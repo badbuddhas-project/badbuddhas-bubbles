@@ -12,6 +12,7 @@ import { isTelegramWebApp, getTelegramUser, expandTelegramApp, closeTelegramApp 
 import type { User } from '@/types/database'
 import { ONBOARDING_KEY } from '@/lib/constants'
 import { ymEvent, getPlatform } from '@/lib/analytics'
+import { TgSplashScreen } from '@/components/TgSplashScreen'
 
 export interface AuthContextType {
   user: User | null
@@ -116,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ user, isLoading, isTelegram, logout, refetchUser }}>
-      {children}
+      {isLoading && isTelegram ? <TgSplashScreen /> : children}
     </AuthContext.Provider>
   )
 }
