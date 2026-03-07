@@ -1,0 +1,128 @@
+'use client'
+
+/**
+ * Global authentication provider.
+ * Handles both Telegram Mini App (initData sync) and browser (JWT cookie) auth flows.
+ * Re-validates the session on every route change and redirects unauthenticated users.
+ */
+
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
+import { isTelegramWebApp, getTelegramUser, expandTelegramApp, closeTelegramApp } from '@/lib/telegram'
+import type { User } from '@/types/database'
+import { ONBOARDING_KEY } from '@/lib/constants'
+import { ymEvent, getPlatform } from '@/lib/analytics'
+
+export interface AuthContextType {
+  user: User | null
+  isLoading: boolean
+  isTelegram: boolean
+  logout: () => void
+  refetchUser: () => Promise<void>
+}
+
+export const AuthContext = createContext<AuthContextType | null>(null)
+
+const PUBLIC_ROUTES = ['/login', '/register', '/onboarding', '/auth/', '/forgot-password', '/reset-password']
+
+/**
+ * @description Root auth provider. Place once at the top of the component tree (app/layout.tsx).
+ * Exposes `AuthContext` with `user`, `isLoading`, `isTelegram`, `logout`, and `refetchUser`.
+ * @param children - The React subtree to wrap.
+ */
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user,      setUser]      = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isTelegram, setIsTelegram] = useState(false)
+  const router   = useRouter()
+  const pathname = usePathname()
+
+  const fetchUser = async () => {
+    // ── 1. Telegram Mini App ──────────────────────────────────────────────────
+    if (isTelegramWebApp()) {
+      setIsTelegram(true)
+      expandTelegramApp()
+
+      const telegramUser = getTelegramUser()
+      if (telegramUser) {
+        try {
+          const res = await fetch('/api/auth/telegram-sync', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              telegram_id: telegramUser.id,
+              username:    telegramUser.username,
+              first_name:  telegramUser.first_name,
+            }),
+          })
+
+          if (res.ok) {
+            const data = await res.json()
+            setUser(data.user)
+            ymEvent('app_opened', { platform: getPlatform(), method: 'telegram' })
+
+            if (data.isNewUser && !localStorage.getItem(ONBOARDING_KEY)) {
+              router.push('/onboarding')
+            }
+          }
+        } catch (e) {
+          console.error('[AuthProvider] Telegram sync error:', e)
+        }
+      }
+
+      setIsLoading(false)
+      return
+    }
+
+    // ── 2. Browser — check JWT session ────────────────────────────────────────
+    setIsTelegram(false)
+
+    try {
+      const res = await fetch('/api/auth/session')
+      if (res.ok) {
+        const data = await res.json()
+        setUser(data.user)
+        ymEvent('app_opened', { platform: getPlatform(), method: 'email' })
+      } else if (pathname && !PUBLIC_ROUTES.some((r) => pathname.startsWith(r))) {
+        const onboardingDone = localStorage.getItem(ONBOARDING_KEY)
+        router.push(onboardingDone ? '/login' : '/onboarding')
+      }
+    } catch (e) {
+      console.error('[AuthProvider] Session check error:', e)
+    }
+
+    setIsLoading(false)
+  }
+
+  // Re-check auth on every route change (guards protected pages)
+  useEffect(() => {
+    fetchUser()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
+
+  const logout = async () => {
+    if (isTelegram) {
+      closeTelegramApp()
+    } else {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      setUser(null)
+      window.location.href = '/login'
+    }
+  }
+
+  const refetchUser = async () => {
+    await fetchUser()
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, isLoading, isTelegram, logout, refetchUser }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export const useAuth = () => {
+  const context = useContext(AuthContext)
+  if (!context) throw new Error('useAuth must be used within AuthProvider')
+  return context
+}
