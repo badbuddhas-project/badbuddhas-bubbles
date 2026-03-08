@@ -136,9 +136,9 @@ export default function ProfilePage() {
             alt=""
             style={{
               position: 'absolute', top: '50%', left: '50%',
-              transform: 'translate(-50%, -55%)',
-              width: 180, height: 180,
-              opacity: 0.35, filter: 'blur(20px)',
+              transform: 'translate(-50%, -50%)',
+              width: 200,
+              opacity: 0.4, zIndex: 0,
               pointerEvents: 'none',
             }}
           />
@@ -147,7 +147,7 @@ export default function ProfilePage() {
           width: 72, height: 72, borderRadius: '50%', marginBottom: 10,
           background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          border: `2px solid ${CARD_BORDER}`, position: 'relative',
+          border: `2px solid ${CARD_BORDER}`, position: 'relative', zIndex: 1,
         }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/images/logo-white-square.png" alt="" width={28} height={28} style={{ display: 'block', opacity: 0.9 }} />
