@@ -60,11 +60,24 @@ export default function Home() {
     localStorage.setItem(LANG_FILTER_KEY, v)
   }, [])
 
+  const isPremium = user?.is_premium ?? false
+
   const instructors = useMemo(() => {
     const set = new Set<string>()
-    practices.forEach((p) => set.add(p.instructor_name))
+    practices.forEach((p) => {
+      // For free users, only show instructors who have at least one non-premium practice
+      if (!isPremium && p.is_premium) return
+      set.add(p.instructor_name)
+    })
     return Array.from(set).sort()
-  }, [practices])
+  }, [practices, isPremium])
+
+  // Reset instructor filter if selected instructor is no longer in the list
+  useEffect(() => {
+    if (instructorFilter !== 'all' && !instructors.includes(instructorFilter)) {
+      setInstructorFilter('all')
+    }
+  }, [instructors, instructorFilter])
 
   const hasActiveFilters = categoryFilter !== 'all' || durationFilter !== 'all' || instructorFilter !== 'all' || languageFilter !== 'all'
 
@@ -80,8 +93,6 @@ export default function Home() {
     if (languageFilter !== 'all') parts.push(languageFilter === 'ru' ? t('catalog.russian') : t('catalog.english'))
     return parts.join(' · ')
   }, [hasActiveFilters, categoryFilter, durationFilter, instructorFilter, languageFilter, t])
-
-  const isPremium = user?.is_premium ?? false
 
   const filteredPractices = useMemo(() => {
     return practices.filter((practice) => {
