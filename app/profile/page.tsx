@@ -129,7 +129,7 @@ export default function ProfilePage() {
           <span style={{ fontSize: 16, fontWeight: 500, color: WHITE }}>Профиль</span>
         </div>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/images/logo.svg" alt="badbuddhas" height={16} style={{ display: 'block' }} />
+        <img src="/images/logo-white.svg" alt="badbuddhas" height={16} style={{ display: 'block' }} />
       </div>
 
       {/* Avatar */}
