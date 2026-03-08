@@ -132,7 +132,7 @@ export default function ProfilePage() {
         <div style={{
           width: 72, height: 72, borderRadius: '50%', marginBottom: 10,
           ...(isPremium
-            ? { backgroundImage: 'url(/images/black_blob_5.png)', backgroundSize: 'cover', backgroundPosition: 'center' }
+            ? { backgroundImage: 'url(/images/black_blob_5.png)', backgroundSize: '180%', backgroundPosition: 'center', overflow: 'hidden' as const }
             : { background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%)' }),
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           border: `2px solid ${CARD_BORDER}`,
