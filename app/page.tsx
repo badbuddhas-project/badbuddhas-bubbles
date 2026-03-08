@@ -22,7 +22,7 @@ const CAT_COLORS: Record<string, string> = {
   energize: '#ec4899',
 }
 
-type CategoryFilter = 'all' | PracticeCategory
+type CategoryFilter = 'all' | 'premium' | PracticeCategory
 type LanguageFilter = 'all' | 'ru' | 'en'
 type DurationFilter = 'all' | 'up5' | 'up10' | 'from10'
 
@@ -83,7 +83,9 @@ export default function Home() {
 
   const filteredPractices = useMemo(() => {
     return practices.filter((practice) => {
-      if (categoryFilter !== 'all' && practice.category !== categoryFilter) return false
+      if (categoryFilter === 'premium') {
+        if (!practice.is_premium) return false
+      } else if (categoryFilter !== 'all' && practice.category !== categoryFilter) return false
       if (languageFilter !== 'all' && practice.language && practice.language !== languageFilter) return false
       if (showFavoritesOnly && !isFavorite(practice.id)) return false
       if (instructorFilter !== 'all' && practice.instructor_name !== instructorFilter) return false
@@ -201,6 +203,7 @@ export default function Home() {
                 { value: 'relax', label: t('catalog.relax') },
                 { value: 'balance', label: t('catalog.balance') },
                 { value: 'energize', label: t('catalog.energize') },
+                { value: 'premium', label: 'Black' },
               ] as const).map((c) => (
                 <Chip key={c.value} active={categoryFilter === c.value} onClick={() => setCategoryFilter(c.value as CategoryFilter)}>{c.label}</Chip>
               ))}

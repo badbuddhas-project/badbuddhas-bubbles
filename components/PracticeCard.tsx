@@ -44,7 +44,7 @@ export function PracticeCard({
             borderRadius: 10,
             overflow: 'hidden',
             ...(practice.preview_image_url
-              ? { backgroundImage: `url(${practice.preview_image_url}?v=1)`, backgroundSize: 'cover', backgroundPosition: 'center' }
+              ? { backgroundImage: `url(${practice.preview_image_url}?v=1)`, backgroundSize: '180%', backgroundPosition: 'center' }
               : { background: '#0A0A0A' }),
           }}
         />
