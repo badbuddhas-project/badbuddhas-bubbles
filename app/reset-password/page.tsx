@@ -61,9 +61,8 @@ export default function ResetPasswordPage() {
 
   return (
     <div style={{ height: '100vh', background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '44px 24px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+      <div style={{ marginBottom: 8 }}>
         <BrandMark size={24} />
-        <span style={{ fontSize: 16, fontWeight: 600, color: '#fff' }}>badbuddhas</span>
       </div>
       <div style={{ fontSize: 13, color: '#CBCBCB', opacity: 0.5, marginBottom: 32 }}>
         {success ? 'Пароль обновлён!' : 'Введите новый пароль'}

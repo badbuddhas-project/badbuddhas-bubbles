@@ -122,10 +122,7 @@ export default function Home() {
     <main style={{ background: '#000', minHeight: '100vh', padding: '44px 16px 80px' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <BrandMark size={22} />
-          <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', letterSpacing: '0.02em' }}>badbuddhas</span>
-        </div>
+        <BrandMark size={22} />
         <button
           onClick={handleProfileClick}
           style={{ width: 32, height: 32, borderRadius: '50%', background: '#313333', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #1A1A1A', cursor: 'pointer', padding: 0 }}

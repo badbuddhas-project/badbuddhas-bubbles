@@ -1,12 +1,11 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Wix_Madefor_Display } from 'next/font/google'
+import { Wix_Madefor_Display } from 'next/font/google'
 import Script from 'next/script'
 import './globals.css'
 import { TelegramProvider } from '@/components/TelegramProvider'
 import { AuthProvider } from '@/components/AuthProvider'
 import { LanguageProvider } from '@/lib/i18n'
 
-const inter = Inter({ subsets: ['latin', 'cyrillic'] })
 const wixFont = Wix_Madefor_Display({
   subsets: ['latin', 'cyrillic'],
   weight: ['400', '500', '600', '700'],

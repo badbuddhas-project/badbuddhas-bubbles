@@ -112,9 +112,8 @@ export default function LoginPage() {
   if (successMessage) {
     return (
       <div style={{ height: '100vh', background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '44px 24px 36px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+        <div style={{ marginBottom: 8 }}>
           <BrandMark size={28} />
-          <span style={{ fontSize: 18, fontWeight: 600, color: '#fff', letterSpacing: '0.04em' }}>badbuddhas</span>
         </div>
         <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#0A0A0A', border: '2px solid #22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '32px 0 20px' }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
@@ -136,9 +135,8 @@ export default function LoginPage() {
 
   return (
     <div style={{ height: '100vh', background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '44px 24px 36px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+      <div style={{ marginBottom: 8 }}>
         <BrandMark size={28} />
-        <span style={{ fontSize: 18, fontWeight: 600, color: '#fff', letterSpacing: '0.04em' }}>badbuddhas</span>
       </div>
       <div style={{ fontSize: 13, color: '#CBCBCB', opacity: 0.5, marginBottom: 32 }}>
         {isLogin ? 'Sign in to continue' : isRegister ? 'Create your account' : 'Reset your password'}
