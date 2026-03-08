@@ -149,7 +149,7 @@ export default function ProfilePage() {
 
       {/* Account type */}
       <div style={{ textAlign: 'center', marginBottom: 14 }}>
-        <span style={{ fontSize: 11, color: GREY }}>{isPremium ? t('profile.premiumAccount').toLowerCase() : t('profile.freeAccount').toLowerCase()}</span>
+        <span style={{ fontSize: 13, color: GREY }}>{isPremium ? t('profile.premiumAccount').toLowerCase() : t('profile.freeAccount').toLowerCase()}</span>
       </div>
 
       {/* Motivational quote */}

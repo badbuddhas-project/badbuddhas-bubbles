@@ -65,7 +65,7 @@ export const en: Translations = {
 
   profile: {
     title: 'Profile',
-    premiumAccount: 'PREMIUM ACCOUNT',
+    premiumAccount: 'BLACK ACCOUNT',
     freeAccount: 'FREE ACCOUNT',
     youAreFantastic: 'YOU ARE FANTASTIC',
     streak: 'Streak',

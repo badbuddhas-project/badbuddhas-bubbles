@@ -65,7 +65,7 @@ export const ru: Translations = {
 
   profile: {
     title: 'Профиль',
-    premiumAccount: 'ПРЕМИУМ АККАУНТ',
+    premiumAccount: 'BLACK АККАУНТ',
     freeAccount: 'БЕСПЛАТНЫЙ АККАУНТ',
     youAreFantastic: 'ВЕЛИКОЛЕПНО',
     streak: 'Серия',
