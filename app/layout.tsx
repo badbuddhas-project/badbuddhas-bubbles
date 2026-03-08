@@ -9,7 +9,8 @@ import { LanguageProvider } from '@/lib/i18n'
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
 const wixFont = Wix_Madefor_Display({
   subsets: ['latin', 'cyrillic'],
-  weight: ['400', '500', '600'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
   variable: '--font-wix',
 })
 

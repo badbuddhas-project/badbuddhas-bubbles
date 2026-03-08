@@ -79,7 +79,6 @@ export default function OnboardingPage() {
         display: 'flex',
         flexDirection: 'column',
         padding: '44px 24px 36px',
-        fontFamily: "var(--font-wix), sans-serif",
       }}
     >
       {/* Header: logo left + skip right */}
