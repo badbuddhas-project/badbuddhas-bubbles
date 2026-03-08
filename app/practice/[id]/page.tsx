@@ -79,7 +79,6 @@ export default function PracticePage() {
 
   const handleBack = () => {
     if (listenedSecondsRef.current > 10 && !hasCompletedRef.current) {
-      recordPractice(practiceId, Math.floor(listenedSecondsRef.current))
       ymEvent('practice_abandoned', { practice_id: practiceId, platform: getPlatform() })
     }
     router.back()
