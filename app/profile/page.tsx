@@ -128,26 +128,14 @@ export default function ProfilePage() {
       </div>
 
       {/* Avatar */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 6, position: 'relative' }}>
-        {isPremium && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src="/images/black_blob_5.png"
-            alt=""
-            style={{
-              position: 'absolute', top: '50%', left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: 200,
-              opacity: 0.4, zIndex: 0,
-              pointerEvents: 'none',
-            }}
-          />
-        )}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 6 }}>
         <div style={{
           width: 72, height: 72, borderRadius: '50%', marginBottom: 10,
-          background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%)',
+          ...(isPremium
+            ? { backgroundImage: 'url(/images/black_blob_5.png)', backgroundSize: 'cover', backgroundPosition: 'center' }
+            : { background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%)' }),
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          border: `2px solid ${CARD_BORDER}`, position: 'relative', zIndex: 1,
+          border: `2px solid ${CARD_BORDER}`,
         }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/images/logo-white-square.png" alt="" width={28} height={28} style={{ display: 'block', opacity: 0.9 }} />
