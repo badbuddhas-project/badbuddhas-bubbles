@@ -106,6 +106,7 @@ export const ru: Translations = {
   settings: {
     title: 'Настройки',
     saving: 'Сохранение...',
+    saved: 'Сохранено',
     firstName: 'Имя',
     firstNamePlaceholder: 'Введите имя',
     lastName: 'Фамилия',

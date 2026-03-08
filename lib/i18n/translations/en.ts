@@ -106,6 +106,7 @@ export const en: Translations = {
   settings: {
     title: 'Settings',
     saving: 'Saving...',
+    saved: 'Saved',
     firstName: 'First name',
     firstNamePlaceholder: 'Enter your name',
     lastName: 'Last name',

@@ -99,6 +99,7 @@ export interface Translations {
   settings: {
     title: string
     saving: string
+    saved: string
     firstName: string
     firstNamePlaceholder: string
     lastName: string

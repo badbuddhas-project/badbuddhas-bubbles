@@ -19,7 +19,9 @@ export default function SettingsPage() {
 
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
+  const [selectedLang, setSelectedLang] = useState(language)
   const [isSaving, setIsSaving] = useState(false)
+  const [showSaved, setShowSaved] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   useEffect(() => {
@@ -38,17 +40,27 @@ export default function SettingsPage() {
 
     setIsSaving(true)
     try {
-      const supabase = getSupabaseClient()
-      await supabase
-        .from('users')
-        .update({
-          first_name: firstName.trim() || null,
-          last_name: lastName.trim() || null,
-        })
-        .eq('id', user.id)
+      // Save name changes to Supabase
+      if (firstName !== (user.first_name || '') || lastName !== (user.last_name || '')) {
+        const supabase = getSupabaseClient()
+        await supabase
+          .from('users')
+          .update({
+            first_name: firstName.trim() || null,
+            last_name: lastName.trim() || null,
+          })
+          .eq('id', user.id)
+        await refreshUser()
+      }
 
-      await refreshUser()
-      router.back()
+      // Apply language change
+      if (selectedLang !== language) {
+        setLanguage(selectedLang)
+      }
+
+      // Show feedback
+      setShowSaved(true)
+      setTimeout(() => setShowSaved(false), 1200)
     } catch (err) {
       console.error('Failed to save:', err)
     } finally {
@@ -80,7 +92,8 @@ export default function SettingsPage() {
 
   const hasChanges =
     firstName !== (user?.first_name || '') ||
-    lastName !== (user?.last_name || '')
+    lastName !== (user?.last_name || '') ||
+    selectedLang !== language
 
   return (
     <main className="min-h-screen bg-black">
@@ -104,7 +117,7 @@ export default function SettingsPage() {
               : 'text-zinc-600'
           }`}
         >
-          {isSaving ? t('settings.saving') : t('common.save')}
+          {showSaved ? t('settings.saved') : isSaving ? t('settings.saving') : t('common.save')}
         </button>
       </header>
 
@@ -161,7 +174,7 @@ export default function SettingsPage() {
           ].map((opt, i) => (
             <div
               key={opt.value}
-              onClick={() => setLanguage(opt.value)}
+              onClick={() => setSelectedLang(opt.value)}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '13px 16px', cursor: 'pointer',
@@ -169,7 +182,7 @@ export default function SettingsPage() {
               }}
             >
               <span style={{ fontSize: 14, color: WHITE }}>{opt.label}</span>
-              {language === opt.value && (
+              {selectedLang === opt.value && (
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
