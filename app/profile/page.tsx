@@ -113,7 +113,21 @@ export default function ProfilePage() {
     <main style={{ minHeight: '100vh', background: BLACK, padding: '44px 16px 80px', overflowY: 'auto' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <span style={{ fontSize: 16, fontWeight: 500, color: WHITE }}>Профиль</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div
+            onClick={() => router.push('/')}
+            style={{
+              width: 32, height: 32, borderRadius: '50%', background: DARK_CARD,
+              border: `1px solid ${CARD_BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREY} strokeWidth="1.5">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </div>
+          <span style={{ fontSize: 16, fontWeight: 500, color: WHITE }}>Профиль</span>
+        </div>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/images/logo.svg" alt="badbuddhas" height={16} style={{ display: 'block' }} />
       </div>
