@@ -127,7 +127,7 @@ export default function ProfilePage() {
           border: `2px solid ${CARD_BORDER}`,
         }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/images/logo-square.png" alt="" width={28} height={28} style={{ display: 'block', opacity: 0.9 }} />
+          <img src="/images/logo-white-square.png" alt="" width={28} height={28} style={{ display: 'block', opacity: 0.9 }} />
         </div>
       </div>
 
@@ -144,7 +144,7 @@ export default function ProfilePage() {
       {/* Motivational quote */}
       <div style={{ textAlign: 'center', marginBottom: 18, padding: '0 12px' }}>
         <span style={{ fontSize: 12, color: GREY }}>
-          <span style={{ opacity: 0.5 }}>[ </span>{quote.text}<span style={{ opacity: 0.5 }}> ]</span>
+          <span style={{ opacity: 0.5 }}>[</span>{quote.text}<span style={{ opacity: 0.5 }}>]</span>
         </span>
         <div style={{ fontSize: 10, color: GREY, opacity: 0.4, marginTop: 6 }}>{quote.author}</div>
       </div>
@@ -177,11 +177,15 @@ export default function ProfilePage() {
       </div>
 
       {/* Last practice */}
-      <div style={{
-        background: DARK_CARD, borderRadius: 14, border: `1px solid ${CARD_BORDER}`,
-        padding: '12px 16px', marginBottom: 18,
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      }}>
+      <div
+        onClick={() => router.push('/')}
+        style={{
+          background: DARK_CARD, borderRadius: 14, border: `1px solid ${CARD_BORDER}`,
+          padding: '12px 16px', marginBottom: 18,
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          cursor: 'pointer',
+        }}
+      >
         <div>
           <div style={{ fontSize: 11, color: GREY, opacity: 0.6, marginBottom: 3 }}>последняя практика</div>
           <div style={{ fontSize: 13, color: WHITE }}>
