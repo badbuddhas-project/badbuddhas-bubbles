@@ -5,10 +5,13 @@ import { useParams, useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/lib/supabase'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 import { usePracticeCompletion } from '@/hooks/usePracticeCompletion'
+import { useFavorites } from '@/hooks/useFavorites'
 import { formatDurationFull } from '@/lib/utils'
 import { useTranslation } from '@/lib/i18n'
 import type { Practice } from '@/types/database'
 import { ymEvent, getPlatform } from '@/lib/analytics'
+
+const GRAIN_URL = "data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"
 
 export default function PracticePage() {
   const params = useParams()
@@ -23,6 +26,7 @@ export default function PracticePage() {
   const hasStartedRef = useRef(false)
 
   const { recordPractice } = usePracticeCompletion()
+  const { isFavorite, toggleFavorite } = useFavorites()
 
   const handleComplete = useCallback(() => {
     if (practice && !hasCompletedRef.current) {
@@ -47,6 +51,7 @@ export default function PracticePage() {
     duration,
     progress,
     toggle,
+    seek,
     seekByPercent,
   } = useAudioPlayer(practice?.audio_url ?? null, {
     onComplete: handleComplete,
@@ -73,7 +78,6 @@ export default function PracticePage() {
   }, [practiceId])
 
   const handleBack = () => {
-    // Record partial listen if played for more than 10 seconds
     if (listenedSecondsRef.current > 10 && !hasCompletedRef.current) {
       recordPractice(practiceId, Math.floor(listenedSecondsRef.current))
       ymEvent('practice_abandoned', { practice_id: practiceId, platform: getPlatform() })
@@ -87,7 +91,29 @@ export default function PracticePage() {
     seekByPercent(percent)
   }
 
-  const remainingTime = duration - currentTime
+  const handleSeekBack = () => {
+    seek(Math.max(0, currentTime - 10))
+  }
+
+  const handleSeekForward = () => {
+    seek(Math.min(duration, currentTime + 10))
+  }
+
+  const handleTogglePlay = () => {
+    if (practice && !hasStartedRef.current && !isPlaying) {
+      hasStartedRef.current = true
+      ymEvent('practice_started', {
+        practice_id: practice.id,
+        practice_name: practice.title,
+        is_premium: practice.is_premium,
+        platform: getPlatform(),
+      })
+    }
+    toggle()
+  }
+
+  const mins = practice ? Math.floor(practice.duration_seconds / 60) : 0
+  const favorite = practice ? isFavorite(practice.id) : false
 
   if (isLoadingPractice) {
     return (
@@ -112,149 +138,170 @@ export default function PracticePage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden">
-      {/* Animated gradient background */}
-      <div className="absolute inset-0 animated-gradient" />
+    <main style={{ position: 'relative', height: '100vh', overflow: 'hidden' }}>
+      {/* Layer 1: Animated gradient */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'linear-gradient(160deg, #0a0a2e, #1a0633, #2d1b4e, #4a1942, #1a2a0e, #0a2e2e, #0a0a2e)',
+        backgroundSize: '400% 400%',
+        animation: 'bbGradShift 12s ease infinite',
+      }}>
+        {/* Radial overlay */}
+        <div style={{
+          position: 'absolute', inset: 0, opacity: 0.5,
+          background: 'radial-gradient(circle at 30% 60%, rgba(139,92,246,0.4), transparent 60%), radial-gradient(circle at 70% 30%, rgba(59,130,246,0.3), transparent 50%)',
+        }} />
+      </div>
 
-      {/* Content */}
-      <div className="relative z-10 min-h-screen flex flex-col">
-        {/* Header */}
-        <header className="flex items-center p-4">
-          <button
-            onClick={handleBack}
-            className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center"
-          >
-            <ArrowLeftIcon className="w-6 h-6 text-emerald-300" />
-          </button>
-        </header>
+      {/* Layer 2: Grain */}
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 1,
+      }}>
+        <div style={{
+          width: '100%', height: '100%', opacity: 0.08,
+          backgroundImage: `url(${GRAIN_URL})`,
+        }} />
+      </div>
 
-        {/* Practice info */}
-        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-          <h1 className="text-2xl font-bold text-white mb-2">
+      {/* Layer 3: Breathing watermark */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/images/logo_ribs.png"
+        alt=""
+        width={180}
+        style={{
+          display: 'block', opacity: 0.02,
+          position: 'absolute', top: '50%', left: '50%', zIndex: 2,
+          animation: 'bbBreathe 8s cubic-bezier(0.45, 0, 0.55, 1) infinite',
+        }}
+      />
+
+      {/* Top: info left, close right */}
+      <div style={{
+        position: 'relative', zIndex: 10,
+        padding: '48px 20px 0',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+      }}>
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 500, color: 'rgba(255,255,255,0.85)', marginBottom: 4 }}>
             {practice.title_ru || practice.title}
-          </h1>
-          <p className="text-zinc-400">{practice.instructor_name}</p>
+          </div>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginBottom: 2 }}>
+            {practice.instructor_name}
+          </div>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>
+            {mins} мин
+          </div>
         </div>
+        <button onClick={handleBack} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
 
-        {/* Player controls */}
-        <div className="p-6 pb-12">
-          {/* Progress bar */}
+      {/* Bottom: progress + timer + controls */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        padding: '0 20px 36px', zIndex: 10,
+      }}>
+        {/* Progress bar */}
+        <div style={{ marginBottom: 6 }}>
           <div
-            className="h-1 bg-zinc-700 rounded-full mb-4 cursor-pointer"
+            style={{ height: 2, background: 'rgba(255,255,255,0.15)', borderRadius: 2, overflow: 'hidden', cursor: 'pointer' }}
             onClick={handleProgressClick}
           >
-            <div
-              className="h-full bg-emerald-300 rounded-full transition-all duration-100"
-              style={{ width: `${progress}%` }}
-            />
+            <div style={{ width: `${progress}%`, height: '100%', background: 'rgba(255,255,255,0.5)', borderRadius: 2 }} />
           </div>
+        </div>
 
-          {/* Time display */}
-          <div className="flex justify-between text-sm text-zinc-400 mb-8">
-            <span>{formatDurationFull(Math.floor(currentTime))}</span>
-            <span>-{formatDurationFull(Math.floor(remainingTime))}</span>
-          </div>
+        {/* Timer — right-aligned, current time only */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 24 }}>
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
+            {formatDurationFull(Math.floor(currentTime))}
+          </span>
+        </div>
 
-          {/* Play/Pause button */}
-          <div className="flex justify-center">
-            <button
-              onClick={() => {
-                if (practice && !hasStartedRef.current && !isPlaying) {
-                  hasStartedRef.current = true
-                  ymEvent('practice_started', {
-                    practice_id: practice.id,
-                    practice_name: practice.title,
-                    is_premium: practice.is_premium,
-                    platform: getPlatform(),
-                  })
-                }
-                toggle()
-              }}
-              disabled={isAudioLoading}
-              className="w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-2xl active:scale-95 transition-transform disabled:opacity-50"
-            >
-              {isAudioLoading ? (
-                <LoadingSpinner className="w-8 h-8 text-black" />
-              ) : isPlaying ? (
-                <PauseIcon className="w-8 h-8 text-black" />
-              ) : (
-                <PlayIcon className="w-8 h-8 text-black ml-1" />
-              )}
-            </button>
-          </div>
+        {/* Controls row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 32 }}>
+          {/* Rewind -10s */}
+          <button onClick={handleSeekBack} style={{ padding: 4, cursor: 'pointer', position: 'relative', background: 'none', border: 'none' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="1.5">
+              <path d="M1 4v6h6" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+            </svg>
+            <span style={{
+              position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+              fontSize: 7, fontWeight: 700, color: 'rgba(255,255,255,0.45)',
+            }}>10</span>
+          </button>
+
+          {/* Play/Pause */}
+          <button
+            onClick={handleTogglePlay}
+            disabled={isAudioLoading}
+            style={{
+              width: 56, height: 56, borderRadius: '50%',
+              border: '1.5px solid rgba(255,255,255,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', background: 'none',
+              opacity: isAudioLoading ? 0.5 : 1,
+            }}
+          >
+            {isAudioLoading ? (
+              <svg style={{ animation: 'spin 1s linear infinite' }} width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <circle opacity="0.25" cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.8)" strokeWidth="4" />
+                <path opacity="0.75" fill="rgba(255,255,255,0.8)" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+            ) : isPlaying ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="rgba(255,255,255,0.8)">
+                <rect x="6" y="5" width="4" height="14" rx="1" />
+                <rect x="14" y="5" width="4" height="14" rx="1" />
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="rgba(255,255,255,0.8)">
+                <path d="M8 5.14v14l11-7-11-7z" />
+              </svg>
+            )}
+          </button>
+
+          {/* Forward +10s */}
+          <button onClick={handleSeekForward} style={{ padding: 4, cursor: 'pointer', position: 'relative', background: 'none', border: 'none' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="1.5">
+              <path d="M23 4v6h-6" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+            </svg>
+            <span style={{
+              position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+              fontSize: 7, fontWeight: 700, color: 'rgba(255,255,255,0.45)',
+            }}>10</span>
+          </button>
+
+          {/* Favorite */}
+          <button
+            onClick={() => toggleFavorite(practice.id)}
+            style={{ padding: 4, cursor: 'pointer', background: 'none', border: 'none' }}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill={favorite ? 'rgba(255,255,255,0.45)' : 'none'} stroke="rgba(255,255,255,0.45)" strokeWidth="1.5">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+          </button>
         </div>
       </div>
 
       <style jsx>{`
-        .animated-gradient {
-          background: linear-gradient(
-            135deg,
-            #8B5CF6 0%,
-            #EC4899 25%,
-            #000000 50%,
-            #8B5CF6 75%,
-            #EC4899 100%
-          );
-          background-size: 400% 400%;
-          animation: gradientShift 15s ease infinite;
+        @keyframes bbBreathe {
+          0%, 100% { transform: translate(-50%, -50%) scale(0.92); }
+          50% { transform: translate(-50%, -50%) scale(1.08); }
         }
-
-        @keyframes gradientShift {
-          0% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-          100% {
-            background-position: 0% 50%;
-          }
+        @keyframes bbGradShift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </main>
-  )
-}
-
-function ArrowLeftIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-    </svg>
-  )
-}
-
-function PlayIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M8 5.14v14l11-7-11-7z" />
-    </svg>
-  )
-}
-
-function PauseIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-    </svg>
-  )
-}
-
-function LoadingSpinner({ className }: { className?: string }) {
-  return (
-    <svg className={`animate-spin ${className}`} viewBox="0 0 24 24" fill="none">
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-      />
-    </svg>
   )
 }
