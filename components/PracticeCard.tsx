@@ -43,14 +43,9 @@ export function PracticeCard({
             height: 80,
             borderRadius: 10,
             overflow: 'hidden',
-            backgroundImage: practice.preview_image_url
-              ? `url(${practice.preview_image_url}?v=1)`
-              : undefined,
-            backgroundSize: '180%',
-            backgroundPosition: 'center',
-            background: practice.preview_image_url
-              ? undefined
-              : 'linear-gradient(135deg, #27272a, #18181b)',
+            ...(practice.preview_image_url
+              ? { backgroundImage: `url(${practice.preview_image_url}?v=1)`, backgroundSize: 'cover', backgroundPosition: 'center' }
+              : { background: '#0A0A0A' }),
           }}
         />
         <button
@@ -90,25 +85,15 @@ export function PracticeCard({
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
           {practice.is_premium && (
-            <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="8" height="8" viewBox="0 0 24 24" fill="#000"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-            </div>
+            <img src="/images/icon-black.png" width={16} height={16} alt="" style={{ display: 'block', flexShrink: 0 }} />
           )}
           <span style={{ fontSize: 15, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {practice.title_ru || practice.title}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-          <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#313333', border: '1px solid #1A1A1A', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
-            {practice.instructor_avatar_url ? (
-              <img
-                src={practice.instructor_avatar_url + '?v=1'}
-                alt={practice.instructor_name}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            ) : (
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#CBCBCB" strokeWidth="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            )}
+          <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#313333', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span style={{ fontSize: 9, color: '#fff', lineHeight: 1 }}>{practice.instructor_name.charAt(0).toUpperCase()}</span>
           </div>
           <span style={{ fontSize: 12, color: '#CBCBCB', opacity: 0.7 }}>
             {practice.instructor_name}

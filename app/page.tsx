@@ -50,12 +50,7 @@ export default function Home() {
 
   const [filterOpen, setFilterOpen] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
-  const [languageFilter, setLanguageFilter] = useState<LanguageFilter>(() => {
-    if (typeof window === 'undefined') return 'all'
-    const saved = localStorage.getItem(LANG_FILTER_KEY)
-    if (saved === 'all' || saved === 'ru' || saved === 'en') return saved
-    return language as LanguageFilter
-  })
+  const [languageFilter, setLanguageFilter] = useState<LanguageFilter>('all')
   const [durationFilter, setDurationFilter] = useState<DurationFilter>('all')
   const [instructorFilter, setInstructorFilter] = useState<string>('all')
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
@@ -138,7 +133,7 @@ export default function Home() {
         </span>
       </div>
       <div style={{ fontSize: 14, color: '#CBCBCB', opacity: 0.5, marginBottom: 20 }}>
-        {t('catalog.letsBreath')}
+        [{t('catalog.letsBreath').toLowerCase()}]
       </div>
 
       {/* Filter bar */}
