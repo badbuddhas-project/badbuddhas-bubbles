@@ -60,6 +60,7 @@ export const en: Translations = {
     loading: 'Loading...',
     notFound: 'Practice not found',
     goBack: 'Go back',
+    min: 'min',
   },
 
   profile: {
@@ -76,6 +77,11 @@ export const en: Translations = {
     faq: 'FAQ',
     communityChat: 'Community chat',
     contactUs: 'Contact us',
+    today: 'today',
+    yesterday: 'yesterday',
+    webAccess: 'web access',
+    emailNotLinked: 'email not linked',
+    notVerified: 'not verified',
     logout: 'Log out',
     closeApp: 'Close app',
     connectedEmail: 'Connected email',
@@ -214,6 +220,10 @@ export const en: Translations = {
     a7: 'Many sensations during breathwork are normal and safe, including: tingling in hands/feet/face, lightheadedness, temperature changes, emotional releases, or vibrations. These occur due to changes in oxygen/CO2 levels and nervous system activation. However, if you feel severe discomfort, chest pain, or extreme dizziness, stop immediately and breathe normally. Always practice in a safe position.',
     stillHaveQuestions: 'Still have questions?',
     contactUs: 'Contact us',
+  },
+
+  splash: {
+    connecting: 'connecting...',
   },
 
   errors: {

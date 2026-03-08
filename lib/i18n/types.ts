@@ -55,6 +55,7 @@ export interface Translations {
     loading: string
     notFound: string
     goBack: string
+    min: string
   }
 
   profile: {
@@ -71,6 +72,11 @@ export interface Translations {
     faq: string
     communityChat: string
     contactUs: string
+    today: string
+    yesterday: string
+    webAccess: string
+    emailNotLinked: string
+    notVerified: string
     logout: string
     closeApp: string
     connectedEmail: string
@@ -201,6 +207,10 @@ export interface Translations {
     a7: string
     stillHaveQuestions: string
     contactUs: string
+  }
+
+  splash: {
+    connecting: string
   }
 
   errors: {
