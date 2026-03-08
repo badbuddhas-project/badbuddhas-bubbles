@@ -163,22 +163,11 @@ export default function PracticePage() {
         }} />
       </div>
 
-      {/* Layer 3: Breathing watermark */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/images/logo-ribs.png"
-        alt=""
-        width={180}
-        style={{
-          display: 'block', opacity: 0.02,
-          position: 'absolute', top: '50%', left: '50%', zIndex: 2,
-          animation: 'bbBreathe 8s cubic-bezier(0.45, 0, 0.55, 1) infinite',
-        }}
-      />
+      {/* Content column */}
+      <div style={{ position: 'relative', zIndex: 10, height: '100%', display: 'flex', flexDirection: 'column' }}>
 
       {/* Top: info left, close right */}
       <div style={{
-        position: 'relative', zIndex: 10,
         padding: '48px 20px 0',
         display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
       }}>
@@ -201,10 +190,23 @@ export default function PracticePage() {
         </button>
       </div>
 
+      {/* Middle: breathing watermark centered in free area */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/logo-ribs.png"
+          alt=""
+          width={180}
+          style={{
+            display: 'block', opacity: 0.02,
+            animation: 'bbBreathe 8s cubic-bezier(0.45, 0, 0.55, 1) infinite',
+          }}
+        />
+      </div>
+
       {/* Bottom: progress + timer + controls */}
       <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0,
-        padding: '0 20px 36px', zIndex: 10,
+        padding: '0 20px 36px',
       }}>
         {/* Progress bar */}
         <div style={{ marginBottom: 6 }}>
@@ -288,10 +290,12 @@ export default function PracticePage() {
         </div>
       </div>
 
+      </div>{/* end content column */}
+
       <style jsx global>{`
         @keyframes bbBreathe {
-          0%, 100% { transform: translate(-50%, -50%) scale(0.92); }
-          50% { transform: translate(-50%, -50%) scale(1.08); }
+          0%, 100% { transform: scale(0.92); }
+          50% { transform: scale(1.08); }
         }
         @keyframes bbGradShift {
           0% { background-position: 0% 50%; }
