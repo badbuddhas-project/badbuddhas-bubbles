@@ -114,11 +114,8 @@ export default function ProfilePage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <span style={{ fontSize: 16, fontWeight: 500, color: WHITE }}>Профиль</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/images/logo.svg" alt="badbuddhas" width={16} height={16} style={{ display: 'block' }} />
-          <span style={{ fontSize: 11, fontWeight: 600, color: WHITE }}>badbuddhas</span>
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/images/logo.svg" alt="badbuddhas" height={16} style={{ display: 'block' }} />
       </div>
 
       {/* Avatar */}
