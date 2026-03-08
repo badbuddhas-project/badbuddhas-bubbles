@@ -3,7 +3,7 @@ export function BrandMark({ size = 24 }: { size?: number }) {
   const width = Math.round(size * (630 / 116))
   return (
     <img
-      src="/images/logo.svg"
+      src="/images/logo-white.svg"
       alt="badbuddhas"
       width={width}
       height={size}
