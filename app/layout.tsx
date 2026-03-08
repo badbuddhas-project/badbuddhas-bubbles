@@ -79,7 +79,7 @@ ym(107145193, 'init', {
           </div>
         </noscript>
       </head>
-      <body className={`${inter.className} ${wixFont.variable} bg-black text-white min-h-screen`}>
+      <body className={`${wixFont.className} ${wixFont.variable} bg-black text-white min-h-screen`}>
         <TelegramProvider>
           <AuthProvider>
             <LanguageProvider>
