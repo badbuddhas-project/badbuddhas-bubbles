@@ -59,6 +59,7 @@ export interface Translations {
   }
 
   profile: {
+    title: string
     premiumAccount: string
     freeAccount: string
     youAreFantastic: string
@@ -67,6 +68,7 @@ export interface Translations {
     minutes: string
     lastPractice: string
     never: string
+    account: string
     settings: string
     language: string
     faq: string
@@ -187,6 +189,8 @@ export interface Translations {
     backToTelegram: string
     continueBtn: string
     continueInBrowser: string
+    goToLogin: string
+    goToApp: string
   }
 
   faq: {
@@ -207,6 +211,19 @@ export interface Translations {
     a7: string
     stillHaveQuestions: string
     contactUs: string
+  }
+
+  quotes: {
+    q1text: string
+    q1author: string
+    q2text: string
+    q2author: string
+    q3text: string
+    q3author: string
+    q4text: string
+    q4author: string
+    q5text: string
+    q5author: string
   }
 
   splash: {
