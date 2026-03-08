@@ -1,54 +1,51 @@
 'use client'
 
 /**
- * Onboarding page: animated multi-step intro shown to new users before the catalog.
+ * Onboarding page: 3-slide intro shown once to new users before the catalog.
+ * Design follows the BadBuddhas Bubbles mockup.
  */
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ONBOARDING_KEY } from '@/lib/constants'
-import { useTranslation } from '@/lib/i18n'
 
-// After onboarding: go to '/' in Telegram, else '/login' in browser.
 function resolvePostOnboardingRoute(): string {
   const tg = (window as any).Telegram?.WebApp
   if (tg && tg.initData && tg.initData.length > 0) return '/'
   return '/login'
 }
 
+const SLIDES = [
+  {
+    title: 'HOW DO YOU WANT TO FEEL?',
+    subtitle: 'Релакс, баланс или заряд энергии — выбери своё состояние',
+  },
+  {
+    title: 'FEEL THE POWER OF BREATH',
+    subtitle: 'Дыхательные практики под электронную музыку от лучших ведущих',
+  },
+  {
+    title: 'JOIN A GROWING COMMUNITY',
+    subtitle: 'Присоединяйся к сообществу тех, кто дышит осознанно',
+  },
+]
+
 export default function OnboardingPage() {
   const router = useRouter()
-  const { t } = useTranslation()
-  const containerRef = useRef<HTMLDivElement>(null)
   const [currentSlide, setCurrentSlide] = useState(0)
   const [touchStart, setTouchStart] = useState(0)
   const [touchEnd, setTouchEnd] = useState(0)
 
-  const SLIDES = useMemo(() => [
-    {
-      title: t('onboarding.slide1Title'),
-      description: t('onboarding.slide1Subtitle'),
-    },
-    {
-      title: t('onboarding.slide2Title'),
-      description: t('onboarding.slide2Subtitle'),
-    },
-    {
-      title: t('onboarding.slide3Title'),
-      description: t('onboarding.slide3Subtitle'),
-    },
-  ], [t])
-
-  // Check if onboarding was already completed — run ONCE on mount only.
   useEffect(() => {
-    if (localStorage.getItem(ONBOARDING_KEY) !== 'true') return
-    router.replace(resolvePostOnboardingRoute())
+    if (localStorage.getItem(ONBOARDING_KEY) === 'true') {
+      router.replace(resolvePostOnboardingRoute())
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const goToSlide = useCallback((index: number) => {
     setCurrentSlide(Math.max(0, Math.min(index, SLIDES.length - 1)))
-  }, [SLIDES.length])
+  }, [])
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.touches[0].clientX)
@@ -62,17 +59,11 @@ export default function OnboardingPage() {
   const handleTouchEnd = () => {
     const diff = touchStart - touchEnd
     const threshold = 50
-
-    if (diff > threshold) {
-      // Swipe left - next slide
-      goToSlide(currentSlide + 1)
-    } else if (diff < -threshold) {
-      // Swipe right - previous slide
-      goToSlide(currentSlide - 1)
-    }
+    if (diff > threshold) goToSlide(currentSlide + 1)
+    else if (diff < -threshold) goToSlide(currentSlide - 1)
   }
 
-  const handleGetStarted = () => {
+  const handleFinish = () => {
     localStorage.setItem(ONBOARDING_KEY, 'true')
     router.replace(resolvePostOnboardingRoute())
   }
@@ -80,124 +71,233 @@ export default function OnboardingPage() {
   const isLastSlide = currentSlide === SLIDES.length - 1
 
   return (
-    <main className="min-h-screen bg-black flex flex-col">
-      {/* Logo */}
-      <header className="flex justify-center pt-12 pb-8">
-        <Logo />
-      </header>
-
-      {/* Slides */}
+    <main
+      style={{
+        height: '100%',
+        minHeight: '100vh',
+        background: '#000000',
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '44px 24px 36px',
+        fontFamily: "'Wix Madefor Display', sans-serif",
+      }}
+    >
+      {/* Header: logo left + skip right */}
       <div
-        ref={containerRef}
-        className="flex-1 overflow-hidden"
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 40,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <BrandMark size={20} />
+          <span
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: '#FFFFFF',
+            }}
+          >
+            badbuddhas
+          </span>
+        </div>
+        <span
+          onClick={handleFinish}
+          style={{
+            fontSize: 12,
+            color: '#CBCBCB',
+            opacity: 0.5,
+            cursor: 'pointer',
+          }}
+        >
+          пропустить
+        </span>
+      </div>
+
+      {/* Slides area */}
+      <div
+        style={{ flex: 1, overflow: 'hidden' }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
         <div
-          className="flex h-full transition-transform duration-300 ease-out"
-          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+          style={{
+            display: 'flex',
+            height: '100%',
+            transition: 'transform 0.3s ease-out',
+            transform: `translateX(-${currentSlide * 100}%)`,
+          }}
         >
           {SLIDES.map((slide, index) => (
             <div
               key={index}
-              className="w-full flex-shrink-0 flex flex-col items-center justify-center px-8 text-center"
+              style={{
+                width: '100%',
+                flexShrink: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
             >
-              {/* Decorative circles */}
-              <div className="relative w-48 h-48 mb-12">
-                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-600/30 to-pink-500/30 animate-pulse" />
-                <div className="absolute inset-4 rounded-full bg-gradient-to-br from-violet-600/20 to-pink-500/20" />
-                <div className="absolute inset-8 rounded-full bg-gradient-to-br from-violet-600/10 to-pink-500/10" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <SlideIcon index={index} />
-                </div>
-              </div>
+              <SlideIllustration index={index} />
 
-              <h2 className="text-2xl font-bold text-white mb-4 tracking-wide">
+              <h2
+                style={{
+                  fontSize: 22,
+                  fontWeight: 600,
+                  color: '#FFFFFF',
+                  textAlign: 'center',
+                  marginBottom: 12,
+                  letterSpacing: '0.02em',
+                  margin: 0,
+                  marginTop: 0,
+                }}
+              >
                 {slide.title}
               </h2>
-              <p className="text-zinc-400 text-lg leading-relaxed max-w-xs">
-                {slide.description}
+
+              <p
+                style={{
+                  fontSize: 14,
+                  color: '#CBCBCB',
+                  opacity: 0.6,
+                  textAlign: 'center',
+                  lineHeight: 1.5,
+                  maxWidth: 260,
+                  marginTop: 12,
+                }}
+              >
+                {slide.subtitle}
               </p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Bottom section */}
-      <div className="px-6 pb-12">
-        {/* Page indicators */}
-        <div className="flex justify-center gap-2 mb-8">
-          {SLIDES.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => goToSlide(index)}
-              className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                index === currentSlide
-                  ? 'w-8 bg-emerald-300'
-                  : 'bg-zinc-600'
-              }`}
+      {/* Bottom: pagination + next */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 20,
+        }}
+      >
+        {/* Dots */}
+        <div style={{ display: 'flex', gap: 8 }}>
+          {SLIDES.map((_, i) => (
+            <div
+              key={i}
+              onClick={() => goToSlide(i)}
+              style={{
+                width: i === currentSlide ? 24 : 8,
+                height: 8,
+                borderRadius: 4,
+                background: i === currentSlide ? '#FFFFFF' : '#313333',
+                transition: 'all 0.3s',
+                cursor: 'pointer',
+              }}
             />
           ))}
         </div>
 
-        {/* Buttons */}
-        <div className="space-y-3">
-          <button
-            onClick={isLastSlide ? handleGetStarted : () => goToSlide(currentSlide + 1)}
-            className="w-full py-4 bg-emerald-300 text-black font-semibold rounded-2xl"
-          >
-            {isLastSlide ? t('onboarding.getStarted') : t('common.next')}
-          </button>
-
-          {!isLastSlide && (
-            <button
-              onClick={handleGetStarted}
-              className="w-full py-4 text-zinc-500 font-medium"
-            >
-              {t('onboarding.skip')}
-            </button>
-          )}
-        </div>
+        {/* Next / Start */}
+        <span
+          onClick={isLastSlide ? handleFinish : () => goToSlide(currentSlide + 1)}
+          style={{
+            fontSize: 15,
+            fontWeight: 500,
+            color: '#FFFFFF',
+            cursor: 'pointer',
+          }}
+        >
+          {isLastSlide ? 'начать' : 'далее'}
+        </span>
       </div>
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@400;500;600&display=swap');
+      `}</style>
     </main>
   )
 }
 
-function Logo() {
+/* ── BrandMark SVG ────────────────────────────────────────────────────────── */
+
+function BrandMark({ size = 24 }: { size?: number }) {
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-600 to-pink-500 flex items-center justify-center">
-        <span className="text-white font-bold text-xl">B</span>
-      </div>
-      <span className="text-white font-bold tracking-widest text-sm">
-        BADBUDDHAS
-      </span>
-    </div>
+    <svg width={size} height={size} viewBox="0 0 110 116" fill="none">
+      <path
+        d="M107.441 57.9999C107.483 51.5528 107.84 45.1653 108.543 38.8494C109.288 32.1101 109.663 26.8618 109.663 23.1104C109.663 17.3313 108.418 12.745 105.934 9.35145C103.444 5.95793 99.906 3.54847 95.3074 2.12903C90.7089 0.709597 85.181 0 78.718 0C78.5691 0 71.7188 0 66.2268 1.9024C62.3549 3.2443 58.5128 3.73931 54.8256 3.79299C51.1384 3.73931 47.344 3.10117 43.4244 1.9024C36.8721 -0.101508 31.0881 0 30.9392 0C24.4821 0 18.9543 0.709597 14.3557 2.12903C9.7571 3.54847 6.21881 5.95793 3.7289 9.35145C1.24495 12.7509 0 17.3313 0 23.1104C0 26.8618 0.375273 32.1101 1.11986 38.8494C1.8168 45.1653 2.1742 51.5528 2.22185 57.9999C2.18016 64.447 1.82275 70.8344 1.11986 77.1503C0.375273 83.8896 0 89.138 0 92.8893C0 98.6685 1.24495 103.255 3.7289 106.648C6.21285 110.042 9.7571 112.451 14.3557 113.871C18.9543 115.29 24.4881 116 30.9451 116C31.0941 116 36.878 116.101 43.4364 114.097C47.3559 112.905 51.1503 112.26 54.8375 112.207C58.5247 112.26 62.3668 112.755 66.2387 114.097C71.7308 116 78.581 116 78.7299 116C85.187 116 90.7208 115.29 95.3194 113.871C99.9179 112.451 103.456 110.042 105.946 106.648C108.43 103.249 109.675 98.6685 109.675 92.8893C109.675 89.138 109.3 83.8896 108.555 77.1503C107.858 70.8344 107.501 64.447 107.453 57.9999H107.441ZM85.4312 109.231C84.3113 110.799 82.3218 111.587 79.4685 111.587C77.479 111.587 75.8826 110.775 74.2505 109.762C58.6379 100.094 52.8122 100.094 35.4186 109.762C33.7388 110.698 32.1901 111.587 30.2005 111.587C27.3413 111.587 25.3518 110.799 24.2379 109.231C23.118 107.656 22.5581 105.098 22.5581 101.555C22.5581 98.0124 22.9036 93.7004 23.5826 88.9352C24.2677 84.17 24.9527 78.9992 25.6317 73.4288C26.2274 68.5681 26.5431 63.5345 26.6206 58.3637H26.6384C26.6384 58.2444 26.6325 58.1251 26.6325 57.9999C26.6325 57.8806 26.6384 57.7613 26.6384 57.6361H26.6206C26.5431 52.4653 26.2334 47.4376 25.6317 42.571C24.9527 37.0006 24.2677 31.8298 23.5826 27.0646C22.9036 22.2993 22.5581 18.0947 22.5581 14.4447C22.5581 10.7947 23.118 8.33757 24.2379 6.76903C25.3577 5.2005 27.3473 4.41325 30.2005 4.41325C32.1901 4.41325 33.7388 5.30188 35.4186 6.23823C52.8122 15.9059 58.6319 15.9059 74.2505 6.23823C75.8885 5.22435 77.479 4.41325 79.4685 4.41325C82.3278 4.41325 84.3173 5.2005 85.4312 6.76903C86.5511 8.34353 87.111 10.9021 87.111 14.4447C87.111 17.9873 86.7655 22.2993 86.0864 27.0646C85.4014 31.8298 84.7164 37.0006 84.0373 42.571C83.4417 47.4317 83.126 52.4653 83.0485 57.6361H83.0306C83.0306 57.7554 83.0366 57.8746 83.0366 57.9999C83.0366 58.1192 83.0306 58.2384 83.0306 58.3637H83.0485C83.126 63.5345 83.4357 68.5621 84.0373 73.4288C84.7164 78.9992 85.4014 84.17 86.0864 88.9352C86.7655 93.7004 87.111 97.9051 87.111 101.555C87.111 105.205 86.5511 107.662 85.4312 109.231Z"
+        fill="#FFFFFF"
+      />
+    </svg>
   )
 }
 
-function SlideIcon({ index }: { index: number }) {
-  const className = 'w-16 h-16 text-white/80'
+/* ── Slide illustrations ──────────────────────────────────────────────────── */
+
+function SlideIllustration({ index }: { index: number }) {
+  const containerStyle = {
+    width: 160,
+    height: 160,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 40,
+  } as const
 
   switch (index) {
     case 0:
+      // Gradient circle placeholder for blob image
       return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z" />
-        </svg>
+        <div
+          style={{
+            ...containerStyle,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle at 30% 30%, #333 0%, #111 70%, #000 100%)',
+          }}
+        />
       )
     case 1:
+      // Breathing cycle icon: circle with arrows
       return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
-        </svg>
+        <div style={containerStyle}>
+          <svg width={100} height={100} viewBox="0 0 100 100" fill="none" style={{ opacity: 0.7 }}>
+            <circle cx="50" cy="50" r="36" stroke="#CBCBCB" strokeWidth="2" />
+            {/* Top arrow (inhale) */}
+            <path d="M50 14 L50 30" stroke="#CBCBCB" strokeWidth="2" strokeLinecap="round" />
+            <path d="M45 20 L50 14 L55 20" stroke="#CBCBCB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            {/* Bottom arrow (exhale) */}
+            <path d="M50 86 L50 70" stroke="#CBCBCB" strokeWidth="2" strokeLinecap="round" />
+            <path d="M45 80 L50 86 L55 80" stroke="#CBCBCB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            {/* Right arrow */}
+            <path d="M86 50 L70 50" stroke="#CBCBCB" strokeWidth="2" strokeLinecap="round" />
+            <path d="M80 45 L86 50 L80 55" stroke="#CBCBCB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            {/* Left arrow */}
+            <path d="M14 50 L30 50" stroke="#CBCBCB" strokeWidth="2" strokeLinecap="round" />
+            <path d="M20 45 L14 50 L20 55" stroke="#CBCBCB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
       )
     case 2:
+      // Community icon: two figures in a circle
       return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-        </svg>
+        <div style={containerStyle}>
+          <svg width={100} height={100} viewBox="0 0 100 100" fill="none" style={{ opacity: 0.7 }}>
+            <circle cx="50" cy="50" r="40" stroke="#CBCBCB" strokeWidth="1.5" />
+            {/* Left person */}
+            <circle cx="38" cy="38" r="6" stroke="#CBCBCB" strokeWidth="1.5" />
+            <path d="M28 58 C28 50 48 50 48 58" stroke="#CBCBCB" strokeWidth="1.5" strokeLinecap="round" />
+            {/* Right person */}
+            <circle cx="62" cy="38" r="6" stroke="#CBCBCB" strokeWidth="1.5" />
+            <path d="M52 58 C52 50 72 50 72 58" stroke="#CBCBCB" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+        </div>
       )
     default:
       return null
