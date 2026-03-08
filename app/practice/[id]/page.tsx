@@ -166,7 +166,7 @@ export default function PracticePage() {
       {/* Layer 3: Breathing watermark */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/images/logo_ribs.png"
+        src="/images/logo-ribs.png"
         alt=""
         width={180}
         style={{
@@ -288,7 +288,7 @@ export default function PracticePage() {
         </div>
       </div>
 
-      <style jsx>{`
+      <style jsx global>{`
         @keyframes bbBreathe {
           0%, 100% { transform: translate(-50%, -50%) scale(0.92); }
           50% { transform: translate(-50%, -50%) scale(1.08); }
