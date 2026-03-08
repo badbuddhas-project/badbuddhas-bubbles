@@ -110,6 +110,7 @@ export const ru: Translations = {
       'Вы уверены, что хотите удалить аккаунт? Это действие необратимо. Все данные, включая историю практик и статистику, будут удалены навсегда.',
     resetPasswordUnavailable:
       'Сброс пароля недоступен в Telegram Mini App',
+    language: 'Язык',
   },
 
   connectEmailModal: {

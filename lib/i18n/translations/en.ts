@@ -110,6 +110,7 @@ export const en: Translations = {
       'Are you sure you want to delete your account? This action cannot be undone. All your data, including practice history and statistics, will be permanently deleted.',
     resetPasswordUnavailable:
       'Password reset is not available in Telegram Mini App',
+    language: 'Language',
   },
 
   connectEmailModal: {

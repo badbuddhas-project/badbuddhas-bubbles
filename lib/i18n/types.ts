@@ -101,6 +101,7 @@ export interface Translations {
     deleteAccountTitle: string
     deleteAccountMessage: string
     resetPasswordUnavailable: string
+    language: string
   }
 
   connectEmailModal: {

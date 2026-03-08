@@ -96,10 +96,9 @@ export default function ProfilePage() {
 
   const menuItems = [
     { label: 'Настройки', sub: 'аккаунт', onClick: () => router.push('/profile/settings') },
-    { label: 'Язык', sub: language === 'ru' ? 'русский' : 'english', onClick: () => router.push('/profile/settings') },
     { label: 'Частые вопросы', sub: '', onClick: () => router.push('/profile/faq') },
-    { label: 'Чат сообщества', sub: '', onClick: () => window.open('https://t.me/badbuddhas', '_blank') },
-    { label: 'Связаться с нами', sub: '', onClick: () => window.open('mailto:contact@badbuddhas.com', '_blank') },
+    { label: 'Чат сообщества', sub: '', onClick: () => window.open('https://t.me/+bb3fiUmoKGVjYmUy', '_blank') },
+    { label: 'Связаться с нами', sub: '', onClick: () => window.open('https://badbuddhas.world/ask?utm_source=telegram&utm_medium=miniapp&utm_campaign=bubbles_contact', '_blank') },
   ]
 
   if (isUserLoading) {
@@ -117,7 +116,7 @@ export default function ProfilePage() {
         <span style={{ fontSize: 16, fontWeight: 500, color: WHITE }}>Профиль</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/images/logo.svg" alt="badbuddhas" width={16} style={{ display: 'block' }} />
+          <img src="/images/logo.svg" alt="badbuddhas" width={16} height={16} style={{ display: 'block' }} />
           <span style={{ fontSize: 11, fontWeight: 600, color: WHITE }}>badbuddhas</span>
         </div>
       </div>
@@ -131,7 +130,7 @@ export default function ProfilePage() {
           border: `2px solid ${CARD_BORDER}`,
         }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/images/logo.svg" alt="" width={28} style={{ display: 'block', opacity: 0.9 }} />
+          <img src="/images/logo-square.png" alt="" width={28} height={28} style={{ display: 'block', opacity: 0.9 }} />
         </div>
       </div>
 

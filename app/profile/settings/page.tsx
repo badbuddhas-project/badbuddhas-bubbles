@@ -7,10 +7,15 @@ import { getSupabaseClient } from '@/lib/supabase'
 import { BottomSheet } from '@/components/BottomSheet'
 import { useTranslation } from '@/lib/i18n'
 
+const DARK_CARD = '#0A0A0A'
+const CARD_BORDER = '#1A1A1A'
+const GREY = '#CBCBCB'
+const WHITE = '#FFFFFF'
+
 export default function SettingsPage() {
   const router = useRouter()
   const { user, refreshUser } = useUser()
-  const { t } = useTranslation()
+  const { t, language, setLanguage } = useTranslation()
 
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -141,6 +146,36 @@ export default function SettingsPage() {
           <div className="w-full px-4 py-3 bg-zinc-900 rounded-xl text-zinc-500">
             {user?.username ? `@${user.username}` : t('common.notAvailable')}
           </div>
+        </div>
+      </section>
+
+      {/* Language */}
+      <section className="p-4">
+        <div style={{ fontSize: 10, color: GREY, opacity: 0.5, textTransform: 'uppercase' as const, letterSpacing: '0.03em', marginBottom: 8 }}>
+          {t('settings.language') || 'ЯЗЫК'}
+        </div>
+        <div style={{ background: DARK_CARD, borderRadius: 14, border: `1px solid ${CARD_BORDER}`, overflow: 'hidden' }}>
+          {[
+            { value: 'en' as const, label: 'English' },
+            { value: 'ru' as const, label: 'Русский' },
+          ].map((opt, i) => (
+            <div
+              key={opt.value}
+              onClick={() => setLanguage(opt.value)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '13px 16px', cursor: 'pointer',
+                borderBottom: i === 0 ? `1px solid ${CARD_BORDER}` : 'none',
+              }}
+            >
+              <span style={{ fontSize: 14, color: WHITE }}>{opt.label}</span>
+              {language === opt.value && (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              )}
+            </div>
+          ))}
         </div>
       </section>
 
