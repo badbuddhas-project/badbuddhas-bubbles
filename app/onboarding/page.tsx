@@ -242,61 +242,63 @@ function BrandMark({ size = 24 }: { size?: number }) {
 /* ── Slide illustrations ──────────────────────────────────────────────────── */
 
 function SlideIllustration({ index }: { index: number }) {
-  const containerStyle = {
-    width: 160,
-    height: 160,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 40,
-  } as const
-
   switch (index) {
     case 0:
-      // Gradient circle placeholder for blob image
       return (
         <div
           style={{
-            ...containerStyle,
+            width: 160,
+            height: 160,
             borderRadius: '50%',
-            background: 'radial-gradient(circle at 30% 30%, #333 0%, #111 70%, #000 100%)',
+            overflow: 'hidden',
+            marginBottom: 40,
+            backgroundImage: 'url(/images/onboarding-blob.png)',
+            backgroundSize: '180%',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
           }}
         />
       )
     case 1:
-      // Breathing cycle icon: circle with arrows
       return (
-        <div style={containerStyle}>
-          <svg width={100} height={100} viewBox="0 0 100 100" fill="none" style={{ opacity: 0.7 }}>
-            <circle cx="50" cy="50" r="36" stroke="#CBCBCB" strokeWidth="2" />
-            {/* Top arrow (inhale) */}
-            <path d="M50 14 L50 30" stroke="#CBCBCB" strokeWidth="2" strokeLinecap="round" />
-            <path d="M45 20 L50 14 L55 20" stroke="#CBCBCB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            {/* Bottom arrow (exhale) */}
-            <path d="M50 86 L50 70" stroke="#CBCBCB" strokeWidth="2" strokeLinecap="round" />
-            <path d="M45 80 L50 86 L55 80" stroke="#CBCBCB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            {/* Right arrow */}
-            <path d="M86 50 L70 50" stroke="#CBCBCB" strokeWidth="2" strokeLinecap="round" />
-            <path d="M80 45 L86 50 L80 55" stroke="#CBCBCB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            {/* Left arrow */}
-            <path d="M14 50 L30 50" stroke="#CBCBCB" strokeWidth="2" strokeLinecap="round" />
-            <path d="M20 45 L14 50 L20 55" stroke="#CBCBCB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+        <div
+          style={{
+            width: 160,
+            height: 160,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 40,
+          }}
+        >
+          <img
+            src="/images/onboarding-cycle.png"
+            alt=""
+            width={100}
+            height={100}
+            style={{ opacity: 0.7 }}
+          />
         </div>
       )
     case 2:
-      // Community icon: two figures in a circle
       return (
-        <div style={containerStyle}>
-          <svg width={100} height={100} viewBox="0 0 100 100" fill="none" style={{ opacity: 0.7 }}>
-            <circle cx="50" cy="50" r="40" stroke="#CBCBCB" strokeWidth="1.5" />
-            {/* Left person */}
-            <circle cx="38" cy="38" r="6" stroke="#CBCBCB" strokeWidth="1.5" />
-            <path d="M28 58 C28 50 48 50 48 58" stroke="#CBCBCB" strokeWidth="1.5" strokeLinecap="round" />
-            {/* Right person */}
-            <circle cx="62" cy="38" r="6" stroke="#CBCBCB" strokeWidth="1.5" />
-            <path d="M52 58 C52 50 72 50 72 58" stroke="#CBCBCB" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
+        <div
+          style={{
+            width: 160,
+            height: 160,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 40,
+          }}
+        >
+          <img
+            src="/images/onboarding-community.png"
+            alt=""
+            width={100}
+            height={100}
+            style={{ opacity: 0.7 }}
+          />
         </div>
       )
     default:
