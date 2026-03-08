@@ -64,6 +64,7 @@ export const en: Translations = {
   },
 
   profile: {
+    title: 'Profile',
     premiumAccount: 'PREMIUM ACCOUNT',
     freeAccount: 'FREE ACCOUNT',
     youAreFantastic: 'YOU ARE FANTASTIC',
@@ -72,6 +73,7 @@ export const en: Translations = {
     minutes: 'Min',
     lastPractice: 'The last practice was on',
     never: 'Never',
+    account: 'account',
     settings: 'Settings',
     language: 'Language',
     faq: 'FAQ',
@@ -200,6 +202,8 @@ export const en: Translations = {
     backToTelegram: 'Back to Telegram',
     continueBtn: 'Continue',
     continueInBrowser: 'Or continue in browser',
+    goToLogin: 'Go to login',
+    goToApp: 'Go to app',
   },
 
   faq: {
@@ -220,6 +224,19 @@ export const en: Translations = {
     a7: 'Many sensations during breathwork are normal and safe, including: tingling in hands/feet/face, lightheadedness, temperature changes, emotional releases, or vibrations. These occur due to changes in oxygen/CO2 levels and nervous system activation. However, if you feel severe discomfort, chest pain, or extreme dizziness, stop immediately and breathe normally. Always practice in a safe position.',
     stillHaveQuestions: 'Still have questions?',
     contactUs: 'Contact us',
+  },
+
+  quotes: {
+    q1text: 'We cannot breathe in the past or the future. We always inhale and exhale in the present.',
+    q1author: 'Dasha Chen',
+    q2text: 'The mind has a funny quality: if you ask a question and then listen quietly, an answer usually comes.',
+    q2author: 'Yongey Mingyur Rinpoche',
+    q3text: 'First you fall in love with an idea, the tiniest piece. And once you start to understand it, everything else follows.',
+    q3author: 'David Lynch',
+    q4text: 'The way out is always within.',
+    q4author: 'Thich Nhat Hanh',
+    q5text: 'People usually consider walking on water or in thin air a miracle. But I think the real miracle is walking on earth mindfully.',
+    q5author: 'Thich Nhat Hanh',
   },
 
   splash: {

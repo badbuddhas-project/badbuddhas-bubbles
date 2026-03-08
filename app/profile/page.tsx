@@ -10,13 +10,7 @@ import { useTranslation } from '@/lib/i18n'
 import { ymEvent, getPlatform } from '@/lib/analytics'
 import { closeTelegramApp } from '@/lib/telegram'
 
-const QUOTES = [
-  { text: 'Мы не можем дышать ни в прошлом, ни в будущем. Мы делаем вдох и выдох всегда в настоящем.', author: 'Даша Чен' },
-  { text: 'У ума есть одно забавное свойство: если вы задаёте вопрос, а потом молча слушаете, то обычно появляется ответ.', author: 'Йонге Мингьюр Ринпоче' },
-  { text: 'Сначала вы влюбляетесь в идею, в самый маленький кусочек. И как только вы начинаете его понимать, все остальное приходит само.', author: 'Дэвид Линч' },
-  { text: 'Выход всегда находится внутри.', author: 'Тит Нан Хан' },
-  { text: 'Люди обычно считают чудом хождение по воде или по воздуху. Но я думаю, что реальное чудо — это идти внимательно по земле.', author: 'Тит Нат Хан' },
-]
+const QUOTE_KEYS = [1, 2, 3, 4, 5] as const
 
 const BLACK = '#000000'
 const DARK_CARD = '#0A0A0A'
@@ -34,8 +28,8 @@ export default function ProfilePage() {
   const [isConnectEmailOpen, setIsConnectEmailOpen] = useState(false)
   const [lastPractice, setLastPractice] = useState<{ name: string; date: string } | null>(null)
 
-  // Random quote, stable per mount
-  const [quote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)])
+  // Random quote index, stable per mount
+  const [quoteIdx] = useState(() => QUOTE_KEYS[Math.floor(Math.random() * QUOTE_KEYS.length)])
 
   // Analytics: profile viewed
   useEffect(() => {
@@ -75,8 +69,8 @@ export default function ProfilePage() {
     const now = new Date()
     const diffMs = now.getTime() - date.getTime()
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-    if (diffDays === 0) return 'сегодня'
-    if (diffDays === 1) return 'вчера'
+    if (diffDays === 0) return t('profile.today')
+    if (diffDays === 1) return t('profile.yesterday')
     return date.toLocaleDateString(language === 'ru' ? 'ru-RU' : 'en-US', { month: 'short', day: 'numeric' })
   }
 
@@ -95,10 +89,10 @@ export default function ProfilePage() {
   const displayName = user?.first_name || user?.username || user?.email?.split('@')[0] || 'User'
 
   const menuItems = [
-    { label: 'Настройки', sub: 'аккаунт', onClick: () => router.push('/profile/settings') },
-    { label: 'Частые вопросы', sub: '', onClick: () => router.push('/profile/faq') },
-    { label: 'Чат сообщества', sub: '', onClick: () => window.open('https://t.me/+bb3fiUmoKGVjYmUy', '_blank') },
-    { label: 'Связаться с нами', sub: '', onClick: () => window.open('https://badbuddhas.world/ask?utm_source=telegram&utm_medium=miniapp&utm_campaign=bubbles_contact', '_blank') },
+    { label: t('profile.settings'), sub: t('profile.account'), onClick: () => router.push('/profile/settings') },
+    { label: t('profile.faq'), sub: '', onClick: () => router.push('/profile/faq') },
+    { label: t('profile.communityChat'), sub: '', onClick: () => window.open('https://t.me/+bb3fiUmoKGVjYmUy', '_blank') },
+    { label: t('profile.contactUs'), sub: '', onClick: () => window.open('https://badbuddhas.world/ask?utm_source=telegram&utm_medium=miniapp&utm_campaign=bubbles_contact', '_blank') },
   ]
 
   if (isUserLoading) {
@@ -126,7 +120,7 @@ export default function ProfilePage() {
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </div>
-          <span style={{ fontSize: 16, fontWeight: 500, color: WHITE }}>Профиль</span>
+          <span style={{ fontSize: 16, fontWeight: 500, color: WHITE }}>{t('profile.title')}</span>
         </div>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/images/logo-white.svg" alt="badbuddhas" height={16} style={{ display: 'block', height: '16px', width: 'auto' }} />
@@ -152,15 +146,15 @@ export default function ProfilePage() {
 
       {/* Account type */}
       <div style={{ textAlign: 'center', marginBottom: 14 }}>
-        <span style={{ fontSize: 11, color: GREY }}>бесплатный аккаунт</span>
+        <span style={{ fontSize: 11, color: GREY }}>{t('profile.freeAccount').toLowerCase()}</span>
       </div>
 
       {/* Motivational quote */}
       <div style={{ textAlign: 'center', marginBottom: 18, padding: '0 12px' }}>
         <span style={{ fontSize: 12, color: GREY }}>
-          <span style={{ opacity: 0.5 }}>[</span>{quote.text}<span style={{ opacity: 0.5 }}>]</span>
+          <span style={{ opacity: 0.5 }}>[</span>{t(`quotes.q${quoteIdx}text` as any)}<span style={{ opacity: 0.5 }}>]</span>
         </span>
-        <div style={{ fontSize: 10, color: GREY, opacity: 0.4, marginTop: 6 }}>{quote.author}</div>
+        <div style={{ fontSize: 10, color: GREY, opacity: 0.4, marginTop: 6 }}>{t(`quotes.q${quoteIdx}author` as any)}</div>
       </div>
 
       {/* Stats block */}
@@ -172,21 +166,21 @@ export default function ProfilePage() {
           <div style={{ fontSize: 28, fontWeight: 600, color: WHITE }}>
             {isStatsLoading ? '-' : (stats?.current_streak ?? 0)}
           </div>
-          <div style={{ fontSize: 11, color: GREY, marginTop: 2 }}>серия</div>
+          <div style={{ fontSize: 11, color: GREY, marginTop: 2 }}>{t('profile.streak').toLowerCase()}</div>
         </div>
         <div style={{ width: 1, background: CARD_BORDER }} />
         <div style={{ flex: 1, textAlign: 'center' }}>
           <div style={{ fontSize: 28, fontWeight: 600, color: WHITE }}>
             {isStatsLoading ? '-' : (stats?.total_practices ?? 0)}
           </div>
-          <div style={{ fontSize: 11, color: GREY, marginTop: 2 }}>практики</div>
+          <div style={{ fontSize: 11, color: GREY, marginTop: 2 }}>{t('profile.practices').toLowerCase()}</div>
         </div>
         <div style={{ width: 1, background: CARD_BORDER }} />
         <div style={{ flex: 1, textAlign: 'center' }}>
           <div style={{ fontSize: 28, fontWeight: 600, color: WHITE }}>
             {isStatsLoading ? '-' : (stats?.total_minutes ?? 0)}
           </div>
-          <div style={{ fontSize: 11, color: GREY, marginTop: 2 }}>минуты</div>
+          <div style={{ fontSize: 11, color: GREY, marginTop: 2 }}>{t('profile.minutes').toLowerCase()}</div>
         </div>
       </div>
 
@@ -201,7 +195,7 @@ export default function ProfilePage() {
         }}
       >
         <div>
-          <div style={{ fontSize: 11, color: GREY, opacity: 0.6, marginBottom: 3 }}>последняя практика</div>
+          <div style={{ fontSize: 11, color: GREY, opacity: 0.6, marginBottom: 3 }}>{t('profile.lastPractice').toLowerCase()}</div>
           <div style={{ fontSize: 13, color: WHITE }}>
             {lastPractice ? lastPractice.name : '—'}
           </div>
@@ -218,8 +212,8 @@ export default function ProfilePage() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 11, color: GREY, opacity: 0.5, marginBottom: 4, textTransform: 'uppercase' as const, letterSpacing: '0.03em' }}>веб-доступ</div>
-            <div style={{ fontSize: 13, color: GREY, opacity: 0.6 }}>email не привязан</div>
+            <div style={{ fontSize: 11, color: GREY, opacity: 0.5, marginBottom: 4, textTransform: 'uppercase' as const, letterSpacing: '0.03em' }}>{t('profile.webAccess')}</div>
+            <div style={{ fontSize: 13, color: GREY, opacity: 0.6 }}>{t('profile.emailNotLinked')}</div>
           </div>
           <button
             onClick={() => {/* Connect logic in next step */}}
@@ -265,7 +259,7 @@ export default function ProfilePage() {
           onClick={handleClose}
           style={{ fontSize: 13, color: GREY, opacity: 0.5, cursor: 'pointer' }}
         >
-          {isTelegram ? 'закрыть' : 'выйти'}
+          {isTelegram ? t('profile.closeApp').toLowerCase() : t('profile.logout').toLowerCase()}
         </span>
       </div>
 
