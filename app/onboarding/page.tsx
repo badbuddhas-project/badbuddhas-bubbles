@@ -79,7 +79,7 @@ export default function OnboardingPage() {
         display: 'flex',
         flexDirection: 'column',
         padding: '44px 24px 36px',
-        fontFamily: "'Wix Madefor Display', sans-serif",
+        fontFamily: "var(--font-wix), sans-serif",
       }}
     >
       {/* Header: logo left + skip right */}
@@ -219,9 +219,6 @@ export default function OnboardingPage() {
         </span>
       </div>
 
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@400;500;600&display=swap');
-      `}</style>
     </main>
   )
 }

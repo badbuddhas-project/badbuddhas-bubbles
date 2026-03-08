@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Wix_Madefor_Display } from 'next/font/google'
 import Script from 'next/script'
 import './globals.css'
 import { TelegramProvider } from '@/components/TelegramProvider'
@@ -7,6 +7,11 @@ import { AuthProvider } from '@/components/AuthProvider'
 import { LanguageProvider } from '@/lib/i18n'
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
+const wixFont = Wix_Madefor_Display({
+  subsets: ['latin', 'cyrillic'],
+  weight: ['400', '500', '600'],
+  variable: '--font-wix',
+})
 
 export const metadata: Metadata = {
   title: 'Breathwork with BadBuddhas',
@@ -73,7 +78,7 @@ ym(107145193, 'init', {
           </div>
         </noscript>
       </head>
-      <body className={`${inter.className} bg-black text-white min-h-screen`}>
+      <body className={`${inter.className} ${wixFont.variable} bg-black text-white min-h-screen`}>
         <TelegramProvider>
           <AuthProvider>
             <LanguageProvider>
