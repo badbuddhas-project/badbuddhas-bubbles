@@ -46,6 +46,14 @@ export const ru: Translations = {
     noFavorites: 'Нет избранных',
     russian: 'Русский',
     english: 'English',
+    duration: 'Длительность',
+    category: 'Категория',
+    instructor: 'Ведущий',
+    language: 'Язык',
+    upTo5min: 'до 5 мин',
+    upTo10min: 'до 10 мин',
+    from10min: 'от 10 мин',
+    all: 'Все',
   },
 
   player: {

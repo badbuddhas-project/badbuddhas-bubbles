@@ -41,6 +41,14 @@ export interface Translations {
     noFavorites: string
     russian: string
     english: string
+    duration: string
+    category: string
+    instructor: string
+    language: string
+    upTo5min: string
+    upTo10min: string
+    from10min: string
+    all: string
   }
 
   player: {

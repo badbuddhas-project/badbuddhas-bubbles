@@ -46,6 +46,14 @@ export const en: Translations = {
     noFavorites: 'No favorites yet',
     russian: 'Russian',
     english: 'English',
+    duration: 'Duration',
+    category: 'Category',
+    instructor: 'Instructor',
+    language: 'Language',
+    upTo5min: 'up to 5 min',
+    upTo10min: 'up to 10 min',
+    from10min: '10+ min',
+    all: 'All',
   },
 
   player: {
