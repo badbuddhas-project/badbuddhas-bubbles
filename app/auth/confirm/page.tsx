@@ -3,12 +3,10 @@
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
 
-const TELEGRAM_URL = 'https://t.me/BadBuddhas_bubbles_bot/breathe'
-
 function useTelegramAvailable() {
   const [available, setAvailable] = useState(false)
   useEffect(() => {
-    setAvailable(!!(window as any).Telegram?.WebApp)
+    setAvailable(!!(window as any).Telegram?.WebApp?.initData)
   }, [])
   return available
 }
@@ -17,8 +15,6 @@ function ConfirmContent() {
   const params = useSearchParams()
   const error = params?.get('error')
   const isTelegram = useTelegramAvailable()
-
-  const buttonHref = isTelegram ? TELEGRAM_URL : '/'
 
   if (error) {
     return (
@@ -53,12 +49,29 @@ function ConfirmContent() {
       <div style={{ fontSize: 14, color: '#CBCBCB', opacity: 0.6, textAlign: 'center', lineHeight: 1.5, marginBottom: 32, maxWidth: 260 }}>
         Теперь вы можете входить в приложение через браузер, используя email и пароль
       </div>
-      <a
-        href={buttonHref}
-        style={{ padding: '14px 40px', borderRadius: 28, background: '#fff', fontSize: 15, fontWeight: 600, color: '#000', textDecoration: 'none', cursor: 'pointer' }}
-      >
-        Перейти в приложение
-      </a>
+      {isTelegram ? (
+        <>
+          <button
+            onClick={() => (window as any).Telegram.WebApp.close()}
+            style={{ padding: '14px 40px', borderRadius: 28, background: '#fff', fontSize: 15, fontWeight: 600, color: '#000', cursor: 'pointer', border: 'none', marginBottom: 12 }}
+          >
+            Вернуться в Telegram
+          </button>
+          <a
+            href="/"
+            style={{ fontSize: 13, color: '#CBCBCB', opacity: 0.6, textDecoration: 'underline', cursor: 'pointer' }}
+          >
+            Продолжить в браузере
+          </a>
+        </>
+      ) : (
+        <a
+          href="/"
+          style={{ padding: '14px 40px', borderRadius: 28, background: '#fff', fontSize: 15, fontWeight: 600, color: '#000', textDecoration: 'none', cursor: 'pointer' }}
+        >
+          Продолжить
+        </a>
+      )}
     </div>
   )
 }
