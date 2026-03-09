@@ -55,6 +55,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to sync user' }, { status: 500 })
     }
 
+    // Sync email_confirmed_at from auth.users (source of truth)
+    if (user.supabase_user_id && !user.email_confirmed_at) {
+      const { data: authUser } = await supabase.auth.admin.getUserById(user.supabase_user_id)
+      if (authUser?.user?.email_confirmed_at) {
+        user.email_confirmed_at = authUser.user.email_confirmed_at
+        await supabase.from('users').update({
+          email_confirmed_at: authUser.user.email_confirmed_at,
+        }).eq('id', user.id)
+      }
+    }
+
     return NextResponse.json({ user: sanitizeUser(user), isNewUser })
   } catch (error) {
     console.error('[telegram-sync] error:', error)
