@@ -41,11 +41,35 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email already registered' }, { status: 400 })
     }
 
+    // Create Supabase Auth user with confirmation email
+    const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://badbuddhas-bubbles.vercel.app'
+    const { data: authData, error: signUpError } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: false,
+    })
+
+    if (signUpError) {
+      console.error('[register] signUp error:', signUpError.message)
+      return NextResponse.json({ error: signUpError.message }, { status: 400 })
+    }
+
+    // Send confirmation email via Supabase invite (generates token_hash link)
+    await supabase.auth.admin.inviteUserByEmail(email, {
+      redirectTo: `${siteUrl}/auth/callback`,
+    })
+
     const password_hash = await bcrypt.hash(password, 10)
 
     const { data: user, error } = await supabase
       .from('users')
-      .insert({ email, password_hash, is_premium: false, auth_provider: 'email' })
+      .insert({
+        email,
+        password_hash,
+        is_premium: false,
+        auth_provider: 'email',
+        supabase_user_id: authData.user?.id ?? null,
+      })
       .select()
       .single()
 

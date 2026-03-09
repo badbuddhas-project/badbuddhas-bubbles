@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { getSupabaseClient } from '@/lib/supabase'
 import { useTranslation } from '@/lib/i18n'
 import { ymEvent, getPlatform } from '@/lib/analytics'
 
@@ -44,20 +43,23 @@ export default function RegisterPage() {
 
     setIsSubmitting(true)
 
-    const supabase = getSupabaseClient()
-    const { error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-    })
-
-    if (authError) {
-      setError(authError.message)
-      setIsSubmitting(false)
-      return
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        setError(data.error || 'Registration failed')
+        setIsSubmitting(false)
+        return
+      }
+      ymEvent('user_registered', { method: 'email', platform: getPlatform() })
+      setSuccess(true)
+    } catch {
+      setError('Network error')
     }
-
-    ymEvent('user_registered', { method: 'email', platform: getPlatform() })
-    setSuccess(true)
     setIsSubmitting(false)
   }
 
