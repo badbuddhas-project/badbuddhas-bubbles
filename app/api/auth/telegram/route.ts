@@ -36,7 +36,7 @@ async function handleTelegramAuth(fields: {
   hash: string
 }): Promise<{ action_link: string } | { error: string }> {
   const { id, first_name = '', last_name = '', username = '', photo_url = '', auth_date, hash } = fields
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://badbuddhas-breathwork.vercel.app'
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://badbuddhas-bubbles.vercel.app'
 
   if (!id || !auth_date || !hash) return { error: 'Missing required fields' }
 
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
 // ── GET — kept as fallback for data-auth-url redirect flow ────────────────────
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://badbuddhas-breathwork.vercel.app'
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://badbuddhas-bubbles.vercel.app'
 
   const result = await handleTelegramAuth({
     id:         searchParams.get('id')         ?? '',

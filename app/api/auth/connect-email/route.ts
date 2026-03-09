@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     // signUp — Supabase sends the confirmation email using the custom template
     // configured in Dashboard: ?token_hash={{ .TokenHash }}&type=signup
     // The token_hash in the link is verified by verifyOtp (no PKCE code_verifier needed).
-    const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://badbuddhas-breathwork.vercel.app'
+    const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://badbuddhas-bubbles.vercel.app'
 
     const { data: authData, error: signUpError } = await anonSupabase.auth.signUp({
       email,

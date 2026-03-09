@@ -3,7 +3,7 @@
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
 
-const TELEGRAM_URL = 'https://t.me/badbuddhas_practice_bot/BadBuddhas'
+const TELEGRAM_URL = 'https://t.me/BadBuddhas_bubbles_bot/breathe'
 
 function useTelegramAvailable() {
   const [available, setAvailable] = useState(false)

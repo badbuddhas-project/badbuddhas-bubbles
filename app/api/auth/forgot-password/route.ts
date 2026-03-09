@@ -46,7 +46,7 @@ export async function POST(request: Request) {
       // Send email via Resend (configure RESEND_API_KEY in env)
       const resendKey = process.env.RESEND_API_KEY
       if (resendKey) {
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://badbuddhas-breathwork.vercel.app'
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://badbuddhas-bubbles.vercel.app'
         const resetLink = `${appUrl}/reset-password?token=${token}`
 
         await fetch('https://api.resend.com/emails', {
