@@ -1,14 +1,15 @@
-/**
- * Yandex.Metrika event helpers.
- * All calls are no-ops on the server and when the counter is not loaded.
- */
+const YM_COUNTER_ID = 107222240;
 
-export const YM_ID = 107145193
+type YmParams = Record<string, string | number | boolean | undefined>;
 
-export function ymEvent(goalName: string, params?: Record<string, unknown>) {
-  if (typeof window === 'undefined') return
-  if (typeof window.ym !== 'function') return
-  window.ym(YM_ID, 'reachGoal', goalName, params)
+export function ymEvent(eventName: string, params?: YmParams): void {
+  try {
+    if (typeof window !== 'undefined' && typeof window.ym === 'function') {
+      window.ym(YM_COUNTER_ID, 'reachGoal', eventName, params);
+    }
+  } catch (e) {
+    console.warn('[analytics] ymEvent error:', e);
+  }
 }
 
 export function getPlatform(): 'telegram' | 'web' {
@@ -16,12 +17,9 @@ export function getPlatform(): 'telegram' | 'web' {
   return window.Telegram?.WebApp?.initData ? 'telegram' : 'web'
 }
 
-// TODO: ym event 'premium_wall_shown' — paywall component is removed (PROJECT_RULES §21).
-// Add ymEvent('premium_wall_shown', { platform: getPlatform() }) when paywall is re-introduced.
-
 declare global {
   interface Window {
-    ym: (id: number, action: string, target: string, params?: unknown) => void
+    ym?: (...args: any[]) => void;
     Telegram?: { WebApp?: { initData?: string; platform?: string } }
   }
 }
