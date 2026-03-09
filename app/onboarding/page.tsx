@@ -16,26 +16,49 @@ function resolvePostOnboardingRoute(): string {
   return '/login'
 }
 
-const SLIDES = [
-  {
-    title: 'HOW DO YOU WANT TO FEEL?',
-    subtitle: 'Релакс, баланс или заряд энергии — выбери своё состояние',
+const onboardingTexts = {
+  ru: {
+    slide1_title: 'КАК ТЫ ХОЧЕШЬ СЕБЯ ЧУВСТВОВАТЬ?',
+    slide1_desc: 'Релакс, баланс или заряд энергии — выбери своё состояние',
+    slide2_title: 'ПОЧУВСТВУЙ СИЛУ ДЫХАНИЯ',
+    slide2_desc: 'Дыхательные практики под электронную музыку от лучших ведущих',
+    slide3_title: 'ПРИСОЕДИНЯЙСЯ К СООБЩЕСТВУ',
+    slide3_desc: 'Присоединяйся к сообществу тех, кто дышит осознанно',
+    next: 'далее',
+    start: 'начать',
+    skip: 'пропустить',
   },
-  {
-    title: 'FEEL THE POWER OF BREATH',
-    subtitle: 'Дыхательные практики под электронную музыку от лучших ведущих',
+  en: {
+    slide1_title: 'HOW DO YOU WANT TO FEEL?',
+    slide1_desc: 'Relax, balance or energy boost — choose your state',
+    slide2_title: 'FEEL THE POWER OF BREATH',
+    slide2_desc: 'Breathwork practices with electronic music from top instructors',
+    slide3_title: 'JOIN A GROWING COMMUNITY',
+    slide3_desc: 'Join the community of conscious breathers',
+    next: 'next',
+    start: 'start',
+    skip: 'skip',
   },
-  {
-    title: 'JOIN A GROWING COMMUNITY',
-    subtitle: 'Присоединяйся к сообществу тех, кто дышит осознанно',
-  },
-]
+}
+
+function detectLang(): 'ru' | 'en' {
+  if (typeof window !== 'undefined') {
+    const code = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.language_code?.slice(0, 2)
+    if (code === 'en') return 'en'
+  }
+  return 'ru'
+}
 
 export default function OnboardingPage() {
   const router = useRouter()
   const [currentSlide, setCurrentSlide] = useState(0)
   const [touchStart, setTouchStart] = useState(0)
   const [touchEnd, setTouchEnd] = useState(0)
+  const [t, setT] = useState(onboardingTexts.ru)
+
+  useEffect(() => {
+    setT(onboardingTexts[detectLang()])
+  }, [])
 
   useEffect(() => {
     if (localStorage.getItem(ONBOARDING_KEY) === 'true') {
@@ -44,8 +67,14 @@ export default function OnboardingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const slides = [
+    { title: t.slide1_title, subtitle: t.slide1_desc },
+    { title: t.slide2_title, subtitle: t.slide2_desc },
+    { title: t.slide3_title, subtitle: t.slide3_desc },
+  ]
+
   const goToSlide = useCallback((index: number) => {
-    setCurrentSlide(Math.max(0, Math.min(index, SLIDES.length - 1)))
+    setCurrentSlide(Math.max(0, Math.min(index, 2)))
   }, [])
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -69,7 +98,7 @@ export default function OnboardingPage() {
     router.replace(resolvePostOnboardingRoute())
   }
 
-  const isLastSlide = currentSlide === SLIDES.length - 1
+  const isLastSlide = currentSlide === slides.length - 1
 
   return (
     <main
@@ -101,7 +130,7 @@ export default function OnboardingPage() {
             cursor: 'pointer',
           }}
         >
-          пропустить
+          {t.skip}
         </span>
       </div>
 
@@ -120,7 +149,7 @@ export default function OnboardingPage() {
             transform: `translateX(-${currentSlide * 100}%)`,
           }}
         >
-          {SLIDES.map((slide, index) => (
+          {slides.map((slide, index) => (
             <div
               key={index}
               style={{
@@ -178,7 +207,7 @@ export default function OnboardingPage() {
       >
         {/* Dots */}
         <div style={{ display: 'flex', gap: 8 }}>
-          {SLIDES.map((_, i) => (
+          {slides.map((_, i) => (
             <div
               key={i}
               onClick={() => goToSlide(i)}
@@ -204,7 +233,7 @@ export default function OnboardingPage() {
             cursor: 'pointer',
           }}
         >
-          {isLastSlide ? 'начать' : 'далее'}
+          {isLastSlide ? t.start : t.next}
         </span>
       </div>
 
