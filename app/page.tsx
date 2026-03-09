@@ -144,7 +144,7 @@ export default function Home() {
       {/* Greeting */}
       <div style={{ marginBottom: 4 }}>
         <span style={{ fontSize: 17, fontWeight: 500, color: '#fff' }}>
-          {t('catalog.hi')}{user?.first_name ? ` ${user.first_name}` : ''}
+          {t('catalog.hi')} {user?.first_name || (language === 'en' ? 'breather' : 'дышащий')}
         </span>
       </div>
       <div style={{ fontSize: 14, color: '#CBCBCB', opacity: 0.5, marginBottom: 20 }}>
