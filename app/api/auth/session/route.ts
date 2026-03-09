@@ -44,6 +44,17 @@ export async function GET() {
       return NextResponse.json({ error: 'User not found' }, { status: 401 })
     }
 
+    // Sync email_confirmed_at from auth.users (source of truth)
+    if (user.supabase_user_id && !user.email_confirmed_at) {
+      const { data: authUserData } = await supabase.auth.admin.getUserById(user.supabase_user_id)
+      if (authUserData?.user?.email_confirmed_at) {
+        await supabase.from('users').update({
+          email_confirmed_at: authUserData.user.email_confirmed_at,
+        }).eq('id', user.id)
+        user.email_confirmed_at = authUserData.user.email_confirmed_at
+      }
+    }
+
     return NextResponse.json({ user: sanitizeUser(user) })
   } catch {
     return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
