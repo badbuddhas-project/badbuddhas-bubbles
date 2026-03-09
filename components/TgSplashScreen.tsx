@@ -40,7 +40,7 @@ export function TgSplashScreen() {
           opacity: 0.5,
         }}
       >
-        подключение...
+        [вдох-выдох]
       </span>
 
       <style>{`
