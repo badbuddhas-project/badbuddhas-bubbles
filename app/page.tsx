@@ -35,6 +35,10 @@ export default function Home() {
   const { isCompleted: isOnboardingCompleted, isLoading: isOnboardingLoading } = useOnboarding()
 
   useEffect(() => {
+    ymEvent('app_opened', { platform: getPlatform() })
+  }, [])
+
+  useEffect(() => {
     if (!isOnboardingLoading && !isOnboardingCompleted) {
       router.replace('/onboarding')
     }
@@ -58,6 +62,7 @@ export default function Home() {
   const handleLanguageFilterChange = useCallback((v: LanguageFilter) => {
     setLanguageFilter(v)
     localStorage.setItem(LANG_FILTER_KEY, v)
+    if (v !== 'all') ymEvent('filter_used', { filter_type: 'language', filter_value: v })
   }, [])
 
   const isPremium = user?.is_premium ?? false
@@ -205,7 +210,7 @@ export default function Home() {
                 { value: 'up10', label: t('catalog.upTo10min') },
                 { value: 'from10', label: t('catalog.from10min') },
               ] as const).map((d) => (
-                <Chip key={d.value} active={durationFilter === d.value} onClick={() => setDurationFilter(d.value as DurationFilter)}>{d.label}</Chip>
+                <Chip key={d.value} active={durationFilter === d.value} onClick={() => { setDurationFilter(d.value as DurationFilter); if (d.value !== 'all') ymEvent('filter_used', { filter_type: 'duration', filter_value: d.value }) }}>{d.label}</Chip>
               ))}
             </FilterGroup>
 
@@ -217,7 +222,7 @@ export default function Home() {
                 { value: 'balance', label: t('catalog.balance') },
                 { value: 'energize', label: t('catalog.energize') },
               ] as const).map((c) => (
-                <Chip key={c.value} active={categoryFilter === c.value} onClick={() => setCategoryFilter(c.value as CategoryFilter)}>{c.label}</Chip>
+                <Chip key={c.value} active={categoryFilter === c.value} onClick={() => { setCategoryFilter(c.value as CategoryFilter); if (c.value !== 'all') ymEvent('filter_used', { filter_type: 'category', filter_value: c.value }) }}>{c.label}</Chip>
               ))}
             </FilterGroup>
 
@@ -225,7 +230,7 @@ export default function Home() {
             <FilterGroup label={t('catalog.instructor')}>
               <Chip active={instructorFilter === 'all'} onClick={() => setInstructorFilter('all')}>{t('catalog.all')}</Chip>
               {instructors.map((name) => (
-                <Chip key={name} active={instructorFilter === name} onClick={() => setInstructorFilter(name)}>{name}</Chip>
+                <Chip key={name} active={instructorFilter === name} onClick={() => { setInstructorFilter(name); ymEvent('filter_used', { filter_type: 'instructor', filter_value: name }) }}>{name}</Chip>
               ))}
             </FilterGroup>
 

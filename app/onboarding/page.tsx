@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ONBOARDING_KEY } from '@/lib/constants'
 import { BrandMark } from '@/components/BrandMark'
+import { ymEvent } from '@/lib/analytics'
 
 function resolvePostOnboardingRoute(): string {
   const tg = (window as any).Telegram?.WebApp
@@ -94,6 +95,7 @@ export default function OnboardingPage() {
   }
 
   const handleFinish = () => {
+    ymEvent('onboarding_completed')
     localStorage.setItem(ONBOARDING_KEY, 'true')
     router.replace(resolvePostOnboardingRoute())
   }

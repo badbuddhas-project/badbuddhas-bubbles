@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
 import { getSupabaseClient } from '@/lib/supabase'
 import { useTranslation } from '@/lib/i18n'
+import { ymEvent } from '@/lib/analytics'
 
 const DARK_CARD = '#0A0A0A'
 const CARD_BORDER = '#1A1A1A'
@@ -54,6 +55,7 @@ export default function SettingsPage() {
       // Apply language change
       if (selectedLang !== language) {
         setLanguage(selectedLang)
+        ymEvent('language_changed', { language: selectedLang })
       }
 
       // Show feedback

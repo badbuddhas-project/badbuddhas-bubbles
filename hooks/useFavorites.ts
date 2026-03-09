@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getSupabaseClient } from '@/lib/supabase'
 import { useUser } from './useUser'
+import { ymEvent } from '@/lib/analytics'
 
 export function useFavorites() {
   const { user } = useUser()
@@ -43,6 +44,8 @@ export function useFavorites() {
 
       const supabase = getSupabaseClient()
       const isFavorite = favoriteIds.has(practiceId)
+
+      ymEvent('favorite_toggled', { action: isFavorite ? 'removed' : 'added', practice_id: practiceId })
 
       // Optimistic update
       setFavoriteIds((prev) => {
