@@ -92,9 +92,13 @@ export function PracticeCard({
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-          <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#313333', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span style={{ fontSize: 9, color: '#fff', lineHeight: 1 }}>{practice.instructor_name.charAt(0).toUpperCase()}</span>
-          </div>
+          {practice.instructor_avatar_url ? (
+            <img src={practice.instructor_avatar_url + '?v=1'} alt="" width={20} height={20} style={{ borderRadius: '50%', display: 'block', flexShrink: 0, objectFit: 'cover' }} />
+          ) : (
+            <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#313333', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: 9, color: '#fff', lineHeight: 1 }}>{practice.instructor_name.charAt(0).toUpperCase()}</span>
+            </div>
+          )}
           <span style={{ fontSize: 12, color: '#CBCBCB', opacity: 0.7 }}>
             {practice.instructor_name}
           </span>
