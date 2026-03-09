@@ -83,6 +83,7 @@ export const ru: Translations = {
     yesterday: 'вчера',
     webAccess: 'веб-доступ',
     emailNotLinked: 'email не привязан',
+    emailNotConfirmed: 'не подтверждён',
     notVerified: 'не подтверждён',
     logout: 'Выйти',
     closeApp: 'Закрыть приложение',

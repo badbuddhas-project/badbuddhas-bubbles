@@ -83,6 +83,7 @@ export const en: Translations = {
     yesterday: 'yesterday',
     webAccess: 'web access',
     emailNotLinked: 'email not linked',
+    emailNotConfirmed: 'not confirmed',
     notVerified: 'not verified',
     logout: 'Log out',
     closeApp: 'Close app',

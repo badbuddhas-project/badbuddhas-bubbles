@@ -86,6 +86,17 @@ export default function ProfilePage() {
     }
   }
 
+  const handleDisconnectEmail = async () => {
+    if (!user) return
+    try {
+      const supabase = getSupabaseClient()
+      await supabase.from('users').update({ email: null, email_confirmed_at: null, password_hash: null }).eq('id', user.id)
+      await refreshUser()
+    } catch (err) {
+      console.error('Failed to disconnect email:', err)
+    }
+  }
+
   const isPremium = user?.is_premium ?? false
   const displayName = user?.first_name || user?.username || user?.email?.split('@')[0] || 'User'
 
@@ -208,7 +219,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Connect Email — stub */}
+      {/* Connect Email */}
       <div style={{
         background: DARK_CARD, borderRadius: 14, border: `1px solid ${CARD_BORDER}`,
         padding: '14px 16px', marginBottom: 12,
@@ -216,17 +227,38 @@ export default function ProfilePage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 11, color: GREY, opacity: 0.5, marginBottom: 4, textTransform: 'uppercase' as const, letterSpacing: '0.03em' }}>{t('profile.webAccess')}</div>
-            <div style={{ fontSize: 13, color: GREY, opacity: 0.6 }}>{t('profile.emailNotLinked')}</div>
+            {user?.email ? (
+              <div style={{ fontSize: 13, color: GREY, opacity: 0.6 }}>
+                {user.email_confirmed_at ? '✅ ' : '✉️ '}{user.email}
+                {!user.email_confirmed_at && (
+                  <span style={{ display: 'block', fontSize: 11, opacity: 0.5, marginTop: 2 }}>{t('profile.emailNotConfirmed')}</span>
+                )}
+              </div>
+            ) : (
+              <div style={{ fontSize: 13, color: GREY, opacity: 0.6 }}>{t('profile.emailNotLinked')}</div>
+            )}
           </div>
-          <button
-            onClick={() => {/* Connect logic in next step */}}
-            style={{
-              fontSize: 11, fontWeight: 500, color: WHITE, background: TURF,
-              border: 'none', borderRadius: 16, padding: '6px 12px', cursor: 'pointer',
-            }}
-          >
-            Connect
-          </button>
+          {!user?.email ? (
+            <button
+              onClick={() => setIsConnectEmailOpen(true)}
+              style={{
+                fontSize: 11, fontWeight: 500, color: WHITE, background: TURF,
+                border: 'none', borderRadius: 16, padding: '6px 12px', cursor: 'pointer',
+              }}
+            >
+              Connect
+            </button>
+          ) : user.email_confirmed_at ? (
+            <button
+              onClick={handleDisconnectEmail}
+              style={{
+                fontSize: 11, fontWeight: 500, color: GREY, opacity: 0.5, background: 'none',
+                border: `1px solid ${CARD_BORDER}`, borderRadius: 16, padding: '6px 12px', cursor: 'pointer',
+              }}
+            >
+              {t('profile.disconnectEmail')}
+            </button>
+          ) : null}
         </div>
       </div>
 

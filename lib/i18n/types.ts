@@ -78,6 +78,7 @@ export interface Translations {
     yesterday: string
     webAccess: string
     emailNotLinked: string
+    emailNotConfirmed: string
     notVerified: string
     logout: string
     closeApp: string
