@@ -220,6 +220,8 @@ export default function ProfilePage() {
       </div>
 
       {/* Connect Email */}
+      {/* TODO: Temporarily hidden for free TG users. Re-enable when web access is needed for free tier. */}
+      {!(isTelegram && !isPremium) && (
       <div style={{
         background: DARK_CARD, borderRadius: 14, border: `1px solid ${CARD_BORDER}`,
         padding: '14px 16px', marginBottom: 12,
@@ -261,6 +263,7 @@ export default function ProfilePage() {
           ) : null}
         </div>
       </div>
+      )}
 
       {/* Menu */}
       <div style={{
