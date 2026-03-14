@@ -1,4 +1,4 @@
-const YM_COUNTER_ID = 107222240;
+const YM_COUNTER_ID = 107703259;
 
 type YmParams = Record<string, string | number | boolean | undefined>;
 
