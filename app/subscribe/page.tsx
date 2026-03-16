@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 
 const WHITE = '#FFFFFF'
@@ -20,20 +20,6 @@ export default function SubscribePage() {
   const router = useRouter()
   const [showWidget, setShowWidget] = useState(false)
   const widgetRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!showWidget) return
-    const container = document.getElementById('gc-widget-container')
-    if (!container) return
-
-    container.innerHTML = ''
-    const script = document.createElement('script')
-    script.id = 'b98c49221fe15139049d24da50d0c7d685721707'
-    script.src = 'https://online.badbuddhas.ru/pl/lite/widget/script?id=1520990'
-    container.appendChild(script)
-
-    return () => { container.innerHTML = '' }
-  }, [showWidget])
 
   const handleSubscribe = () => {
     setShowWidget(true)
@@ -115,25 +101,17 @@ export default function SubscribePage() {
             ← Назад к описанию
           </button>
 
-          <div
-            id="gc-widget-container"
-            className="rounded-2xl overflow-hidden"
+          <iframe
+            src="/gc-widget.html"
+            className="w-full rounded-2xl"
+            style={{
+              minHeight: 600,
+              background: DARK_CARD,
+              border: 'none',
+              borderRadius: 16,
+            }}
+            title="Оплата подписки"
           />
-
-          <noscript>
-            <div className="p-6 text-center">
-              <p className="text-white/60 mb-4">Не удалось загрузить форму оплаты</p>
-              <a
-                href="https://online.badbuddhas.ru/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block py-3 px-6 rounded-xl font-semibold text-white transition-opacity hover:opacity-90"
-                style={{ backgroundColor: PINK }}
-              >
-                Перейти к оплате на сайте →
-              </a>
-            </div>
-          </noscript>
 
           <p className="text-xs text-white/40 mt-4 text-center">
             оплата через GetCourse · отмена в любой момент
