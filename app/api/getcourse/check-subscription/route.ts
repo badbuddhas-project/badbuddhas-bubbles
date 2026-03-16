@@ -1,0 +1,75 @@
+/**
+ * POST /api/getcourse/check-subscription — checks if a user has an active
+ * subscription in GetCourse and syncs the result to our subscriptions table.
+ */
+
+import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+
+export async function POST(request: Request) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+
+  try {
+    const { email } = await request.json()
+
+    if (!email) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
+    }
+
+    const normalizedEmail = email.toLowerCase().trim()
+
+    // Query GetCourse API
+    const gcResponse = await fetch('https://online.badbuddhas.ru/pl/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        key: process.env.GETCOURSE_API_KEY!,
+        action: 'getUser',
+        params: JSON.stringify({ email: normalizedEmail }),
+      }),
+    })
+
+    if (!gcResponse.ok) {
+      console.error('[check-subscription] GetCourse API error:', gcResponse.status)
+      return NextResponse.json({ error: 'GetCourse API unavailable' }, { status: 502 })
+    }
+
+    const gcData = await gcResponse.json()
+
+    // GetCourse returns { success: true, info: { ... } } when user found
+    const hasSubscription = gcData.success === true && gcData.info?.addfields?.subscription_active === true
+
+    if (hasSubscription) {
+      // Find user by verified_email
+      const { data: user } = await supabase
+        .from('users')
+        .select('id')
+        .eq('verified_email', normalizedEmail)
+        .maybeSingle()
+
+      if (user) {
+        // Upsert subscription record
+        await supabase
+          .from('subscriptions')
+          .upsert(
+            {
+              user_id: user.id,
+              email: normalizedEmail,
+              status: 'active',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'user_id' }
+          )
+      }
+    }
+
+    return NextResponse.json({ hasSubscription })
+  } catch (error) {
+    console.error('[check-subscription] error:', error)
+    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+  }
+}
