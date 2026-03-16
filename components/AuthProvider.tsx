@@ -24,7 +24,7 @@ export interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | null>(null)
 
-const PUBLIC_ROUTES = ['/login', '/register', '/onboarding', '/auth/', '/forgot-password', '/reset-password']
+const PUBLIC_ROUTES = ['/login', '/register', '/onboarding', '/auth/', '/forgot-password', '/reset-password', '/subscribe']
 
 /**
  * @description Root auth provider. Place once at the top of the component tree (app/layout.tsx).

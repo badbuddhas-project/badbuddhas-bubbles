@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Script from 'next/script'
 
 const WHITE = '#FFFFFF'
 const PINK = '#C034A5'
@@ -22,6 +21,25 @@ export default function SubscribePage() {
   const [showWidget, setShowWidget] = useState(false)
   const [scriptError, setScriptError] = useState(false)
   const widgetRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!showWidget) return
+
+    const container = document.getElementById('gc-widget-container')
+    if (!container) return
+
+    container.innerHTML = ''
+
+    const script = document.createElement('script')
+    script.id = 'b98c49221fe15139049d24da50d0c7d685721707'
+    script.src = 'https://online.badbuddhas.ru/pl/lite/widget/script?id=1520990'
+    script.onerror = () => setScriptError(true)
+    container.appendChild(script)
+
+    return () => {
+      if (container) container.innerHTML = ''
+    }
+  }, [showWidget])
 
   const handleSubscribe = () => {
     setShowWidget(true)
@@ -105,34 +123,28 @@ export default function SubscribePage() {
 
           <div
             id="gc-widget-container"
-            className="rounded-2xl overflow-hidden min-h-[300px]"
+            className="rounded-2xl overflow-hidden"
             style={{
+              minHeight: 400,
               backgroundColor: DARK_CARD,
               border: `1px solid ${CARD_BORDER}`,
             }}
-          >
-            <Script
-              id="b98c49221fe15139049d24da50d0c7d685721707"
-              src="https://online.badbuddhas.ru/pl/lite/widget/script?id=1520990"
-              strategy="lazyOnload"
-              onError={() => setScriptError(true)}
-            />
+          />
 
-            {scriptError && (
-              <div className="p-6 text-center">
-                <p className="text-white/60 mb-4">Не удалось загрузить форму оплаты</p>
-                <a
-                  href="https://online.badbuddhas.ru/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block py-3 px-6 rounded-xl font-semibold text-white transition-opacity hover:opacity-90"
-                  style={{ backgroundColor: PINK }}
-                >
-                  Перейти к оплате на сайте →
-                </a>
-              </div>
-            )}
-          </div>
+          {scriptError && (
+            <div className="p-6 text-center">
+              <p className="text-white/60 mb-4">Не удалось загрузить форму оплаты</p>
+              <a
+                href="https://online.badbuddhas.ru/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block py-3 px-6 rounded-xl font-semibold text-white transition-opacity hover:opacity-90"
+                style={{ backgroundColor: PINK }}
+              >
+                Перейти к оплате на сайте →
+              </a>
+            </div>
+          )}
 
           <p className="text-xs text-white/40 mt-4 text-center">
             оплата через GetCourse · отмена в любой момент
