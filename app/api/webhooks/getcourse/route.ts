@@ -15,27 +15,40 @@ export async function POST(request: Request) {
   )
 
   try {
-    const url = new URL(request.url)
+    let email: string | null = null
+    let status: string | null = null
+    let dealId: string | null = null
+    let secret: string | null = null
 
-    // Read from query params first (GetCourse "Вызвать URL" sends data this way)
-    let email = url.searchParams.get('email')
-    let status = url.searchParams.get('status')
-    let dealId = url.searchParams.get('deal_id')
-    let secret = url.searchParams.get('secret')
-      ?? request.headers.get('x-gc-webhook-secret')
+    const contentType = request.headers.get('content-type') || ''
 
-    // Fall back to JSON body for compatibility
-    if (!email || !status) {
+    // GetCourse sends POST with x-www-form-urlencoded
+    if (contentType.includes('form-urlencoded')) {
+      const formData = await request.formData()
+      email = formData.get('email') as string
+      status = formData.get('status') as string
+      dealId = formData.get('deal_id') as string
+      secret = formData.get('secret') as string
+    } else {
+      // JSON fallback
       try {
         const body = await request.json()
-        email = email || body.email
-        status = status || body.status
-        dealId = dealId || body.deal_id
-        secret = secret || body.webhook_secret || body.secret
+        email = body.email
+        status = body.status
+        dealId = body.deal_id
+        secret = body.secret || body.webhook_secret
       } catch {
         // Body may not be JSON — that's fine if we got query params
       }
     }
+
+    // Also check query params as fallback
+    const url = new URL(request.url)
+    email = email || url.searchParams.get('email')
+    status = status || url.searchParams.get('status')
+    dealId = dealId || url.searchParams.get('deal_id')
+    secret = secret || url.searchParams.get('secret')
+      || request.headers.get('x-gc-webhook-secret')
 
     // Validate webhook secret
     if (secret !== process.env.GETCOURSE_WEBHOOK_SECRET) {
