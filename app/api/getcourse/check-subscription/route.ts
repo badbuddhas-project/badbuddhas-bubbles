@@ -35,14 +35,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ hasSubscription: true })
     }
 
-    // 2. No local record — query GetCourse API (deals endpoint)
-    const gcResponse = await fetch('https://online.badbuddhas.ru/pl/api/deals', {
+    // 2. No local record — query GetCourse API (users endpoint)
+    const gcResponse = await fetch('https://online.badbuddhas.ru/pl/api/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         key: process.env.GETCOURSE_API_KEY!,
-        action: 'getDeals',
-        params: JSON.stringify({ user: { email: normalizedEmail } }),
+        action: 'getUser',
+        params: JSON.stringify({ email: normalizedEmail }),
       }),
     })
 
