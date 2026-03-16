@@ -69,13 +69,17 @@ export async function POST(request: Request) {
 
     // 3. Export API Step 2: Poll for user export result
     const userData = await waitForExport(step1Data.info.export_id, apiKey)
+    console.log('[check-subscription] FULL Step 2 userData:', JSON.stringify(userData))
 
     if (!userData?.info?.items?.length) {
+      console.log('[check-subscription] No items in userData.info:', JSON.stringify(userData?.info))
       return NextResponse.json({ hasSubscription: false, debug: 'user not found' })
     }
 
+    console.log('[check-subscription] Export items structure:', JSON.stringify(userData.info.items))
     const gcUserId = userData.info.items[0]?.id
     if (!gcUserId) {
+      console.log('[check-subscription] First item has no id:', JSON.stringify(userData.info.items[0]))
       return NextResponse.json({ hasSubscription: false, debug: 'no user id in export' })
     }
 
@@ -93,6 +97,7 @@ export async function POST(request: Request) {
 
     // 5. Export API Step 4: Poll for deals export result
     const dealsData = await waitForExport(step3Data.info.export_id, apiKey)
+    console.log('[check-subscription] FULL Step 4 dealsData:', JSON.stringify(dealsData))
 
     const hasPaidDeals = dealsData?.info?.items?.length > 0
     console.log('[check-subscription] Result: hasPaidDeals =', hasPaidDeals)
