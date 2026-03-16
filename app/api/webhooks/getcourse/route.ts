@@ -15,12 +15,30 @@ export async function POST(request: Request) {
   )
 
   try {
-    const body = await request.json()
-    const { email, status, deal_id } = body
+    const url = new URL(request.url)
+
+    // Read from query params first (GetCourse "Вызвать URL" sends data this way)
+    let email = url.searchParams.get('email')
+    let status = url.searchParams.get('status')
+    let dealId = url.searchParams.get('deal_id')
+    let secret = url.searchParams.get('secret')
+      ?? request.headers.get('x-gc-webhook-secret')
+
+    // Fall back to JSON body for compatibility
+    if (!email || !status) {
+      try {
+        const body = await request.json()
+        email = email || body.email
+        status = status || body.status
+        dealId = dealId || body.deal_id
+        secret = secret || body.webhook_secret || body.secret
+      } catch {
+        // Body may not be JSON — that's fine if we got query params
+      }
+    }
 
     // Validate webhook secret
-    const webhookSecret = request.headers.get('x-gc-webhook-secret') ?? body.webhook_secret
-    if (webhookSecret !== process.env.GETCOURSE_WEBHOOK_SECRET) {
+    if (secret !== process.env.GETCOURSE_WEBHOOK_SECRET) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -55,7 +73,7 @@ export async function POST(request: Request) {
             user_id: user.id,
             email: normalizedEmail,
             status: 'active',
-            gc_deal_id: deal_id ?? null,
+            gc_deal_id: dealId ?? null,
             updated_at: new Date().toISOString(),
           },
           { onConflict: 'user_id' }
