@@ -40,6 +40,9 @@ export async function POST(request: Request) {
 
     const gcData = await gcResponse.json()
 
+    console.log('[check-subscription] GetCourse API request email:', normalizedEmail)
+    console.log('[check-subscription] GetCourse API response:', JSON.stringify(gcData))
+
     // GetCourse returns { success: true, info: { ... } } when user found
     const hasSubscription = gcData.success === true && gcData.info?.addfields?.subscription_active === true
 
