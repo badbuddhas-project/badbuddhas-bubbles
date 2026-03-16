@@ -97,9 +97,8 @@ export async function POST(request: Request) {
     const hasPaidDeals = dealsData?.info?.items?.length > 0
     console.log('[check-subscription] Result:', hasPaidDeals)
 
-    // 6. If paid deals found — cache in Supabase subscriptions
+    // 6. If paid deals found — try to cache in Supabase subscriptions
     if (hasPaidDeals) {
-      // Try to find user by email or verified_email
       const { data: user } = await supabase
         .from('users')
         .select('id')
@@ -127,7 +126,9 @@ export async function POST(request: Request) {
           console.log('[check-subscription] Subscription saved for user:', user.id)
         }
       } else {
-        console.log('[check-subscription] User not found in Supabase, subscription not cached')
+        // User not in users table (e.g. Telegram user without email link)
+        // Still return hasSubscription: true — just can't cache it yet
+        console.log('[check-subscription] User not in users table, returning true without caching')
       }
     }
 
