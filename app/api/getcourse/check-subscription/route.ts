@@ -9,8 +9,8 @@ import { createClient } from '@supabase/supabase-js'
 const BASE_URL = 'https://online.badbuddhas.ru/pl/api/account'
 
 async function waitForExport(exportId: string, apiKey: string) {
-  for (let i = 0; i < 5; i++) {
-    await new Promise(r => setTimeout(r, 2000))
+  for (let i = 0; i < 10; i++) {
+    await new Promise(r => setTimeout(r, 3000))
 
     const res = await fetch(`${BASE_URL}/exports/${exportId}?key=${apiKey}`)
     const data = await res.json()
