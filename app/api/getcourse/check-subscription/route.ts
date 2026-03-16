@@ -77,7 +77,9 @@ export async function POST(request: Request) {
     }
 
     console.log('[check-subscription] Export items structure:', JSON.stringify(userData.info.items))
-    const gcUserId = userData.info.items[0]?.id
+    // GetCourse export returns items as arrays: items[0][0] = user id
+    const gcUserId = userData.info.items[0]?.[0] ?? userData.info.items[0]?.id
+    console.log('[check-subscription] Found user ID:', gcUserId)
     if (!gcUserId) {
       console.log('[check-subscription] First item has no id:', JSON.stringify(userData.info.items[0]))
       return NextResponse.json({ hasSubscription: false, debug: 'no user id in export' })
