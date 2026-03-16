@@ -22,14 +22,27 @@ export async function POST(request: Request) {
 
     const normalizedEmail = email.toLowerCase().trim()
 
-    // Query GetCourse API
-    const gcResponse = await fetch('https://online.badbuddhas.ru/pl/api/users', {
+    // 1. Check local subscriptions table first
+    const { data: localSub } = await supabase
+      .from('subscriptions')
+      .select('status, expires_at')
+      .eq('email', normalizedEmail)
+      .eq('status', 'active')
+      .maybeSingle()
+
+    if (localSub) {
+      console.log('[check-subscription] found active local subscription for:', normalizedEmail)
+      return NextResponse.json({ hasSubscription: true })
+    }
+
+    // 2. No local record — query GetCourse API (deals endpoint)
+    const gcResponse = await fetch('https://online.badbuddhas.ru/pl/api/deals', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         key: process.env.GETCOURSE_API_KEY!,
-        action: 'getUser',
-        params: JSON.stringify({ email: normalizedEmail }),
+        action: 'getDeals',
+        params: JSON.stringify({ user: { email: normalizedEmail } }),
       }),
     })
 
@@ -43,11 +56,13 @@ export async function POST(request: Request) {
     console.log('[check-subscription] GetCourse API request email:', normalizedEmail)
     console.log('[check-subscription] GetCourse API response:', JSON.stringify(gcData))
 
-    // GetCourse returns { success: true, info: { ... } } when user found
-    const hasSubscription = gcData.success === true && gcData.info?.addfields?.subscription_active === true
+    // GetCourse returns { success: true, info: [...deals] } when user has deals
+    const hasSubscription = gcData.success === true
+      && Array.isArray(gcData.info)
+      && gcData.info.length > 0
 
     if (hasSubscription) {
-      // Find user by verified_email
+      // Find user by verified_email and create local subscription record
       const { data: user } = await supabase
         .from('users')
         .select('id')
@@ -55,7 +70,6 @@ export async function POST(request: Request) {
         .maybeSingle()
 
       if (user) {
-        // Upsert subscription record
         await supabase
           .from('subscriptions')
           .upsert(
