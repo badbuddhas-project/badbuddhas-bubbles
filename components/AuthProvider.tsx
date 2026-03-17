@@ -60,7 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (res.ok) {
             const data = await res.json()
             setUser(data.user)
-            ymEvent('app_opened', { platform: getPlatform(), method: 'telegram' })
+            const startParam = (window as any).Telegram?.WebApp?.initDataUnsafe?.start_param
+            ymEvent('app_opened', { platform: getPlatform(), method: 'telegram', source: startParam || 'organic' })
 
             if (data.isNewUser && !localStorage.getItem(ONBOARDING_KEY)) {
               router.push('/onboarding')
@@ -83,7 +84,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (res.ok) {
         const data = await res.json()
         setUser(data.user)
-        ymEvent('app_opened', { platform: getPlatform(), method: 'email' })
+        const startParam = (window as any).Telegram?.WebApp?.initDataUnsafe?.start_param
+        ymEvent('app_opened', { platform: getPlatform(), method: 'email', source: startParam || 'organic' })
       } else if (pathname && !PUBLIC_ROUTES.some((r) => pathname.startsWith(r))) {
         const onboardingDone = localStorage.getItem(ONBOARDING_KEY)
         router.push(onboardingDone ? '/login' : '/onboarding')

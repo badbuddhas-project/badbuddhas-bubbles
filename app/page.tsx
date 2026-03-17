@@ -35,7 +35,8 @@ export default function Home() {
   const { isCompleted: isOnboardingCompleted, isLoading: isOnboardingLoading } = useOnboarding()
 
   useEffect(() => {
-    ymEvent('app_opened', { platform: getPlatform() })
+    const startParam = (window as any).Telegram?.WebApp?.initDataUnsafe?.start_param
+    ymEvent('app_opened', { platform: getPlatform(), source: startParam || 'organic' })
   }, [])
 
   useEffect(() => {
