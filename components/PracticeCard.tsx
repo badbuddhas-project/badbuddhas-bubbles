@@ -8,6 +8,7 @@ interface PracticeCardProps {
   onToggleFavorite: (practiceId: string) => void
   onClick: (practice: Practice) => void
   catColors?: Record<string, string>
+  isLocked?: boolean
 }
 
 export function PracticeCard({
@@ -16,6 +17,7 @@ export function PracticeCard({
   onToggleFavorite,
   onClick,
   catColors = {},
+  isLocked = false,
 }: PracticeCardProps) {
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -32,10 +34,10 @@ export function PracticeCard({
 
   return (
     <div
-      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', cursor: 'pointer' }}
+      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', cursor: 'pointer', opacity: isLocked ? 0.55 : 1 }}
       onClick={() => onClick(practice)}
     >
-      {/* Preview with Play button */}
+      {/* Preview with Play/Lock button */}
       <div style={{ position: 'relative', flexShrink: 0 }}>
         <div
           style={{
@@ -69,7 +71,14 @@ export function PracticeCard({
             padding: 0,
           }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><polygon points="8,5 20,12 8,19"/></svg>
+          {isLocked ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C034A5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><polygon points="8,5 20,12 8,19"/></svg>
+          )}
         </button>
       </div>
 
@@ -84,12 +93,15 @@ export function PracticeCard({
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
-          {practice.is_premium && (
+          {practice.is_premium && !isLocked && (
             <img src="/images/icon-black.png" width={16} height={16} alt="" style={{ display: 'block', flexShrink: 0 }} />
           )}
           <span style={{ fontSize: 15, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {practice.title_ru || practice.title}
           </span>
+          {isLocked && (
+            <span style={{ fontSize: 8, fontWeight: 700, color: '#C034A5', background: 'rgba(192,52,165,0.12)', borderRadius: 4, padding: '2px 5px', flexShrink: 0, letterSpacing: '0.03em' }}>BLACK</span>
+          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
           {practice.instructor_avatar_url ? (

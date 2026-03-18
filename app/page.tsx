@@ -69,13 +69,9 @@ export default function Home() {
 
   const instructors = useMemo(() => {
     const set = new Set<string>()
-    practices.forEach((p) => {
-      // For free users, only show instructors who have at least one non-premium practice
-      if (!isPremium && p.is_premium) return
-      set.add(p.instructor_name)
-    })
+    practices.forEach((p) => set.add(p.instructor_name))
     return Array.from(set).sort()
-  }, [practices, isPremium])
+  }, [practices])
 
   // Reset instructor filter if selected instructor is no longer in the list
   useEffect(() => {
@@ -101,8 +97,6 @@ export default function Home() {
 
   const filteredPractices = useMemo(() => {
     return practices.filter((practice) => {
-      // Hide premium practices from free users
-      if (!isPremium && practice.is_premium) return false
       if (categoryFilter !== 'all' && practice.category !== categoryFilter) return false
       if (languageFilter !== 'all' && practice.language && practice.language !== languageFilter) return false
       if (showFavoritesOnly && !isFavorite(practice.id)) return false
@@ -115,7 +109,7 @@ export default function Home() {
       }
       return true
     })
-  }, [practices, isPremium, categoryFilter, languageFilter, showFavoritesOnly, isFavorite, instructorFilter, durationFilter])
+  }, [practices, categoryFilter, languageFilter, showFavoritesOnly, isFavorite, instructorFilter, durationFilter])
 
   const handlePracticeClick = (practice: Practice) => {
     router.push(`/practice/${practice.id}`)
@@ -248,6 +242,35 @@ export default function Home() {
         )}
       </div>
 
+      {/* Subscription banner — free users only */}
+      {!isPremium && (
+        <div
+          onClick={() => router.push('/subscribe')}
+          style={{
+            background: '#0A0A0A',
+            border: '1px solid #1A1A1A',
+            borderRadius: 14,
+            padding: '14px 16px',
+            marginBottom: 20,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            cursor: 'pointer',
+          }}
+        >
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <span style={{ fontSize: 15, fontWeight: 500, color: '#fff' }}>[ чёрный баблс ]</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: '#C034A5', letterSpacing: '0.03em' }}>подписка</span>
+            </div>
+            <span style={{ fontSize: 12, color: '#CBCBCB', opacity: 0.5 }}>больше практик · теория · расписание</span>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#54C68C" strokeWidth="2" style={{ flexShrink: 0 }}>
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </div>
+      )}
+
       {/* Practice list */}
       {isPracticesLoading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -263,8 +286,9 @@ export default function Home() {
                 practice={practice}
                 isFavorite={isFavorite(practice.id)}
                 onToggleFavorite={toggleFavorite}
-                onClick={handlePracticeClick}
+                onClick={!isPremium && practice.is_premium ? () => router.push('/subscribe') : handlePracticeClick}
                 catColors={CAT_COLORS}
+                isLocked={!isPremium && practice.is_premium}
               />
               {i < filteredPractices.length - 1 && (
                 <div style={{ height: 1, background: '#1A1A1A', marginLeft: 92 }} />

@@ -219,6 +219,35 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      {/* Subscription CTA — free users only */}
+      {!isPremium && (
+        <div
+          onClick={() => router.push('/subscribe')}
+          style={{
+            background: DARK_CARD,
+            border: '1px solid rgba(192,52,165,0.25)',
+            borderRadius: 14,
+            padding: '16px',
+            marginBottom: 12,
+            cursor: 'pointer',
+          }}
+        >
+          <div style={{ fontSize: 15, fontWeight: 500, color: '#C034A5', marginBottom: 4 }}>[ чёрный баблс ]</div>
+          <div style={{ fontSize: 12, color: GREY, opacity: 0.6, marginBottom: 12 }}>больше практик, теория и бонусы</div>
+          <div style={{
+            background: '#C034A5',
+            color: WHITE,
+            fontSize: 13,
+            fontWeight: 500,
+            borderRadius: 20,
+            padding: '8px 0',
+            textAlign: 'center' as const,
+          }}>
+            попробовать
+          </div>
+        </div>
+      )}
+
       {/* Connect Email */}
       {/* TODO: Temporarily hidden for free TG users. Re-enable when web access is needed for free tier. */}
       {!(isTelegram && !isPremium) && (
