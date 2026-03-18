@@ -53,6 +53,10 @@ export async function POST(request: Request) {
 
     if (cached) {
       console.log('[check-subscription] Cache hit for:', normalizedEmail)
+      await supabase
+        .from('users')
+        .update({ is_premium: true })
+        .eq('email', normalizedEmail)
       return NextResponse.json({ hasSubscription: true, cached: true })
     }
 
@@ -124,6 +128,10 @@ export async function POST(request: Request) {
           console.error('[check-subscription] Supabase upsert error:', subError)
         } else {
           console.log('[check-subscription] Subscription saved for user:', user.id)
+          await supabase
+            .from('users')
+            .update({ is_premium: true })
+            .eq('email', normalizedEmail)
         }
       } else {
         // User not in users table (e.g. Telegram user without email link)
