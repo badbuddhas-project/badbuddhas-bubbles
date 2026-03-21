@@ -52,7 +52,7 @@ export async function POST(request: Request) {
 
     const { error } = await supabase
       .from('users')
-      .update({ verified_email: normalizedEmail, is_premium: true })
+      .update({ email: normalizedEmail, verified_email: normalizedEmail, is_premium: true })
       .eq('id', userId)
 
     if (error) {
