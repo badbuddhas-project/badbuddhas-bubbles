@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
     const { error } = await supabase
       .from('users')
-      .update({ verified_email: normalizedEmail })
+      .update({ verified_email: normalizedEmail, is_premium: true })
       .eq('id', decoded.user_id)
 
     if (error) {
