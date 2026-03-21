@@ -52,12 +52,19 @@ export async function POST(request: Request) {
       .maybeSingle()
 
     if (cached) {
-      console.log('[check-subscription] Cache hit for:', normalizedEmail)
-      await supabase
-        .from('users')
-        .update({ is_premium: true })
-        .eq('email', normalizedEmail)
-      return NextResponse.json({ hasSubscription: true, cached: true })
+      const isExpired = cached.expires_at && new Date(cached.expires_at) <= new Date()
+
+      if (!isExpired) {
+        console.log('[check-subscription] Cache hit (valid) for:', normalizedEmail)
+        await supabase
+          .from('users')
+          .update({ is_premium: true })
+          .eq('email', normalizedEmail)
+        return NextResponse.json({ hasSubscription: true, cached: true })
+      }
+
+      // Cache expired — will re-check via GetCourse API below
+      console.log('[check-subscription] Cache expired for:', normalizedEmail)
     }
 
     // 2. Export API Step 1: Start user export filtered by email
@@ -119,6 +126,7 @@ export async function POST(request: Request) {
               email: normalizedEmail,
               status: 'active',
               gc_deal_id: dealId || null,
+              expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
               updated_at: new Date().toISOString(),
             },
             { onConflict: 'user_id' }
@@ -137,6 +145,29 @@ export async function POST(request: Request) {
         // User not in users table (e.g. Telegram user without email link)
         // Still return hasSubscription: true — just can't cache it yet
         console.log('[check-subscription] User not in users table, returning true without caching')
+      }
+    }
+
+    // If cache was expired and GetCourse did NOT confirm — mark as expired
+    if (!hasPaidDeals && cached) {
+      const { data: user } = await supabase
+        .from('users')
+        .select('id')
+        .or(`email.eq.${normalizedEmail},verified_email.eq.${normalizedEmail}`)
+        .maybeSingle()
+
+      if (user) {
+        await supabase
+          .from('subscriptions')
+          .update({ status: 'expired', updated_at: new Date().toISOString() })
+          .eq('user_id', user.id)
+
+        await supabase
+          .from('users')
+          .update({ is_premium: false })
+          .eq('email', normalizedEmail)
+
+        console.log('[check-subscription] Subscription expired for:', normalizedEmail)
       }
     }
 
