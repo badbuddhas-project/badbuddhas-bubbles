@@ -1,6 +1,7 @@
 /**
  * POST /api/auth/link-email — saves verified_email for the current user.
  * Used after successful GetCourse subscription check to link payment email.
+ * Supports both JWT cookie (web) and telegram_id (Telegram Mini App).
  */
 
 import { NextResponse } from 'next/server'
@@ -17,16 +18,34 @@ export async function POST(request: Request) {
   const JWT_SECRET = process.env.JWT_SECRET!
 
   try {
-    const token = cookies().get('session')?.value
-    if (!token) {
-      return NextResponse.json({ error: 'No session' }, { status: 401 })
-    }
-
-    const decoded = jwt.verify(token, JWT_SECRET) as { user_id: string }
-
-    const { email } = await request.json()
+    const { email, telegram_id } = await request.json()
     if (!email || typeof email !== 'string') {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 })
+    }
+
+    let userId: string | null = null
+
+    // Auth method 1: JWT cookie (web)
+    const token = cookies().get('session')?.value
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET) as { user_id: string }
+        userId = decoded.user_id
+      } catch { /* invalid token, try telegram */ }
+    }
+
+    // Auth method 2: telegram_id from body (Telegram Mini App)
+    if (!userId && telegram_id) {
+      const { data: tgUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('telegram_id', telegram_id)
+        .single()
+      userId = tgUser?.id ?? null
+    }
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
     const normalizedEmail = email.toLowerCase().trim()
@@ -34,7 +53,7 @@ export async function POST(request: Request) {
     const { error } = await supabase
       .from('users')
       .update({ verified_email: normalizedEmail, is_premium: true })
-      .eq('id', decoded.user_id)
+      .eq('id', userId)
 
     if (error) {
       console.error('[link-email] update error:', error)
@@ -45,7 +64,7 @@ export async function POST(request: Request) {
     const { data: userData } = await supabase
       .from('users')
       .select('telegram_id, username')
-      .eq('id', decoded.user_id)
+      .eq('id', userId)
       .single()
 
     if (userData) {
@@ -59,6 +78,7 @@ export async function POST(request: Request) {
         .eq('email', normalizedEmail)
     }
 
+    console.log('[link-email] Updated user', userId, 'with email', normalizedEmail)
     return NextResponse.json({ success: true })
   } catch {
     return NextResponse.json({ error: 'Invalid session' }, { status: 401 })

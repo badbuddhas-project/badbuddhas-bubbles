@@ -66,10 +66,11 @@ function SubscribePage() {
       const data = await res.json()
 
       if (data.hasSubscription) {
+        const tgUser = (window as any).Telegram?.WebApp?.initDataUnsafe?.user
         await fetch('/api/auth/link-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: checkEmail.trim() }),
+          body: JSON.stringify({ email: checkEmail.trim(), telegram_id: tgUser?.id || null }),
         })
         setStep('success')
       } else {
