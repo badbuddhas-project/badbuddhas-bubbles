@@ -77,8 +77,7 @@ export default function SubscribePage() {
       <div className="pt-4 pb-2">
         <button
           onClick={() => {
-            if (step === 'payment') { setStep('landing'); window.scrollTo({ top: 0, behavior: 'smooth' }) }
-            else if (step === 'activate') setStep('payment')
+            if (step === 'payment' || step === 'activate') { setStep('landing'); window.scrollTo({ top: 0, behavior: 'smooth' }) }
             else router.back()
           }}
           className="text-white/60 hover:text-white transition-colors text-sm flex items-center gap-1"
@@ -126,6 +125,13 @@ export default function SubscribePage() {
             <p className="text-xs text-white/40 mt-4">
               оплата через GetCourse · отмена в любой момент
             </p>
+            <button
+              onClick={goToActivate}
+              className="mt-4 bg-transparent border-none cursor-pointer"
+              style={{ color: GREEN, fontSize: 13 }}
+            >
+              Уже есть подписка? Активировать
+            </button>
           </div>
         </>
       )}
@@ -143,14 +149,6 @@ export default function SubscribePage() {
           <p className="text-xs text-white/40 mt-4 text-center">
             оплата через GetCourse · отмена в любой момент
           </p>
-
-          <button
-            onClick={goToActivate}
-            className="w-full mt-6 py-3 rounded-2xl font-medium text-sm transition-opacity hover:opacity-90"
-            style={{ backgroundColor: DARK_CARD, border: `1px solid ${CARD_BORDER}`, color: WHITE }}
-          >
-            Уже оплатил → Активировать подписку
-          </button>
         </div>
       )}
 
