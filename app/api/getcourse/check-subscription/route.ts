@@ -112,7 +112,7 @@ export async function POST(request: Request) {
     if (hasPaidDeals) {
       const { data: user } = await supabase
         .from('users')
-        .select('id')
+        .select('id, telegram_id, username')
         .or(`email.eq.${normalizedEmail},verified_email.eq.${normalizedEmail}`)
         .maybeSingle()
 
@@ -128,6 +128,8 @@ export async function POST(request: Request) {
               gc_deal_id: dealId || null,
               expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
               updated_at: new Date().toISOString(),
+              ...(user.telegram_id ? { telegram_id: user.telegram_id } : {}),
+              ...(user.username ? { tg_username: user.username } : {}),
             },
             { onConflict: 'user_id' }
           )

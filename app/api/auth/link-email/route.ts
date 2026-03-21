@@ -41,6 +41,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to update' }, { status: 500 })
     }
 
+    // Sync telegram_id and username to subscriptions
+    const { data: userData } = await supabase
+      .from('users')
+      .select('telegram_id, username')
+      .eq('id', decoded.user_id)
+      .single()
+
+    if (userData) {
+      await supabase
+        .from('subscriptions')
+        .update({
+          telegram_id: userData.telegram_id,
+          tg_username: userData.username,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('email', normalizedEmail)
+    }
+
     return NextResponse.json({ success: true })
   } catch {
     return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
