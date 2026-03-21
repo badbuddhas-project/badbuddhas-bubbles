@@ -165,19 +165,39 @@ export default function SubscribePage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="email@example.com"
-            className="w-full rounded-xl px-4 py-3 text-white text-sm outline-none mb-4"
+            disabled={isChecking}
+            className="w-full rounded-xl px-4 py-3 text-white text-sm outline-none mb-4 disabled:opacity-50"
             style={{ backgroundColor: DARK_CARD, border: `1px solid ${CARD_BORDER}` }}
             onKeyDown={(e) => e.key === 'Enter' && handleCheckSubscription()}
           />
 
-          <button
-            onClick={handleCheckSubscription}
-            disabled={isChecking || !email.trim()}
-            className="w-full py-3 rounded-2xl font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-            style={{ backgroundColor: PINK }}
-          >
-            {isChecking ? 'Проверяю...' : 'Проверить'}
-          </button>
+          {isChecking ? (
+            <div className="flex flex-col items-center gap-3 py-4">
+              <div
+                className="rounded-full"
+                style={{
+                  width: 32, height: 32,
+                  border: `3px solid ${CARD_BORDER}`,
+                  borderTopColor: PINK,
+                  animation: 'spin 0.8s linear infinite',
+                }}
+              />
+              <p className="text-sm font-medium text-white">Проверяем подписку...</p>
+              <p className="text-xs text-center" style={{ color: '#CBCBCB', opacity: 0.5 }}>
+                Это может занять немного времени.{'\n'}Не закрывайте и не обновляйте страницу
+              </p>
+              <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+            </div>
+          ) : (
+            <button
+              onClick={handleCheckSubscription}
+              disabled={!email.trim()}
+              className="w-full py-3 rounded-2xl font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              style={{ backgroundColor: PINK }}
+            >
+              Проверить
+            </button>
+          )}
 
           {error && (
             <div className="mt-4 text-center">
