@@ -214,7 +214,7 @@ export default function SubscribePage() {
           </p>
 
           <button
-            onClick={() => router.push('/')}
+            onClick={() => window.location.href = '/'}
             className="w-full py-3 rounded-2xl font-semibold text-white transition-opacity hover:opacity-90"
             style={{ backgroundColor: GREEN }}
           >
