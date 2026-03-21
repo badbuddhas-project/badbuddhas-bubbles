@@ -58,6 +58,7 @@ export default function Home() {
   const [durationFilter, setDurationFilter] = useState<DurationFilter>('all')
   const [instructorFilter, setInstructorFilter] = useState<string>('all')
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
+  const [blackFilter, setBlackFilter] = useState(false)
 
   const handleLanguageFilterChange = useCallback((v: LanguageFilter) => {
     setLanguageFilter(v)
@@ -80,11 +81,12 @@ export default function Home() {
     }
   }, [instructors, instructorFilter])
 
-  const hasActiveFilters = categoryFilter !== 'all' || durationFilter !== 'all' || instructorFilter !== 'all' || languageFilter !== 'all'
+  const hasActiveFilters = categoryFilter !== 'all' || durationFilter !== 'all' || instructorFilter !== 'all' || languageFilter !== 'all' || blackFilter
 
   const filterLabel = useMemo(() => {
     if (!hasActiveFilters) return t('catalog.allPractices')
     const parts: string[] = []
+    if (blackFilter) parts.push('Black')
     if (categoryFilter !== 'all') parts.push(t(`catalog.${categoryFilter}`))
     if (durationFilter !== 'all') {
       const dLabels: Record<string, string> = { up5: t('catalog.upTo5min'), up10: t('catalog.upTo10min'), from10: t('catalog.from10min') }
@@ -93,10 +95,11 @@ export default function Home() {
     if (instructorFilter !== 'all') parts.push(instructorFilter)
     if (languageFilter !== 'all') parts.push(languageFilter === 'ru' ? t('catalog.russian') : t('catalog.english'))
     return parts.join(' · ')
-  }, [hasActiveFilters, categoryFilter, durationFilter, instructorFilter, languageFilter, t])
+  }, [hasActiveFilters, blackFilter, categoryFilter, durationFilter, instructorFilter, languageFilter, t])
 
   const filteredPractices = useMemo(() => {
     return practices.filter((practice) => {
+      if (blackFilter && !practice.is_premium) return false
       if (categoryFilter !== 'all' && practice.category !== categoryFilter) return false
       if (languageFilter !== 'all' && practice.language && practice.language !== languageFilter) return false
       if (showFavoritesOnly && !isFavorite(practice.id)) return false
@@ -109,7 +112,7 @@ export default function Home() {
       }
       return true
     })
-  }, [practices, categoryFilter, languageFilter, showFavoritesOnly, isFavorite, instructorFilter, durationFilter])
+  }, [practices, blackFilter, categoryFilter, languageFilter, showFavoritesOnly, isFavorite, instructorFilter, durationFilter])
 
   const handlePracticeClick = (practice: Practice) => {
     router.push(`/practice/${practice.id}`)
@@ -216,8 +219,11 @@ export default function Home() {
                 { value: 'balance', label: t('catalog.balance') },
                 { value: 'energize', label: t('catalog.energize') },
               ] as const).map((c) => (
-                <Chip key={c.value} active={categoryFilter === c.value} onClick={() => { setCategoryFilter(c.value as CategoryFilter); if (c.value !== 'all') ymEvent('filter_used', { filter_type: 'category', filter_value: c.value }) }}>{c.label}</Chip>
+                <Chip key={c.value} active={categoryFilter === c.value && !blackFilter} onClick={() => { setBlackFilter(false); setCategoryFilter(c.value as CategoryFilter); if (c.value !== 'all') ymEvent('filter_used', { filter_type: 'category', filter_value: c.value }) }}>{c.label}</Chip>
               ))}
+              {isPremium && (
+                <Chip active={blackFilter} onClick={() => { setBlackFilter(!blackFilter); if (!blackFilter) { setCategoryFilter('all'); ymEvent('filter_used', { filter_type: 'category', filter_value: 'black' }) } }}>Black</Chip>
+              )}
             </FilterGroup>
 
             {/* Instructor */}
