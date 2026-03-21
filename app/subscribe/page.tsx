@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState, useRef, useEffect, useCallback } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useUser } from '@/hooks/useUser'
 
 const WHITE = '#FFFFFF'
 const PINK = '#C034A5'
@@ -18,14 +19,25 @@ const FEATURES = [
 
 type Step = 'landing' | 'payment' | 'activate' | 'success'
 
-export default function SubscribePage() {
+export default function SubscribePageWrapper() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black" />}>
+      <SubscribePage />
+    </Suspense>
+  )
+}
+
+function SubscribePage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const { user } = useUser()
   const widgetRef = useRef<HTMLDivElement>(null)
 
   const [step, setStep] = useState<Step>('landing')
   const [email, setEmail] = useState('')
   const [isChecking, setIsChecking] = useState(false)
   const [error, setError] = useState('')
+  const [autoChecked, setAutoChecked] = useState(false)
 
   const goToPayment = () => {
     setStep('payment')
@@ -40,8 +52,8 @@ export default function SubscribePage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const handleCheckSubscription = async () => {
-    if (!email.trim()) return
+  const checkSubscription = useCallback(async (checkEmail: string) => {
+    if (!checkEmail.trim()) return
     setIsChecking(true)
     setError('')
 
@@ -49,16 +61,15 @@ export default function SubscribePage() {
       const res = await fetch('/api/getcourse/check-subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim() }),
+        body: JSON.stringify({ email: checkEmail.trim() }),
       })
       const data = await res.json()
 
       if (data.hasSubscription) {
-        // Save verified_email to current user
         await fetch('/api/auth/link-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email.trim() }),
+          body: JSON.stringify({ email: checkEmail.trim() }),
         })
         setStep('success')
       } else {
@@ -68,6 +79,32 @@ export default function SubscribePage() {
       setError('Ошибка проверки. Попробуйте ещё раз')
     } finally {
       setIsChecking(false)
+    }
+  }, [])
+
+  const handleCheckSubscription = () => checkSubscription(email)
+
+  // Auto-activate from success URL (?success=true&email=...)
+  useEffect(() => {
+    if (autoChecked || !searchParams) return
+    const isSuccess = searchParams.get('success') === 'true'
+    const successEmail = searchParams.get('email')
+    if (isSuccess && successEmail) {
+      setAutoChecked(true)
+      setEmail(successEmail)
+      setStep('activate')
+      checkSubscription(successEmail)
+    }
+  }, [searchParams, autoChecked, checkSubscription])
+
+  const handlePostPaymentActivate = () => {
+    const userEmail = user?.email
+    if (userEmail) {
+      setEmail(userEmail)
+      setStep('activate')
+      checkSubscription(userEmail)
+    } else {
+      goToActivate()
     }
   }
 
@@ -149,6 +186,13 @@ export default function SubscribePage() {
           <p className="text-xs text-white/40 mt-4 text-center">
             оплата через GetCourse · отмена в любой момент
           </p>
+          <button
+            onClick={handlePostPaymentActivate}
+            className="w-full mt-4 bg-transparent border-none cursor-pointer text-center"
+            style={{ color: GREEN, fontSize: 13 }}
+          >
+            Оплата прошла? Активировать подписку
+          </button>
         </div>
       )}
 
