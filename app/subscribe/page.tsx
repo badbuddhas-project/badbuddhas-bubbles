@@ -38,8 +38,6 @@ function SubscribePage() {
   const [isChecking, setIsChecking] = useState(false)
   const [error, setError] = useState('')
   const [autoChecked, setAutoChecked] = useState(false)
-  const [capturedEmail, setCapturedEmail] = useState<string | null>(null)
-
   const goToPayment = () => {
     setStep('payment')
     setTimeout(() => {
@@ -48,7 +46,6 @@ function SubscribePage() {
   }
 
   const goToActivate = () => {
-    if (capturedEmail && !email) setEmail(capturedEmail)
     setStep('activate')
     setError('')
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -100,29 +97,8 @@ function SubscribePage() {
     }
   }, [searchParams, autoChecked, checkSubscription])
 
-  // Listen for email / payment-complete from GetCourse widget iframe
-  useEffect(() => {
-    function handleMessage(event: MessageEvent) {
-      if (event.data?.type === 'gc-email') {
-        setCapturedEmail(event.data.email)
-      }
-      if (event.data?.type === 'gc-payment-complete') {
-        const emailToUse = capturedEmail || user?.email
-        if (emailToUse) {
-          setEmail(emailToUse)
-          setStep('activate')
-          checkSubscription(emailToUse)
-        } else {
-          goToActivate()
-        }
-      }
-    }
-    window.addEventListener('message', handleMessage)
-    return () => window.removeEventListener('message', handleMessage)
-  }, [capturedEmail, user?.email, checkSubscription])
-
   const handlePostPaymentActivate = () => {
-    const emailToUse = capturedEmail || user?.email
+    const emailToUse = user?.email
     if (emailToUse) {
       setEmail(emailToUse)
       setStep('activate')
