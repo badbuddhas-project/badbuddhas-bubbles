@@ -60,22 +60,45 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to update' }, { status: 500 })
     }
 
-    // Sync telegram_id and username to subscriptions
+    // Ensure subscription record exists
     const { data: userData } = await supabase
       .from('users')
       .select('telegram_id, username')
       .eq('id', userId)
       .single()
 
-    if (userData) {
+    const telegramId = userData?.telegram_id ?? null
+    const tgUsername = userData?.username ?? null
+
+    const { data: existingSub } = await supabase
+      .from('subscriptions')
+      .select('id')
+      .eq('email', normalizedEmail)
+      .maybeSingle()
+
+    if (!existingSub) {
+      await supabase.from('subscriptions').insert({
+        user_id: userId,
+        email: normalizedEmail,
+        status: 'active',
+        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        telegram_id: telegramId,
+        tg_username: tgUsername,
+      })
+      console.log('[link-email] Created subscription for user:', userId)
+    } else {
       await supabase
         .from('subscriptions')
         .update({
-          telegram_id: userData.telegram_id,
-          tg_username: userData.username,
+          user_id: userId,
+          status: 'active',
+          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          telegram_id: telegramId,
+          tg_username: tgUsername,
           updated_at: new Date().toISOString(),
         })
         .eq('email', normalizedEmail)
+      console.log('[link-email] Updated subscription for user:', userId)
     }
 
     console.log('[link-email] Updated user', userId, 'with email', normalizedEmail)
