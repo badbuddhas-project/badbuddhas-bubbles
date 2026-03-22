@@ -10,5 +10,26 @@
 </head>
 <body>
   <script id="0e417cb9c5ca2fb00cf1b6295b602f174d70bf5a" src="https://online.badbuddhas.ru/pl/lite/widget/script?id=1576883"></script>
+  <script>
+    var observer = new MutationObserver(function() {
+      var emailInput = document.querySelector('input[type="email"], input[name="email"]');
+      if (emailInput && !emailInput._tracked) {
+        emailInput._tracked = true;
+        emailInput.addEventListener('input', function() {
+          if (emailInput.value && emailInput.value.includes('@')) {
+            window.parent.postMessage({ type: 'gc-email', email: emailInput.value }, '*');
+          }
+        });
+        if (emailInput.value && emailInput.value.includes('@')) {
+          window.parent.postMessage({ type: 'gc-email', email: emailInput.value }, '*');
+        }
+      }
+      var text = document.body.innerText || '';
+      if (text.indexOf('спасибо') !== -1 || text.indexOf('Спасибо') !== -1 || text.indexOf('Добро пожаловать') !== -1) {
+        window.parent.postMessage({ type: 'gc-payment-complete' }, '*');
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  </script>
 </body>
 </html>
