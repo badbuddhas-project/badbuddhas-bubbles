@@ -45,6 +45,13 @@ export default function Home() {
   }, [isOnboardingCompleted, isOnboardingLoading, router])
 
   useEffect(() => {
+    const tgStartParam = (window as any).Telegram?.WebApp?.initDataUnsafe?.start_param
+    if (tgStartParam === 'activate') {
+      router.push('/subscribe?step=activate')
+    }
+  }, [router])
+
+  useEffect(() => {
     if (!isPracticesLoading && practices.length > 0) {
       ymEvent('practice_list_viewed', { platform: getPlatform() })
     }

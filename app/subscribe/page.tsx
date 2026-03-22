@@ -84,9 +84,10 @@ function SubscribePage() {
 
   const handleCheckSubscription = () => checkSubscription(email)
 
-  // Auto-activate from success URL (?success=true&email=...)
+  // Auto-activate from success URL, query step, or Telegram startapp
   useEffect(() => {
     if (autoChecked || !searchParams) return
+
     const isSuccess = searchParams.get('success') === 'true'
     const successEmail = searchParams.get('email')
     if (isSuccess && successEmail) {
@@ -94,6 +95,20 @@ function SubscribePage() {
       setEmail(successEmail)
       setStep('activate')
       checkSubscription(successEmail)
+      return
+    }
+
+    const stepParam = searchParams.get('step')
+    if (stepParam === 'activate') {
+      setAutoChecked(true)
+      setStep('activate')
+      return
+    }
+
+    const tgStartParam = (window as any).Telegram?.WebApp?.initDataUnsafe?.start_param
+    if (tgStartParam === 'activate') {
+      setAutoChecked(true)
+      setStep('activate')
     }
   }, [searchParams, autoChecked, checkSubscription])
 
