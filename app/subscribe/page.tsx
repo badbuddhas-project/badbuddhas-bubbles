@@ -31,7 +31,7 @@ function SubscribePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user } = useUser()
-  const widgetRef = useRef<HTMLDivElement>(null)
+  const formRef = useRef<HTMLDivElement>(null)
 
   const [step, setStep] = useState<Step>('landing')
   const [email, setEmail] = useState('')
@@ -41,7 +41,7 @@ function SubscribePage() {
   const goToPayment = () => {
     setStep('payment')
     setTimeout(() => {
-      widgetRef.current?.scrollIntoView({ behavior: 'smooth' })
+      formRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, 100)
   }
 
@@ -111,6 +111,26 @@ function SubscribePage() {
       setStep('activate')
     }
   }, [searchParams, autoChecked, checkSubscription])
+
+  // Fill hidden form fields for GetCourse
+  useEffect(() => {
+    if (step !== 'payment') return
+    const loc = document.querySelector('input[name="__gc__internal__form__helper"]') as HTMLInputElement
+    const ref = document.querySelector('input[name="__gc__internal__form__helper_ref"]') as HTMLInputElement
+    if (loc) loc.value = window.location.href
+    if (ref) ref.value = document.referrer
+  }, [step])
+
+  // Auto-activate from localStorage (email saved before payment redirect)
+  useEffect(() => {
+    if (step !== 'activate') return
+    const savedEmail = localStorage.getItem('gc_payment_email')
+    if (savedEmail && !email) {
+      setEmail(savedEmail)
+      localStorage.removeItem('gc_payment_email')
+      checkSubscription(savedEmail)
+    }
+  }, [step, email, checkSubscription])
 
   const handlePostPaymentActivate = () => {
     const emailToUse = user?.email
@@ -188,15 +208,65 @@ function SubscribePage() {
         </>
       )}
 
-      {/* Step 2: Payment widget */}
+      {/* Step 2: Payment form */}
       {step === 'payment' && (
-        <div className="max-w-md mx-auto" ref={widgetRef}>
-          <iframe
-            src="/gc-widget.html"
-            className="w-full rounded-2xl"
-            style={{ minHeight: 600, background: DARK_CARD, border: 'none', borderRadius: 16 }}
-            title="Оплата подписки"
-          />
+        <div className="max-w-md mx-auto" ref={formRef}>
+          <form
+            action="https://online.badbuddhas.ru/pl/lite/block-public/process-html?id=2218368276"
+            method="post"
+            target="_blank"
+            onSubmit={() => {
+              const emailInput = document.querySelector('input[name="formParams[email]"]') as HTMLInputElement
+              if (emailInput?.value) {
+                localStorage.setItem('gc_payment_email', emailInput.value)
+              }
+            }}
+            className="rounded-2xl p-5"
+            style={{ backgroundColor: DARK_CARD, border: `1px solid ${CARD_BORDER}` }}
+          >
+            <input type="hidden" name="formParams[setted_offer_id]" />
+            <input type="hidden" name="formParams[willCreatePaidDeal]" value="" />
+            <input type="hidden" name="__gc__internal__form__helper" value="" />
+            <input type="hidden" name="__gc__internal__form__helper_ref" value="" />
+            <input type="hidden" name="formParams[need_offer]" value="" />
+            <input type="hidden" name="formParams[offer_id][]" value="" />
+            <input type="hidden" name="formParams[userCustomFields][10784871]" />
+            <input type="hidden" name="formParams[userCustomFields][10784870]" />
+            <input type="hidden" name="formParams[dealCustomFields][1299623]" />
+            <input type="hidden" name="formParams[dealCustomFields][1299624]" />
+            <input type="hidden" name="formParams[dealCustomFields][1299625]" />
+            <input type="hidden" name="formParams[dealCustomFields][1299626]" />
+            <input type="hidden" name="formParams[dealCustomFields][1299627]" />
+            <input type="hidden" name="isHtmlWidget" value="1" />
+            <input type="hidden" name="requestTime" value="" />
+            <input type="hidden" name="requestSimpleSign" value="" />
+
+            <input
+              type="text"
+              maxLength={60}
+              placeholder="Введите ваше имя"
+              name="formParams[full_name]"
+              className="w-full px-4 py-3 rounded-xl text-white text-sm outline-none mb-3 placeholder-gray-500"
+              style={{ backgroundColor: '#111', border: `1px solid ${CARD_BORDER}` }}
+            />
+            <input
+              type="email"
+              maxLength={60}
+              placeholder="Введите ваш эл. адрес"
+              name="formParams[email]"
+              required
+              className="w-full px-4 py-3 rounded-xl text-white text-sm outline-none mb-4 placeholder-gray-500"
+              style={{ backgroundColor: '#111', border: `1px solid ${CARD_BORDER}` }}
+            />
+
+            <button
+              type="submit"
+              className="w-full py-4 rounded-2xl font-semibold text-lg text-white transition-opacity hover:opacity-90"
+              style={{ backgroundColor: PINK }}
+            >
+              Перейти к оплате
+            </button>
+          </form>
 
           <p className="text-xs text-white/40 mt-4 text-center">
             оплата через GetCourse · отмена в любой момент
