@@ -66,6 +66,47 @@ export async function POST(request: Request) {
       }
     }
 
+    // Auto-check subscription expiry if user has verified_email
+    if (user.verified_email) {
+      try {
+        const { data: sub } = await supabase
+          .from('subscriptions')
+          .select('status, expires_at')
+          .eq('email', user.verified_email)
+          .eq('status', 'active')
+          .maybeSingle()
+
+        const needsRecheck =
+          (sub && sub.expires_at && new Date(sub.expires_at) < new Date()) ||
+          (!sub && user.is_premium)
+
+        if (needsRecheck) {
+          console.log('[telegram-sync] Subscription expired/missing, re-checking:', user.verified_email)
+          const checkRes = await fetch(new URL('/api/getcourse/check-subscription', request.url), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: user.verified_email }),
+          })
+          const checkData = await checkRes.json()
+
+          if (!checkData.hasSubscription) {
+            await supabase.from('users').update({ is_premium: false }).eq('id', user.id)
+            await supabase
+              .from('subscriptions')
+              .update({ status: 'expired', updated_at: new Date().toISOString() })
+              .eq('email', user.verified_email)
+            user.is_premium = false
+            console.log('[telegram-sync] Subscription deactivated:', user.verified_email)
+          } else {
+            user.is_premium = true
+            console.log('[telegram-sync] Subscription renewed:', user.verified_email)
+          }
+        }
+      } catch (err) {
+        console.error('[telegram-sync] Subscription check failed (non-blocking):', err)
+      }
+    }
+
     return NextResponse.json({ user: sanitizeUser(user), isNewUser })
   } catch (error) {
     console.error('[telegram-sync] error:', error)
