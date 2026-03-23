@@ -104,7 +104,7 @@ function SubscribePage() {
         await fetch('/api/auth/link-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: checkEmail.trim(), telegram_id: tgUser?.id || null }),
+          body: JSON.stringify({ email: checkEmail.trim(), telegram_id: tgUser?.id || null, activate_premium: true }),
         })
         setStep('success')
       } else {
