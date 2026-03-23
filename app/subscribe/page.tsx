@@ -97,16 +97,11 @@ function SubscribePage() {
     }
 
     const stepParam = searchParams.get('step')
-    if (stepParam === 'activate') {
-      setAutoChecked(true)
-      setStep('activate')
-      return
-    }
-
     const tgStartParam = (window as any).Telegram?.WebApp?.initDataUnsafe?.start_param
-    if (tgStartParam === 'activate') {
+    if (stepParam === 'activate' || tgStartParam === 'activate') {
       setAutoChecked(true)
-      setStep('activate')
+      handleAutoActivate()
+      return
     }
   }, [searchParams, autoChecked, checkSubscription])
 
