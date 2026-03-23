@@ -65,40 +65,19 @@ export default function ProfilePage() {
     fetchLastPractice()
   }, [user])
 
-  // Fetch subscription expiry for premium users
+  // Fetch subscription expiry for premium users via server API (bypasses RLS)
   useEffect(() => {
     if (!user?.is_premium) return
     const fetchSub = async () => {
       try {
-        const supabase = getSupabaseClient()
-        const email = user.email || user.verified_email
-
-        // Try by user_id first
-        let sub = null
-        const { data: byId, error: errId } = await (supabase.from('subscriptions' as any) as any)
-          .select('expires_at, status')
-          .eq('user_id', user.id)
-          .eq('status', 'active')
-          .maybeSingle()
-        console.log('[Profile] sub by user_id:', byId, errId?.message)
-        if (byId?.expires_at) sub = byId
-
-        // Fallback: try by email
-        if (!sub && email) {
-          const { data: byEmail, error: errEmail } = await (supabase.from('subscriptions' as any) as any)
-            .select('expires_at, status')
-            .eq('email', email)
-            .eq('status', 'active')
-            .maybeSingle()
-          console.log('[Profile] sub by email:', byEmail, errEmail?.message)
-          if (byEmail?.expires_at) sub = byEmail
-        }
-
-        if (sub?.expires_at) {
-          console.log('[Profile] Setting subscription expiry:', sub.expires_at)
-          setSubscriptionExpiry(sub.expires_at)
-        } else {
-          console.log('[Profile] No subscription expiry found for user:', user.id, 'email:', email)
+        const tgId = user.telegram_id ? `?telegram_id=${user.telegram_id}` : ''
+        const res = await fetch(`/api/subscriptions/me${tgId}`)
+        if (res.ok) {
+          const data = await res.json()
+          console.log('[Profile] subscription data:', data)
+          if (data?.expires_at) {
+            setSubscriptionExpiry(data.expires_at)
+          }
         }
       } catch (err) {
         console.error('[Profile] fetchSub error:', err)
