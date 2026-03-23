@@ -332,7 +332,10 @@ function SubscribePage() {
           </p>
 
           <button
-            onClick={() => window.location.href = '/'}
+            onClick={() => {
+              sessionStorage.setItem('activate_handled', '1')
+              window.location.href = '/'
+            }}
             className="w-full py-3 rounded-2xl font-semibold text-white transition-opacity hover:opacity-90"
             style={{ backgroundColor: GREEN }}
           >
