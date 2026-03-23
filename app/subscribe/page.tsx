@@ -49,6 +49,42 @@ function SubscribePage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  /** Try session cookie (web) then telegram-sync (TG) to get current user email */
+  const getSessionEmail = async (): Promise<string | null> => {
+    // Method 1: JWT session (web)
+    try {
+      const res = await fetch('/api/auth/session')
+      if (res.ok) {
+        const data = await res.json()
+        const em = data.user?.email || data.user?.verified_email
+        if (em) return em
+      }
+    } catch { /* ignore */ }
+
+    // Method 2: telegram-sync (TG Mini App)
+    try {
+      const tgUser = (window as any).Telegram?.WebApp?.initDataUnsafe?.user
+      if (tgUser?.id) {
+        const res = await fetch('/api/auth/telegram-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            telegram_id: tgUser.id,
+            username: tgUser.username,
+            first_name: tgUser.first_name,
+          }),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          const em = data.user?.email || data.user?.verified_email
+          if (em) return em
+        }
+      }
+    } catch { /* ignore */ }
+
+    return null
+  }
+
   const checkSubscription = useCallback(async (checkEmail: string) => {
     if (!checkEmail.trim()) return
     setIsChecking(true)
@@ -100,23 +136,16 @@ function SubscribePage() {
     const tgStartParam = (window as any).Telegram?.WebApp?.initDataUnsafe?.start_param
     if (stepParam === 'activate' || tgStartParam === 'activate') {
       setAutoChecked(true)
-      // Inline auto-activate to avoid stale closure issues
       ;(async () => {
-        try {
-          console.log('[subscribe] auto-activate: checking session...')
-          const sessionRes = await fetch('/api/auth/session')
-          const session = await sessionRes.json()
-          const userEmail = session.user?.email || session.user?.verified_email
-          console.log('[subscribe] auto-activate: user email =', userEmail)
+        console.log('[subscribe] auto-activate: resolving email...')
+        const userEmail = await getSessionEmail()
+        console.log('[subscribe] auto-activate: email =', userEmail)
 
-          if (userEmail) {
-            setEmail(userEmail)
-            setStep('activate')
-            checkSubscription(userEmail)
-          } else {
-            setStep('activate')
-          }
-        } catch {
+        if (userEmail) {
+          setEmail(userEmail)
+          setStep('activate')
+          checkSubscription(userEmail)
+        } else {
           setStep('activate')
         }
       })()
@@ -125,21 +154,15 @@ function SubscribePage() {
   }, [searchParams, autoChecked, checkSubscription])
 
   const handleAutoActivate = async () => {
-    try {
-      console.log('[subscribe] handleAutoActivate: checking session...')
-      const sessionRes = await fetch('/api/auth/session')
-      const session = await sessionRes.json()
-      const userEmail = session.user?.email || session.user?.verified_email
-      console.log('[subscribe] handleAutoActivate: user email =', userEmail)
+    console.log('[subscribe] handleAutoActivate: resolving email...')
+    const userEmail = await getSessionEmail()
+    console.log('[subscribe] handleAutoActivate: email =', userEmail)
 
-      if (userEmail) {
-        setEmail(userEmail)
-        setStep('activate')
-        checkSubscription(userEmail)
-      } else {
-        goToActivate()
-      }
-    } catch {
+    if (userEmail) {
+      setEmail(userEmail)
+      setStep('activate')
+      checkSubscription(userEmail)
+    } else {
       goToActivate()
     }
   }
