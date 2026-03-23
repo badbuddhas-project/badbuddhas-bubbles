@@ -203,16 +203,16 @@ export default function ProfilePage() {
         }}>
           <div>
             <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, letterSpacing: '0.05em', textTransform: 'uppercase' as const }}>
-              {t('profile.subscription') || 'Подписка'}
+              {language === 'ru' ? 'Подписка' : 'Subscription'}
             </div>
             <div style={{ fontSize: 14, color: '#C034A5', fontWeight: 600 }}>
-              [ black ] {t('profile.active') || 'активна'}
+              [ black ] {language === 'ru' ? 'активна' : 'active'}
             </div>
           </div>
           {subscriptionExpiry && (
             <div style={{ textAlign: 'right' as const }}>
               <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4 }}>
-                {t('profile.validUntil') || 'действует до'}
+                {language === 'ru' ? 'действует до' : 'valid until'}
               </div>
               <div style={{ fontSize: 14, color: GREY, fontWeight: 500 }}>
                 {formatExpiryDate(subscriptionExpiry)}
