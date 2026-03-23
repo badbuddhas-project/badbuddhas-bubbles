@@ -13,6 +13,7 @@ import type { User } from '@/types/database'
 import { ONBOARDING_KEY } from '@/lib/constants'
 import { ymEvent, getPlatform } from '@/lib/analytics'
 import { TgSplashScreen } from '@/components/TgSplashScreen'
+import EmailGate from '@/components/EmailGate'
 
 export interface AuthContextType {
   user: User | null
@@ -35,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user,      setUser]      = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isTelegram, setIsTelegram] = useState(false)
+  const [showEmailGate, setShowEmailGate] = useState(false)
   const router   = useRouter()
   const pathname = usePathname()
 
@@ -101,6 +103,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname])
 
+  // Show EmailGate if authenticated user has no email
+  useEffect(() => {
+    if (user && !user.email && !user.verified_email) {
+      setShowEmailGate(true)
+    }
+  }, [user])
+
   const logout = async () => {
     if (isTelegram) {
       closeTelegramApp()
@@ -118,6 +127,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{ user, isLoading, isTelegram, logout, refetchUser }}>
       {isLoading && isTelegram ? <TgSplashScreen /> : children}
+      {showEmailGate && (
+        <EmailGate
+          onComplete={(email) => {
+            setShowEmailGate(false)
+            if (user) {
+              setUser({ ...user, email, verified_email: email })
+            }
+          }}
+        />
+      )}
     </AuthContext.Provider>
   )
 }

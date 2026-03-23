@@ -13,6 +13,7 @@ export interface Database {
           is_premium: boolean
           created_at: string
           email: string | null
+          verified_email: string | null
           email_confirmed_at: string | null
           auth_provider: string
           supabase_user_id: string | null
@@ -26,6 +27,7 @@ export interface Database {
           is_premium?: boolean
           created_at?: string
           email?: string | null
+          verified_email?: string | null
           email_confirmed_at?: string | null
           auth_provider?: string
           supabase_user_id?: string | null
@@ -39,6 +41,7 @@ export interface Database {
           is_premium?: boolean
           created_at?: string
           email?: string | null
+          verified_email?: string | null
           email_confirmed_at?: string | null
           auth_provider?: string
           supabase_user_id?: string | null
