@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   )
 
   try {
-    const { email } = await request.json()
+    const { email, telegram_id } = await request.json()
 
     if (!email) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 })
@@ -60,7 +60,13 @@ export async function POST(request: Request) {
 
       if (!isExpired) {
         console.log('[check-subscription] Cache hit (valid) for:', normalizedEmail)
-        // Do NOT update users here — link-email handles that with correct user_id
+        // Ensure the real user (by telegram_id) has is_premium=true
+        if (telegram_id) {
+          await supabase
+            .from('users')
+            .update({ is_premium: true, email: normalizedEmail, verified_email: normalizedEmail })
+            .eq('telegram_id', telegram_id)
+        }
         return NextResponse.json({ hasSubscription: true, cached: true })
       }
 
@@ -109,37 +115,84 @@ export async function POST(request: Request) {
     const hasPaidDeals = dealsData?.info?.items?.length > 0
     console.log('[check-subscription] Result:', hasPaidDeals)
 
-    // 6. If paid deals found — upsert subscription cache by email
-    //    (link-email will handle user record update with correct user_id)
-    if (hasPaidDeals) {
-      const dealId = String(dealsData.info.items[0]?.[0] ?? '')
+    // 6. Find the REAL user — prefer telegram_id (TG), fallback to email (web)
+    let realUser: { id: string; telegram_id: number | null; username: string | null } | null = null
 
-      // Try to find existing user by email for subscription cache
-      const { data: existingUser } = await supabase
+    if (telegram_id) {
+      const { data } = await supabase
+        .from('users')
+        .select('id, telegram_id, username')
+        .eq('telegram_id', telegram_id)
+        .single()
+      realUser = data
+      console.log('[check-subscription] Found user by telegram_id:', realUser?.id)
+    }
+
+    if (!realUser) {
+      const { data } = await supabase
         .from('users')
         .select('id, telegram_id, username')
         .or(`email.eq.${normalizedEmail},verified_email.eq.${normalizedEmail}`)
         .maybeSingle()
+      realUser = data
+      console.log('[check-subscription] Found user by email:', realUser?.id)
+    }
 
-      await supabase
-        .from('subscriptions')
-        .upsert(
-          {
-            email: normalizedEmail,
-            status: 'active',
-            gc_deal_id: dealId || null,
-            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_at: new Date().toISOString(),
-            ...(existingUser ? {
-              user_id: existingUser.id,
-              ...(existingUser.telegram_id ? { telegram_id: existingUser.telegram_id } : {}),
-              ...(existingUser.username ? { tg_username: existingUser.username } : {}),
-            } : {}),
-          },
-          { onConflict: 'email' }
-        )
+    // 7. If paid deals found — update real user and cache subscription
+    if (hasPaidDeals) {
+      const dealId = String(dealsData.info.items[0]?.[0] ?? '')
 
-      console.log('[check-subscription] Subscription cached for:', normalizedEmail)
+      if (realUser) {
+        // Update the real user's premium status and email
+        await supabase
+          .from('users')
+          .update({ is_premium: true, email: normalizedEmail, verified_email: normalizedEmail })
+          .eq('id', realUser.id)
+
+        // Upsert subscription for this user
+        await supabase
+          .from('subscriptions')
+          .upsert(
+            {
+              user_id: realUser.id,
+              email: normalizedEmail,
+              status: 'active',
+              gc_deal_id: dealId || null,
+              expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              updated_at: new Date().toISOString(),
+              ...(realUser.telegram_id ? { telegram_id: realUser.telegram_id } : {}),
+              ...(realUser.username ? { tg_username: realUser.username } : {}),
+            },
+            { onConflict: 'user_id' }
+          )
+
+        // Clean up any email-only duplicate user (no telegram_id)
+        if (realUser.telegram_id) {
+          await supabase
+            .from('users')
+            .delete()
+            .eq('email', normalizedEmail)
+            .is('telegram_id', null)
+            .neq('id', realUser.id)
+        }
+
+        console.log('[check-subscription] Updated real user:', realUser.id, 'is_premium=true')
+      } else {
+        // No user found at all — cache subscription by email only
+        await supabase
+          .from('subscriptions')
+          .upsert(
+            {
+              email: normalizedEmail,
+              status: 'active',
+              gc_deal_id: dealId || null,
+              expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'email' }
+          )
+        console.log('[check-subscription] No user found, cached subscription by email only')
+      }
     }
 
     // If cache was expired and GetCourse did NOT confirm — mark as expired
@@ -148,6 +201,13 @@ export async function POST(request: Request) {
         .from('subscriptions')
         .update({ status: 'expired', updated_at: new Date().toISOString() })
         .eq('email', normalizedEmail)
+
+      if (realUser) {
+        await supabase
+          .from('users')
+          .update({ is_premium: false })
+          .eq('id', realUser.id)
+      }
 
       console.log('[check-subscription] Subscription expired for:', normalizedEmail)
     }

@@ -91,10 +91,11 @@ function SubscribePage() {
     setError('')
 
     try {
+      const tgUserId = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id
       const res = await fetch('/api/getcourse/check-subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: checkEmail.trim() }),
+        body: JSON.stringify({ email: checkEmail.trim(), telegram_id: tgUserId || null }),
       })
       const data = await res.json()
 
