@@ -71,15 +71,38 @@ export default function ProfilePage() {
     const fetchSub = async () => {
       try {
         const supabase = getSupabaseClient()
-        const { data } = await (supabase.from('subscriptions' as any) as any)
-          .select('expires_at')
+        const email = user.email || user.verified_email
+
+        // Try by user_id first
+        let sub = null
+        const { data: byId, error: errId } = await (supabase.from('subscriptions' as any) as any)
+          .select('expires_at, status')
           .eq('user_id', user.id)
           .eq('status', 'active')
           .maybeSingle()
-        if (data?.expires_at) {
-          setSubscriptionExpiry(data.expires_at)
+        console.log('[Profile] sub by user_id:', byId, errId?.message)
+        if (byId?.expires_at) sub = byId
+
+        // Fallback: try by email
+        if (!sub && email) {
+          const { data: byEmail, error: errEmail } = await (supabase.from('subscriptions' as any) as any)
+            .select('expires_at, status')
+            .eq('email', email)
+            .eq('status', 'active')
+            .maybeSingle()
+          console.log('[Profile] sub by email:', byEmail, errEmail?.message)
+          if (byEmail?.expires_at) sub = byEmail
         }
-      } catch { /* subscriptions table may not be typed */ }
+
+        if (sub?.expires_at) {
+          console.log('[Profile] Setting subscription expiry:', sub.expires_at)
+          setSubscriptionExpiry(sub.expires_at)
+        } else {
+          console.log('[Profile] No subscription expiry found for user:', user.id, 'email:', email)
+        }
+      } catch (err) {
+        console.error('[Profile] fetchSub error:', err)
+      }
     }
     fetchSub()
   }, [user])
