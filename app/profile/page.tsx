@@ -27,6 +27,7 @@ export default function ProfilePage() {
 
   const [isConnectEmailOpen, setIsConnectEmailOpen] = useState(false)
   const [lastPractice, setLastPractice] = useState<{ name: string; date: string } | null>(null)
+  const [subscriptionExpiry, setSubscriptionExpiry] = useState<string | null>(null)
 
   // Random quote index, stable per mount
   const [quoteIdx] = useState(() => QUOTE_KEYS[Math.floor(Math.random() * QUOTE_KEYS.length)])
@@ -63,6 +64,30 @@ export default function ProfilePage() {
     }
     fetchLastPractice()
   }, [user])
+
+  // Fetch subscription expiry for premium users
+  useEffect(() => {
+    if (!user?.is_premium) return
+    const fetchSub = async () => {
+      const supabase = getSupabaseClient()
+      const { data } = await supabase
+        .from('subscriptions')
+        .select('expires_at')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle()
+      if (data?.expires_at) {
+        setSubscriptionExpiry(data.expires_at)
+      }
+    }
+    fetchSub()
+  }, [user])
+
+  const formatExpiryDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString(language === 'ru' ? 'ru-RU' : 'en-US', {
+      day: 'numeric', month: 'long', year: 'numeric',
+    })
+  }
 
   const formatRelativeDate = (dateStr: string) => {
     const date = new Date(dateStr)
@@ -162,6 +187,39 @@ export default function ProfilePage() {
       <div style={{ textAlign: 'center', marginBottom: 14 }}>
         <span style={{ fontSize: 13, color: GREY }}>{isPremium ? t('profile.premiumAccount').toLowerCase() : t('profile.freeAccount').toLowerCase()}</span>
       </div>
+
+      {/* Subscription card — premium users */}
+      {isPremium && (
+        <div style={{
+          background: DARK_CARD,
+          border: `1px solid ${CARD_BORDER}`,
+          borderRadius: 16,
+          padding: '14px 16px',
+          margin: '0 4px 14px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}>
+          <div>
+            <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, letterSpacing: '0.05em', textTransform: 'uppercase' as const }}>
+              {t('profile.subscription') || 'Подписка'}
+            </div>
+            <div style={{ fontSize: 14, color: '#C034A5', fontWeight: 600 }}>
+              [ black ] {t('profile.active') || 'активна'}
+            </div>
+          </div>
+          {subscriptionExpiry && (
+            <div style={{ textAlign: 'right' as const }}>
+              <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4 }}>
+                {t('profile.validUntil') || 'действует до'}
+              </div>
+              <div style={{ fontSize: 14, color: GREY, fontWeight: 500 }}>
+                {formatExpiryDate(subscriptionExpiry)}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Motivational quote */}
       <div style={{ textAlign: 'center', marginBottom: 18, padding: '0 12px' }}>
