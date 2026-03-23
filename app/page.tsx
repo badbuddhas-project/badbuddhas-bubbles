@@ -46,11 +46,11 @@ export default function Home() {
 
   useEffect(() => {
     const tgStartParam = (window as any).Telegram?.WebApp?.initDataUnsafe?.start_param
-    if (tgStartParam === 'activate' && !isPremium && !sessionStorage.getItem('activate_handled')) {
+    if (tgStartParam === 'activate' && !user?.is_premium && !sessionStorage.getItem('activate_handled')) {
       sessionStorage.setItem('activate_handled', '1')
       router.push('/subscribe?step=activate')
     }
-  }, [router, isPremium])
+  }, [router, user?.is_premium])
 
   useEffect(() => {
     if (!isPracticesLoading && practices.length > 0) {
