@@ -2,6 +2,10 @@
  * POST /api/getcourse/check-subscription — checks if a user has an active
  * subscription in GetCourse via the Export API (2-step: start export → fetch result).
  * Caches result in Supabase subscriptions table.
+ *
+ * IMPORTANT: This route does NOT update users.is_premium directly.
+ * That responsibility belongs to /api/auth/link-email which is called
+ * by the client after a successful check, using the correct user_id.
  */
 
 import { NextResponse } from 'next/server'
@@ -56,10 +60,7 @@ export async function POST(request: Request) {
 
       if (!isExpired) {
         console.log('[check-subscription] Cache hit (valid) for:', normalizedEmail)
-        await supabase
-          .from('users')
-          .update({ is_premium: true })
-          .eq('email', normalizedEmail)
+        // Do NOT update users here — link-email handles that with correct user_id
         return NextResponse.json({ hasSubscription: true, cached: true })
       }
 
@@ -108,69 +109,47 @@ export async function POST(request: Request) {
     const hasPaidDeals = dealsData?.info?.items?.length > 0
     console.log('[check-subscription] Result:', hasPaidDeals)
 
-    // 6. If paid deals found — try to cache in Supabase subscriptions
+    // 6. If paid deals found — upsert subscription cache by email
+    //    (link-email will handle user record update with correct user_id)
     if (hasPaidDeals) {
-      const { data: user } = await supabase
+      const dealId = String(dealsData.info.items[0]?.[0] ?? '')
+
+      // Try to find existing user by email for subscription cache
+      const { data: existingUser } = await supabase
         .from('users')
         .select('id, telegram_id, username')
         .or(`email.eq.${normalizedEmail},verified_email.eq.${normalizedEmail}`)
         .maybeSingle()
 
-      if (user) {
-        const dealId = String(dealsData.info.items[0]?.[0] ?? '')
-        const { error: subError } = await supabase
-          .from('subscriptions')
-          .upsert(
-            {
-              user_id: user.id,
-              email: normalizedEmail,
-              status: 'active',
-              gc_deal_id: dealId || null,
-              expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-              updated_at: new Date().toISOString(),
-              ...(user.telegram_id ? { telegram_id: user.telegram_id } : {}),
-              ...(user.username ? { tg_username: user.username } : {}),
-            },
-            { onConflict: 'user_id' }
-          )
+      await supabase
+        .from('subscriptions')
+        .upsert(
+          {
+            email: normalizedEmail,
+            status: 'active',
+            gc_deal_id: dealId || null,
+            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            updated_at: new Date().toISOString(),
+            ...(existingUser ? {
+              user_id: existingUser.id,
+              ...(existingUser.telegram_id ? { telegram_id: existingUser.telegram_id } : {}),
+              ...(existingUser.username ? { tg_username: existingUser.username } : {}),
+            } : {}),
+          },
+          { onConflict: 'email' }
+        )
 
-        if (subError) {
-          console.error('[check-subscription] Supabase upsert error:', subError)
-        } else {
-          console.log('[check-subscription] Subscription saved for user:', user.id)
-          await supabase
-            .from('users')
-            .update({ is_premium: true })
-            .eq('email', normalizedEmail)
-        }
-      } else {
-        // User not in users table (e.g. Telegram user without email link)
-        // Still return hasSubscription: true — just can't cache it yet
-        console.log('[check-subscription] User not in users table, returning true without caching')
-      }
+      console.log('[check-subscription] Subscription cached for:', normalizedEmail)
     }
 
     // If cache was expired and GetCourse did NOT confirm — mark as expired
     if (!hasPaidDeals && cached) {
-      const { data: user } = await supabase
-        .from('users')
-        .select('id')
-        .or(`email.eq.${normalizedEmail},verified_email.eq.${normalizedEmail}`)
-        .maybeSingle()
+      await supabase
+        .from('subscriptions')
+        .update({ status: 'expired', updated_at: new Date().toISOString() })
+        .eq('email', normalizedEmail)
 
-      if (user) {
-        await supabase
-          .from('subscriptions')
-          .update({ status: 'expired', updated_at: new Date().toISOString() })
-          .eq('user_id', user.id)
-
-        await supabase
-          .from('users')
-          .update({ is_premium: false })
-          .eq('email', normalizedEmail)
-
-        console.log('[check-subscription] Subscription expired for:', normalizedEmail)
-      }
+      console.log('[check-subscription] Subscription expired for:', normalizedEmail)
     }
 
     return NextResponse.json({ hasSubscription: hasPaidDeals })
