@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState, useRef, useEffect, useCallback } from 'react'
+import { Suspense, useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
 
@@ -31,18 +31,25 @@ function SubscribePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user } = useUser()
-  const formRef = useRef<HTMLDivElement>(null)
 
   const [step, setStep] = useState<Step>('landing')
   const [email, setEmail] = useState('')
   const [isChecking, setIsChecking] = useState(false)
   const [error, setError] = useState('')
   const [autoChecked, setAutoChecked] = useState(false)
+
+  // Payment form states
+  const [paymentName, setPaymentName] = useState('')
+  const [paymentEmail, setPaymentEmail] = useState('')
+  const [paymentLoading, setPaymentLoading] = useState(false)
+  const [paymentError, setPaymentError] = useState('')
+  const [paymentSent, setPaymentSent] = useState(false)
+  const [consentPersonal, setConsentPersonal] = useState(false)
+  const [consentMarketing, setConsentMarketing] = useState(false)
+
   const goToPayment = () => {
     setStep('payment')
-    setTimeout(() => {
-      formRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, 100)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const goToActivate = () => {
@@ -112,28 +119,62 @@ function SubscribePage() {
     }
   }, [searchParams, autoChecked, checkSubscription])
 
-  // Fill hidden form fields for GetCourse
-  useEffect(() => {
-    if (step !== 'payment') return
-    const loc = document.querySelector('input[name="__gc__internal__form__helper"]') as HTMLInputElement
-    const ref = document.querySelector('input[name="__gc__internal__form__helper_ref"]') as HTMLInputElement
-    if (loc) loc.value = window.location.href
-    if (ref) ref.value = document.referrer
-  }, [step])
+  const handlePaymentSubmit = useCallback(async () => {
+    if (!paymentName || !paymentEmail || !consentPersonal) return
+    setPaymentLoading(true)
+    setPaymentError('')
 
-  // Auto-activate from localStorage (email saved before payment redirect)
-  useEffect(() => {
-    if (step !== 'activate') return
-    const savedEmail = localStorage.getItem('gc_payment_email')
-    if (savedEmail && !email) {
-      setEmail(savedEmail)
-      localStorage.removeItem('gc_payment_email')
-      checkSubscription(savedEmail)
+    try {
+      const formData = new URLSearchParams()
+      formData.append('formParams[full_name]', paymentName)
+      formData.append('formParams[email]', paymentEmail)
+      formData.append('formParams[setted_offer_id]', '')
+      formData.append('formParams[willCreatePaidDeal]', '')
+      formData.append('formParams[need_offer]', '')
+      formData.append('formParams[offer_id][]', '')
+      formData.append('formParams[userCustomFields][10784871]', consentPersonal ? 'Да' : '')
+      formData.append('formParams[userCustomFields][10784870]', consentMarketing ? 'Да' : '')
+      formData.append('formParams[dealCustomFields][1299623]', '')
+      formData.append('formParams[dealCustomFields][1299624]', '')
+      formData.append('formParams[dealCustomFields][1299625]', '')
+      formData.append('formParams[dealCustomFields][1299626]', '')
+      formData.append('formParams[dealCustomFields][1299627]', '')
+      formData.append('isHtmlWidget', '1')
+      formData.append('requestTime', String(Math.floor(Date.now() / 1000)))
+      formData.append('requestSimpleSign', '')
+      formData.append('__gc__internal__form__helper', window.location.href)
+      formData.append('__gc__internal__form__helper_ref', document.referrer || '')
+
+      const response = await fetch('/api/getcourse/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData.toString(),
+      })
+      const data = await response.json()
+      console.log('[subscribe] GetCourse response:', data)
+
+      const link = data.payment_link || data.redirect_link
+      if (data.success && link) {
+        const tg = (window as any).Telegram?.WebApp
+        if (tg?.openLink) {
+          tg.openLink(link)
+        } else {
+          window.open(link, '_blank')
+        }
+        setPaymentSent(true)
+      } else {
+        setPaymentError(data.error || data.message || 'Ошибка при создании заказа')
+      }
+    } catch (err) {
+      console.error('[subscribe] Payment form error:', err)
+      setPaymentError('Не удалось отправить форму. Попробуйте ещё раз.')
+    } finally {
+      setPaymentLoading(false)
     }
-  }, [step, email, checkSubscription])
+  }, [paymentName, paymentEmail, consentPersonal, consentMarketing])
 
   const handlePostPaymentActivate = () => {
-    const emailToUse = user?.email
+    const emailToUse = paymentEmail || user?.email
     if (emailToUse) {
       setEmail(emailToUse)
       setStep('activate')
@@ -210,74 +251,94 @@ function SubscribePage() {
 
       {/* Step 2: Payment form */}
       {step === 'payment' && (
-        <div className="max-w-md mx-auto" ref={formRef}>
-          <form
-            action="https://online.badbuddhas.ru/pl/lite/block-public/process-html?id=2218368276"
-            method="post"
-            target="_blank"
-            onSubmit={() => {
-              const emailInput = document.querySelector('input[name="formParams[email]"]') as HTMLInputElement
-              if (emailInput?.value) {
-                localStorage.setItem('gc_payment_email', emailInput.value)
-              }
-            }}
-            className="rounded-2xl p-5"
-            style={{ backgroundColor: DARK_CARD, border: `1px solid ${CARD_BORDER}` }}
-          >
-            <input type="hidden" name="formParams[setted_offer_id]" />
-            <input type="hidden" name="formParams[willCreatePaidDeal]" value="" />
-            <input type="hidden" name="__gc__internal__form__helper" value="" />
-            <input type="hidden" name="__gc__internal__form__helper_ref" value="" />
-            <input type="hidden" name="formParams[need_offer]" value="" />
-            <input type="hidden" name="formParams[offer_id][]" value="" />
-            <input type="hidden" name="formParams[userCustomFields][10784871]" />
-            <input type="hidden" name="formParams[userCustomFields][10784870]" />
-            <input type="hidden" name="formParams[dealCustomFields][1299623]" />
-            <input type="hidden" name="formParams[dealCustomFields][1299624]" />
-            <input type="hidden" name="formParams[dealCustomFields][1299625]" />
-            <input type="hidden" name="formParams[dealCustomFields][1299626]" />
-            <input type="hidden" name="formParams[dealCustomFields][1299627]" />
-            <input type="hidden" name="isHtmlWidget" value="1" />
-            <input type="hidden" name="requestTime" value="" />
-            <input type="hidden" name="requestSimpleSign" value="" />
-
-            <input
-              type="text"
-              maxLength={60}
-              placeholder="Введите ваше имя"
-              name="formParams[full_name]"
-              className="w-full px-4 py-3 rounded-xl text-white text-sm outline-none mb-3 placeholder-gray-500"
-              style={{ backgroundColor: '#111', border: `1px solid ${CARD_BORDER}` }}
-            />
-            <input
-              type="email"
-              maxLength={60}
-              placeholder="Введите ваш эл. адрес"
-              name="formParams[email]"
-              required
-              className="w-full px-4 py-3 rounded-xl text-white text-sm outline-none mb-4 placeholder-gray-500"
-              style={{ backgroundColor: '#111', border: `1px solid ${CARD_BORDER}` }}
-            />
-
-            <button
-              type="submit"
-              className="w-full py-4 rounded-2xl font-semibold text-lg text-white transition-opacity hover:opacity-90"
-              style={{ backgroundColor: PINK }}
+        <div className="max-w-md mx-auto pt-4">
+          {!paymentSent ? (
+            <div
+              className="rounded-2xl p-5 space-y-3"
+              style={{ backgroundColor: DARK_CARD, border: `1px solid ${CARD_BORDER}` }}
             >
-              Перейти к оплате
-            </button>
-          </form>
+              <input
+                type="text"
+                maxLength={60}
+                placeholder="Введите ваше имя"
+                value={paymentName}
+                onChange={(e) => setPaymentName(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl text-white text-sm outline-none placeholder-gray-500"
+                style={{ backgroundColor: '#111', border: `1px solid ${CARD_BORDER}` }}
+              />
+              <input
+                type="email"
+                maxLength={60}
+                placeholder="Введите ваш эл. адрес"
+                value={paymentEmail}
+                onChange={(e) => setPaymentEmail(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl text-white text-sm outline-none placeholder-gray-500"
+                style={{ backgroundColor: '#111', border: `1px solid ${CARD_BORDER}` }}
+              />
+
+              <label className="flex items-start gap-3 text-xs text-gray-400 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={consentPersonal}
+                  onChange={(e) => setConsentPersonal(e.target.checked)}
+                  className="mt-0.5 accent-[#C034A5]"
+                />
+                <span>
+                  Даю согласие на обработку персональных данных в соответствии с{' '}
+                  <a href="https://online.badbuddhas.ru/policy" target="_blank" rel="noreferrer" className="text-[#C034A5] underline">
+                    Политикой конфиденциальности
+                  </a>{' '}
+                  и согласен с условиями{' '}
+                  <a href="https://online.badbuddhas.ru/oferta" target="_blank" rel="noreferrer" className="text-[#C034A5] underline">
+                    Оферты
+                  </a>
+                </span>
+              </label>
+
+              <label className="flex items-start gap-3 text-xs text-gray-400 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={consentMarketing}
+                  onChange={(e) => setConsentMarketing(e.target.checked)}
+                  className="mt-0.5 accent-[#C034A5]"
+                />
+                <span>Даю согласие на получение информационных и маркетинговых рассылок</span>
+              </label>
+
+              {paymentError && <p className="text-red-500 text-sm text-center">{paymentError}</p>}
+
+              <button
+                onClick={handlePaymentSubmit}
+                disabled={paymentLoading || !paymentName || !paymentEmail || !consentPersonal}
+                className="w-full py-4 rounded-2xl font-semibold text-lg text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                style={{ backgroundColor: PINK }}
+              >
+                {paymentLoading ? 'Создаём заказ...' : 'Перейти к оплате'}
+              </button>
+            </div>
+          ) : (
+            <div className="text-center space-y-4 pt-8">
+              <p className="text-white text-lg font-semibold">Оплатите заказ в открывшемся окне</p>
+              <p className="text-gray-400 text-sm">После оплаты нажмите кнопку ниже</p>
+              <button
+                onClick={handlePostPaymentActivate}
+                className="w-full py-4 rounded-2xl font-semibold text-lg text-white transition-opacity hover:opacity-90"
+                style={{ backgroundColor: GREEN }}
+              >
+                Я оплатил — Активировать подписку
+              </button>
+              <button
+                onClick={() => setPaymentSent(false)}
+                className="text-gray-400 text-sm underline bg-transparent border-none cursor-pointer"
+              >
+                Вернуться к форме
+              </button>
+            </div>
+          )}
 
           <p className="text-xs text-white/40 mt-4 text-center">
             оплата через GetCourse · отмена в любой момент
           </p>
-          <button
-            onClick={handlePostPaymentActivate}
-            className="w-full mt-4 bg-transparent border-none cursor-pointer text-center"
-            style={{ color: GREEN, fontSize: 13 }}
-          >
-            Оплата прошла? Активировать подписку
-          </button>
         </div>
       )}
 
