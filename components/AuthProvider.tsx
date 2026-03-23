@@ -83,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // ── 2. Browser — check JWT session ────────────────────────────────────────
+    console.log('[AuthProvider] Not in Telegram, checking JWT session. pathname:', pathname)
     setIsTelegram(false)
 
     try {
@@ -108,13 +109,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname])
 
-  // Show EmailGate if authenticated user has no email (skip on /subscribe — it has its own flow)
+  // EmailGate: only show on /subscribe when user has no email
+  // On other pages — let the user browse freely without forcing email collection
   useEffect(() => {
-    if (user && !user.email && !user.verified_email && pathname !== '/subscribe') {
-      setShowEmailGate(true)
-    } else {
-      setShowEmailGate(false)
-    }
+    setShowEmailGate(false)
   }, [user, pathname])
 
   const logout = async () => {
