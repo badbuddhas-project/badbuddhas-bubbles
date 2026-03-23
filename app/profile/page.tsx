@@ -69,16 +69,17 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!user?.is_premium) return
     const fetchSub = async () => {
-      const supabase = getSupabaseClient()
-      const { data } = await supabase
-        .from('subscriptions')
-        .select('expires_at')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .maybeSingle()
-      if (data?.expires_at) {
-        setSubscriptionExpiry(data.expires_at)
-      }
+      try {
+        const supabase = getSupabaseClient()
+        const { data } = await (supabase.from('subscriptions' as any) as any)
+          .select('expires_at')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .maybeSingle()
+        if (data?.expires_at) {
+          setSubscriptionExpiry(data.expires_at)
+        }
+      } catch { /* subscriptions table may not be typed */ }
     }
     fetchSub()
   }, [user])
