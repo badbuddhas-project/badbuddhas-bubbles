@@ -26,6 +26,7 @@ export interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | null>(null)
 
 const PUBLIC_ROUTES = ['/login', '/register', '/onboarding', '/auth/', '/forgot-password', '/reset-password', '/subscribe']
+const EMAIL_GATE_SKIP_KEY = 'email_gate_shown'
 
 /**
  * @description Root auth provider. Place once at the top of the component tree (app/layout.tsx).
@@ -109,11 +110,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname])
 
-  // EmailGate: only show on /subscribe when user has no email
-  // On other pages — let the user browse freely without forcing email collection
+  // Show EmailGate once per session for TG users without email
+  // Skipped on public routes; sessionStorage prevents re-showing after skip/complete
   useEffect(() => {
-    setShowEmailGate(false)
-  }, [user, pathname])
+    const isPublic = PUBLIC_ROUTES.some((r) => pathname?.startsWith(r))
+    const alreadyHandled = sessionStorage.getItem(EMAIL_GATE_SKIP_KEY)
+    const needsEmail = user && !user.email && !user.verified_email
+
+    if (isTelegram && needsEmail && !isPublic && !alreadyHandled) {
+      setShowEmailGate(true)
+    } else {
+      setShowEmailGate(false)
+    }
+  }, [user, pathname, isTelegram])
 
   const logout = async () => {
     if (isTelegram) {
@@ -135,10 +144,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {showEmailGate && (
         <EmailGate
           onComplete={(email) => {
+            sessionStorage.setItem(EMAIL_GATE_SKIP_KEY, '1')
             setShowEmailGate(false)
             if (user) {
               setUser({ ...user, email, verified_email: email })
             }
+          }}
+          onSkip={() => {
+            sessionStorage.setItem(EMAIL_GATE_SKIP_KEY, '1')
+            setShowEmailGate(false)
           }}
         />
       )}
