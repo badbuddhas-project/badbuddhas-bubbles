@@ -34,18 +34,8 @@ export async function POST(request: Request) {
 
     let userId: string | null = null
 
-    // Auth method 1: JWT cookie (web)
-    const token = cookies().get('session')?.value
-    if (token) {
-      try {
-        const decoded = jwt.verify(token, JWT_SECRET) as { user_id: string }
-        userId = decoded.user_id
-        console.log('[link-email] Auth via JWT cookie, userId:', userId)
-      } catch { /* invalid token, try telegram */ }
-    }
-
-    // Auth method 2: telegram_id from body (Telegram Mini App)
-    if (!userId && telegram_id) {
+    // Auth method 1 (priority): telegram_id from body — lookup real user in our users table
+    if (telegram_id) {
       console.log('[link-email] Looking up user by telegram_id:', telegram_id)
       const { data: tgUser, error: lookupErr } = await supabase
         .from('users')
@@ -58,6 +48,39 @@ export async function POST(request: Request) {
       }
       userId = tgUser?.id ?? null
       console.log('[link-email] TG user lookup result:', userId)
+    }
+
+    // Auth method 2 (fallback): JWT cookie — resolve to users table id
+    if (!userId) {
+      const token = cookies().get('session')?.value
+      if (token) {
+        try {
+          const decoded = jwt.verify(token, JWT_SECRET) as { user_id: string }
+          const jwtUserId = decoded.user_id
+          console.log('[link-email] JWT user_id from cookie:', jwtUserId)
+
+          // JWT user_id may be a Supabase Auth UUID — look up our users table
+          const { data: jwtUser } = await supabase
+            .from('users')
+            .select('id')
+            .eq('supabase_user_id', jwtUserId)
+            .maybeSingle()
+
+          if (jwtUser) {
+            userId = jwtUser.id
+            console.log('[link-email] Found user by supabase_user_id:', userId)
+          } else {
+            // Try direct match (in case JWT stores our users.id)
+            const { data: directUser } = await supabase
+              .from('users')
+              .select('id')
+              .eq('id', jwtUserId)
+              .maybeSingle()
+            userId = directUser?.id ?? null
+            console.log('[link-email] Direct id lookup result:', userId)
+          }
+        } catch { /* invalid token */ }
+      }
     }
 
     if (!userId) {
