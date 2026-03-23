@@ -100,16 +100,37 @@ function SubscribePage() {
     const tgStartParam = (window as any).Telegram?.WebApp?.initDataUnsafe?.start_param
     if (stepParam === 'activate' || tgStartParam === 'activate') {
       setAutoChecked(true)
-      handleAutoActivate()
+      // Inline auto-activate to avoid stale closure issues
+      ;(async () => {
+        try {
+          console.log('[subscribe] auto-activate: checking session...')
+          const sessionRes = await fetch('/api/auth/session')
+          const session = await sessionRes.json()
+          const userEmail = session.user?.email || session.user?.verified_email
+          console.log('[subscribe] auto-activate: user email =', userEmail)
+
+          if (userEmail) {
+            setEmail(userEmail)
+            setStep('activate')
+            checkSubscription(userEmail)
+          } else {
+            setStep('activate')
+          }
+        } catch {
+          setStep('activate')
+        }
+      })()
       return
     }
   }, [searchParams, autoChecked, checkSubscription])
 
   const handleAutoActivate = async () => {
     try {
+      console.log('[subscribe] handleAutoActivate: checking session...')
       const sessionRes = await fetch('/api/auth/session')
       const session = await sessionRes.json()
       const userEmail = session.user?.email || session.user?.verified_email
+      console.log('[subscribe] handleAutoActivate: user email =', userEmail)
 
       if (userEmail) {
         setEmail(userEmail)
