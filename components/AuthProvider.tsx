@@ -45,8 +45,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (isTelegramWebApp()) {
       setIsTelegram(true)
       expandTelegramApp()
+      console.log('[AuthProvider] Detected Telegram Mini App')
 
       const telegramUser = getTelegramUser()
+      console.log('[AuthProvider] TG user:', telegramUser?.id, telegramUser?.username)
       if (telegramUser) {
         try {
           const res = await fetch('/api/auth/telegram-sync', {
@@ -61,12 +63,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (res.ok) {
             const data = await res.json()
+            console.log('[AuthProvider] TG sync OK, user:', data.user?.id, 'email:', data.user?.email, 'verified:', data.user?.verified_email)
             setUser(data.user)
             ymEvent('app_opened', { platform: getPlatform(), method: 'telegram' })
 
             if (data.isNewUser && !localStorage.getItem(ONBOARDING_KEY)) {
               router.push('/onboarding')
             }
+          } else {
+            console.error('[AuthProvider] TG sync failed:', res.status)
           }
         } catch (e) {
           console.error('[AuthProvider] Telegram sync error:', e)
@@ -103,12 +108,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname])
 
-  // Show EmailGate if authenticated user has no email
+  // Show EmailGate if authenticated user has no email (skip on /subscribe — it has its own flow)
   useEffect(() => {
-    if (user && !user.email && !user.verified_email) {
+    if (user && !user.email && !user.verified_email && pathname !== '/subscribe') {
       setShowEmailGate(true)
+    } else {
+      setShowEmailGate(false)
     }
-  }, [user])
+  }, [user, pathname])
 
   const logout = async () => {
     if (isTelegram) {
