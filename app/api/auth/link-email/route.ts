@@ -114,6 +114,20 @@ export async function POST(request: Request) {
 
     console.log('[link-email] Update result:', JSON.stringify(updateData))
 
+    // Получить данные юзера для ГК
+    const { data: gcUserData } = await supabase
+      .from('users')
+      .select('first_name, last_name')
+      .eq('id', userId)
+      .single()
+
+    // Синхронизировать в ГК (non-blocking)
+    syncUserToGetCourse(
+      normalizedEmail,
+      gcUserData?.first_name || '',
+      gcUserData?.last_name || ''
+    ).catch(console.error)
+
     // Create/update subscription record only when activating premium
     if (activate_premium) {
       const telegramId = updateData?.telegram_id ?? null
@@ -161,5 +175,35 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error('[link-email] Unhandled error:', err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
+  }
+}
+
+async function syncUserToGetCourse(email: string, firstName: string, lastName: string) {
+  const apiKey = process.env.GETCOURSE_API_KEY
+  const baseUrl = 'https://online.badbuddhas.ru'
+
+  try {
+    const params = new URLSearchParams({
+      'user[email]': email,
+      'user[first_name]': firstName || '',
+      'user[last_name]': lastName || '',
+      'system_fields[source]': 'bubbles_app',
+    })
+
+    const res = await fetch(
+      `${baseUrl}/pl/api/account/users?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString(),
+      }
+    )
+
+    const data = await res.json()
+    console.log('[link-email] GC sync result:', data?.success, data?.error)
+    return data
+  } catch (e) {
+    // Не блокируем основной флоу если ГК недоступен
+    console.error('[link-email] GC sync failed (non-critical):', e)
   }
 }
