@@ -179,31 +179,48 @@ export async function POST(request: Request) {
 }
 
 async function syncUserToGetCourse(email: string, firstName: string, lastName: string) {
-  const apiKey = process.env.GETCOURSE_API_KEY
-  const baseUrl = 'https://online.badbuddhas.ru'
-
   try {
-    const params = new URLSearchParams({
-      'user[email]': email,
-      'user[first_name]': firstName || '',
-      'user[last_name]': lastName || '',
-      'system_fields[source]': 'bubbles_app',
+    const apiKey = process.env.GETCOURSE_WRITE_API_KEY
+    if (!apiKey) {
+      console.warn('[GC sync] No GETCOURSE_WRITE_API_KEY found')
+      return
+    }
+
+    // 1. Собрать объект параметров
+    const paramsObj = {
+      user: {
+        email,
+        first_name: firstName || '',
+        last_name: lastName || '',
+      },
+      system: {
+        refresh_if_exists: 1,
+      },
+    }
+
+    // 2. JSON → base64
+    const paramsBase64 = Buffer.from(JSON.stringify(paramsObj)).toString('base64')
+
+    // 3. POST как form-data (application/x-www-form-urlencoded)
+    const body = new URLSearchParams({
+      action: 'add',
+      key: apiKey,
+      params: paramsBase64,
     })
 
-    const res = await fetch(
-      `${baseUrl}/pl/api/account/users?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params.toString(),
-      }
-    )
+    const res = await fetch('https://online.badbuddhas.ru/pl/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+    })
 
     const data = await res.json()
-    console.log('[link-email] GC sync result:', data?.success, data?.error)
-    return data
+    console.log('[GC sync] response:', JSON.stringify(data))
+
+    if (!data.success) {
+      console.error('[GC sync] error:', data.error)
+    }
   } catch (e) {
-    // Не блокируем основной флоу если ГК недоступен
-    console.error('[link-email] GC sync failed (non-critical):', e)
+    console.error('[GC sync] failed (non-critical):', e)
   }
 }
