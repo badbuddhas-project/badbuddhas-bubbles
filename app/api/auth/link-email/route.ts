@@ -196,6 +196,7 @@ async function syncUserToGetCourse(email: string, firstName: string, lastName: s
         email,
         first_name: firstName || '',
         last_name: lastName || '',
+        group_name: ['Приложение Черный баблс | бесплатно'],
       },
       system: {
         refresh_if_exists: 1,
