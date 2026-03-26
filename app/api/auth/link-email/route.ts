@@ -114,20 +114,6 @@ export async function POST(request: Request) {
 
     console.log('[link-email] Update result:', JSON.stringify(updateData))
 
-    // Получить данные юзера для ГК
-    const { data: gcUserData } = await supabase
-      .from('users')
-      .select('first_name, last_name')
-      .eq('id', userId)
-      .single()
-
-    // Синхронизировать в ГК (non-blocking)
-    syncUserToGetCourse(
-      normalizedEmail,
-      gcUserData?.first_name || '',
-      gcUserData?.last_name || ''
-    ).catch(console.error)
-
     // Create/update subscription record only when activating premium
     if (activate_premium) {
       const telegramId = updateData?.telegram_id ?? null
@@ -170,6 +156,22 @@ export async function POST(request: Request) {
       }
     }
 
+    // Получить данные юзера для ГК
+    const { data: gcUserData } = await supabase
+      .from('users')
+      .select('first_name, last_name')
+      .eq('id', userId)
+      .single()
+
+    // Синхронизировать в ГК (await — иначе Vercel убивает процесс при return)
+    console.log('[link-email] Calling GC sync for:', normalizedEmail)
+    const gcResult = await syncUserToGetCourse(
+      normalizedEmail,
+      gcUserData?.first_name || '',
+      gcUserData?.last_name || ''
+    )
+    console.log('[link-email] GC sync result:', JSON.stringify(gcResult))
+
     console.log('[link-email] Success for user', userId, 'email:', normalizedEmail, 'premium:', !!activate_premium)
     return NextResponse.json({ success: true })
   } catch (err) {
@@ -180,7 +182,9 @@ export async function POST(request: Request) {
 
 async function syncUserToGetCourse(email: string, firstName: string, lastName: string) {
   try {
+    console.log('[GC sync] Starting for email:', email)
     const apiKey = process.env.GETCOURSE_WRITE_API_KEY
+    console.log('[GC sync] API key exists:', !!apiKey)
     if (!apiKey) {
       console.warn('[GC sync] No GETCOURSE_WRITE_API_KEY found')
       return
