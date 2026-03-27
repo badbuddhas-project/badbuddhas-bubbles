@@ -17,9 +17,9 @@ import type { Practice, PracticeCategory } from '@/types/database'
 import { ymEvent, getPlatform } from '@/lib/analytics'
 
 const CAT_COLORS: Record<string, string> = {
-  relax: '#8b5cf6',
-  balance: '#3b82f6',
-  energize: '#ec4899',
+  slow:   '#8b5cf6',
+  ground: '#3b82f6',
+  rise:   '#ec4899',
 }
 
 type CategoryFilter = 'all' | PracticeCategory

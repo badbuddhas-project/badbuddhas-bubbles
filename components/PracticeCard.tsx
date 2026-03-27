@@ -1,6 +1,7 @@
 'use client'
 
 import type { Practice } from '@/types/database'
+import { EnergyBlob } from '@/components/EnergyBlob'
 
 interface PracticeCardProps {
   practice: Practice
@@ -37,16 +38,10 @@ export function PracticeCard({
     >
       {/* Preview with Play button */}
       <div style={{ position: 'relative', flexShrink: 0 }}>
-        <div
-          style={{
-            width: 80,
-            height: 80,
-            borderRadius: 10,
-            overflow: 'hidden',
-            ...(practice.preview_image_url
-              ? { backgroundImage: `url(${practice.preview_image_url}?v=1)`, backgroundSize: '180%', backgroundPosition: 'center' }
-              : { background: '#0A0A0A' }),
-          }}
+        <EnergyBlob
+          type={practice.category}
+          size={80}
+          radius={10}
         />
         <button
           onClick={handlePlayClick}
