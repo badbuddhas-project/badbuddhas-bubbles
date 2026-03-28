@@ -1,6 +1,7 @@
 'use client'
 
 import type { Practice } from '@/types/database'
+import BreathVisual from './BreathVisual'
 
 interface PracticeCardProps {
   practice: Practice
@@ -39,17 +40,7 @@ export function PracticeCard({
     >
       {/* Preview with Play/Lock button */}
       <div style={{ position: 'relative', flexShrink: 0 }}>
-        <div
-          style={{
-            width: 80,
-            height: 80,
-            borderRadius: 10,
-            overflow: 'hidden',
-            ...(practice.preview_image_url
-              ? { backgroundImage: `url(${practice.preview_image_url}?v=1)`, backgroundSize: '180%', backgroundPosition: 'center' }
-              : { background: '#0A0A0A' }),
-          }}
-        />
+        <BreathVisual category={practice.category} size={80} borderRadius={10} animate={false} />
         <button
           onClick={handlePlayClick}
           style={{
