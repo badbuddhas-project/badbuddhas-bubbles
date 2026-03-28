@@ -76,28 +76,32 @@ export default function SettingsPage() {
   return (
     <main className="min-h-screen bg-black">
       {/* Header */}
-      <header className="flex items-center justify-between p-4 border-b border-zinc-800">
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '14px 16px', borderBottom: `1px solid ${CARD_BORDER}`,
+      }}>
         <button
           onClick={handleBack}
-          className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
-          <ArrowLeftIcon className="w-5 h-5 text-white" />
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={GREY} strokeWidth="1.5">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
         </button>
-
-        <h1 className="text-lg font-semibold text-white">{t('settings.title')}</h1>
-
+        <span style={{ fontSize: 17, fontWeight: 700, color: WHITE }}>{t('settings.title')}</span>
         <button
           onClick={handleSave}
           disabled={!hasChanges || isSaving}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            hasChanges && !isSaving
-              ? 'text-emerald-300'
-              : 'text-zinc-600'
-          }`}
+          style={{
+            background: 'none', border: 'none', cursor: hasChanges ? 'pointer' : 'default',
+            padding: 0, fontSize: 14, fontWeight: 500,
+            color: showSaved ? '#54C68C' : hasChanges && !isSaving ? GREY : '#444',
+            transition: 'color 0.2s',
+          }}
         >
           {showSaved ? t('settings.saved') : isSaving ? t('settings.saving') : t('common.save')}
         </button>
-      </header>
+      </div>
 
       {/* Form */}
       <section className="p-4 space-y-4">
@@ -165,11 +169,4 @@ export default function SettingsPage() {
   )
 }
 
-function ArrowLeftIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-    </svg>
-  )
-}
 

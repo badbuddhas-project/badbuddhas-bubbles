@@ -9,6 +9,7 @@ import { ConnectEmailModal } from '@/components/ConnectEmailModal'
 import { useTranslation } from '@/lib/i18n'
 import { ymEvent, getPlatform } from '@/lib/analytics'
 import { closeTelegramApp } from '@/lib/telegram'
+import { EnergyBlob } from '@/components/EnergyBlob'
 
 const QUOTE_KEYS = [1, 2, 3, 4, 5] as const
 
@@ -140,16 +141,12 @@ export default function ProfilePage() {
 
       {/* Avatar */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 6 }}>
-        <div style={{
-          width: 72, height: 72, borderRadius: '50%', marginBottom: 10,
-          ...(isPremium
-            ? { backgroundImage: 'url(/images/black_blob_5.png)', backgroundSize: '220%', backgroundPosition: 'center', overflow: 'hidden' as const }
-            : { background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%)' }),
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          border: `2px solid ${CARD_BORDER}`,
-        }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/images/logo-white-square.png" alt="" width={28} height={28} style={{ display: 'block', opacity: 0.9 }} />
+        <div style={{ position: 'relative', marginBottom: 10 }}>
+          <EnergyBlob
+            type={isPremium ? 'rise' : 'slow'}
+            size={72}
+            radius={36}
+          />
         </div>
       </div>
 
@@ -160,7 +157,9 @@ export default function ProfilePage() {
 
       {/* Account type */}
       <div style={{ textAlign: 'center', marginBottom: 14 }}>
-        <span style={{ fontSize: 13, color: GREY }}>{isPremium ? t('profile.premiumAccount').toLowerCase() : t('profile.freeAccount').toLowerCase()}</span>
+        <span style={{ fontSize: 13, fontWeight: 600, color: isPremium ? '#C034A5' : '#54C68C' }}>
+          {isPremium ? 'bubbles [black]' : 'bubbles'}
+        </span>
       </div>
 
       {/* Motivational quote */}
