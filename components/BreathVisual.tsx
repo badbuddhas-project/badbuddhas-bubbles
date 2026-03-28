@@ -218,61 +218,56 @@ function drawGround(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: nu
   const cx = S / 2
   const cy = S / 2
   const R = S * 0.32
-  const wobbleHarmonics = 6
-  const wobbleAmp = 0.07
+  const seed = 99
+  const wobbleCount = 8
+  const wobbleAmt = 0.05
+  const layers = 3
 
-  function wobblePath(radius: number, timeOffset: number) {
+  for (let l = 0; l < layers; l++) {
+    const r = R * (1 - l * 0.25)
+    const breathe = 1 + 0.06 * Math.sin(t * (0.3 + l * 0.1))
     const steps = 120
+
+    const rng2 = seededRng(seed + l * 100)
+    const wobbles: number[] = []
+    for (let i = 0; i < wobbleCount; i++) wobbles.push((rng2() - 0.5) * 2)
+
     ctx.beginPath()
     for (let i = 0; i <= steps; i++) {
-      const angle = (i / steps) * Math.PI * 2
-      let r = radius
-      for (let h = 1; h <= wobbleHarmonics; h++) {
-        r += radius * wobbleAmp * Math.sin(h * angle + t * (0.3 + h * 0.1) + timeOffset) / wobbleHarmonics
+      const tFrac = i / steps
+      const a = tFrac * Math.PI * 2
+      let wobble = 0
+      for (let w = 0; w < wobbleCount; w++) {
+        wobble += wobbles[w] * Math.sin(a * (w + 1) + t * (0.2 + w * 0.05)) * wobbleAmt
       }
-      const x = cx + Math.cos(angle) * r
-      const y = cy + Math.sin(angle) * r
+      const rr = r * breathe * (1 + wobble)
+      const x = cx + Math.cos(a) * rr
+      const y = cy + Math.sin(a) * rr
       if (i === 0) ctx.moveTo(x, y)
       else ctx.lineTo(x, y)
     }
     ctx.closePath()
+
+    const alpha = 0.8 - l * 0.25
+    ctx.strokeStyle = rgb(c, alpha * 0.12)
+    ctx.lineWidth = S * 0.025
+    ctx.stroke()
+    ctx.strokeStyle = rgb(c, alpha * 0.9)
+    ctx.lineWidth = S * (0.01 - l * 0.002)
+    ctx.stroke()
   }
 
-  // Layer 1 glow
-  wobblePath(R, 0)
-  ctx.strokeStyle = rgb(c, 0.12)
-  ctx.lineWidth = S * 0.02
-  ctx.stroke()
-
-  // Layer 2 glow
-  wobblePath(R * 0.75, Math.PI)
-  ctx.strokeStyle = rgb(c, 0.12)
-  ctx.lineWidth = S * 0.02
-  ctx.stroke()
-
-  // Layer 1 sharp
-  wobblePath(R, 0)
-  ctx.strokeStyle = rgb(c, 0.7)
-  ctx.lineWidth = S * 0.008
-  ctx.stroke()
-
-  // Layer 2 sharp
-  wobblePath(R * 0.75, Math.PI)
-  ctx.strokeStyle = rgb(c, 0.7)
-  ctx.lineWidth = S * 0.008
-  ctx.stroke()
-
-  // Center glow
-  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 0.15)
-  grad.addColorStop(0, rgb(c, 0.5))
-  grad.addColorStop(1, rgb(c, 0))
+  // Center presence
+  const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 0.15)
+  cg.addColorStop(0, rgb(c, 0.35))
+  cg.addColorStop(1, 'rgba(0,0,0,0)')
+  ctx.fillStyle = cg
   ctx.beginPath()
   ctx.arc(cx, cy, R * 0.15, 0, Math.PI * 2)
-  ctx.fillStyle = grad
   ctx.fill()
 
   if (showBubbles) {
-    const rng = seededRng(99)
+    const rng = seededRng(seed)
     drawBubbles(ctx, S, c, t, rng)
   }
 }

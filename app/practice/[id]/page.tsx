@@ -164,9 +164,11 @@ export default function PracticePage() {
         </button>
       </div>
 
-      {/* Middle: BreathVisual centered */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <BreathVisual category={practice.category} size={280} borderRadius={0} animate={true} showBubbles={false} />
+      {/* Middle: BreathVisual full-width square */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+        <div style={{ width: '100%', aspectRatio: '1', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <BreathVisual category={practice.category} size={390} borderRadius={0} animate={true} showBubbles={false} />
+        </div>
       </div>
 
       {/* Bottom: progress + timer + controls */}
@@ -250,6 +252,18 @@ export default function PracticePage() {
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill={favorite ? 'rgba(255,255,255,0.45)' : 'none'} stroke="rgba(255,255,255,0.45)" strokeWidth="1.5">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+          </button>
+
+          {/* Share */}
+          <button
+            onClick={() => navigator.share?.({ url: window.location.href }).catch(() => {})}
+            style={{ padding: 4, cursor: 'pointer', background: 'none', border: 'none' }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/>
+              <polyline points="16 6 12 2 8 6"/>
+              <line x1="12" y1="2" x2="12" y2="15"/>
             </svg>
           </button>
         </div>
