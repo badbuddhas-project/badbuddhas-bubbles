@@ -7,6 +7,7 @@ interface BreathVisualProps {
   size: number
   borderRadius?: number
   animate?: boolean
+  showBubbles?: boolean
 }
 
 type ColorRGB = { r: number; g: number; b: number }
@@ -64,7 +65,7 @@ function drawBubbles(
   }
 }
 
-function drawSlow(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: number) {
+function drawSlow(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: number, showBubbles: boolean) {
   const cx = S / 2
   const cy = S / 2
   const cr = S * 0.22
@@ -119,9 +120,10 @@ function drawSlow(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: numb
   ctx.fillStyle = rgb(c, 0.9)
   ctx.fill()
 
-  // Bubbles
-  const rng = seededRng(42)
-  drawBubbles(ctx, S, c, t, rng)
+  if (showBubbles) {
+    const rng = seededRng(42)
+    drawBubbles(ctx, S, c, t, rng)
+  }
 }
 
 function drawRise(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: number) {
@@ -212,7 +214,7 @@ function drawRise(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: numb
   ctx.fill()
 }
 
-function drawGround(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: number) {
+function drawGround(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: number, showBubbles: boolean) {
   const cx = S / 2
   const cy = S / 2
   const R = S * 0.32
@@ -269,9 +271,10 @@ function drawGround(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: nu
   ctx.fillStyle = grad
   ctx.fill()
 
-  // Bubbles
-  const rng = seededRng(99)
-  drawBubbles(ctx, S, c, t, rng)
+  if (showBubbles) {
+    const rng = seededRng(99)
+    drawBubbles(ctx, S, c, t, rng)
+  }
 }
 
 export default function BreathVisual({
@@ -279,6 +282,7 @@ export default function BreathVisual({
   size,
   borderRadius = 14,
   animate = true,
+  showBubbles = true,
 }: BreathVisualProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const rafRef = useRef<number>(0)
@@ -319,9 +323,9 @@ export default function BreathVisual({
 
       // Draw visual
       const ts = t / 1000
-      if (visualType === 'slow') drawSlow(ctx, S, color, ts)
+      if (visualType === 'slow') drawSlow(ctx, S, color, ts, showBubbles)
       else if (visualType === 'rise') drawRise(ctx, S, color, ts)
-      else drawGround(ctx, S, color, ts)
+      else drawGround(ctx, S, color, ts, showBubbles)
     }
 
     if (animate) {
@@ -334,7 +338,7 @@ export default function BreathVisual({
     } else {
       render(0)
     }
-  }, [category, size, animate, visualType, color])
+  }, [category, size, animate, showBubbles, visualType, color])
 
   return (
     <canvas

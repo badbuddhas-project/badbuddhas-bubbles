@@ -12,8 +12,6 @@ import type { Practice } from '@/types/database'
 import { ymEvent, getPlatform } from '@/lib/analytics'
 import BreathVisual from '@/components/BreathVisual'
 
-const GRAIN_URL = "data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"
-
 export default function PracticePage() {
   const params = useParams()
   const router = useRouter()
@@ -138,36 +136,7 @@ export default function PracticePage() {
   }
 
   return (
-    <main style={{ position: 'relative', height: '100vh', overflow: 'hidden' }}>
-      {/* Layer 1: Animated gradient */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        background: 'linear-gradient(160deg, #0a0a2e, #1a0633, #2d1b4e, #4a1942, #1a2a0e, #0a2e2e, #0a0a2e)',
-        backgroundSize: '400% 400%',
-        animation: 'bbGradShift 12s ease infinite',
-      }}>
-        {/* Radial overlay */}
-        <div style={{
-          position: 'absolute', inset: 0, opacity: 0.5,
-          background: 'radial-gradient(circle at 30% 60%, rgba(139,92,246,0.4), transparent 60%), radial-gradient(circle at 70% 30%, rgba(59,130,246,0.3), transparent 50%)',
-        }} />
-      </div>
-
-      {/* Layer 2: Grain */}
-      <div style={{
-        position: 'absolute', inset: 0, zIndex: 1,
-      }}>
-        <div style={{
-          width: '100%', height: '100%', opacity: 0.08,
-          backgroundImage: `url(${GRAIN_URL})`,
-        }} />
-      </div>
-
-      {/* Layer 3: BreathVisual */}
-      <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', zIndex: 2 }}>
-        <BreathVisual category={practice.category} size={390} borderRadius={0} animate={true} />
-      </div>
-
+    <main style={{ position: 'relative', height: '100vh', overflow: 'hidden', background: '#000000' }}>
       {/* Content column */}
       <div style={{ position: 'relative', zIndex: 10, height: '100%', display: 'flex', flexDirection: 'column' }}>
 
@@ -195,18 +164,9 @@ export default function PracticePage() {
         </button>
       </div>
 
-      {/* Middle: breathing watermark centered in free area */}
+      {/* Middle: BreathVisual centered */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/images/logo-ribs.png"
-          alt=""
-          width={180}
-          style={{
-            display: 'block', opacity: 0.02,
-            animation: 'bbBreathe 8s cubic-bezier(0.45, 0, 0.55, 1) infinite',
-          }}
-        />
+        <BreathVisual category={practice.category} size={280} borderRadius={0} animate={true} showBubbles={false} />
       </div>
 
       {/* Bottom: progress + timer + controls */}
@@ -298,15 +258,6 @@ export default function PracticePage() {
       </div>{/* end content column */}
 
       <style jsx global>{`
-        @keyframes bbBreathe {
-          0%, 100% { transform: scale(0.92); }
-          50% { transform: scale(1.08); }
-        }
-        @keyframes bbGradShift {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
