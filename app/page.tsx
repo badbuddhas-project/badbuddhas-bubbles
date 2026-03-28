@@ -4,7 +4,7 @@
  * Home page: practice catalog with filters and favorites.
  */
 
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
 import { usePractices } from '@/hooks/usePractices'
@@ -13,6 +13,7 @@ import { useOnboarding } from '@/hooks/useOnboarding'
 import { useTranslation } from '@/lib/i18n'
 import { PracticeCard } from '@/components/PracticeCard'
 import { BrandMark } from '@/components/BrandMark'
+import BreathVisual from '@/components/BreathVisual'
 import type { Practice, PracticeCategory } from '@/types/database'
 import { ymEvent, getPlatform } from '@/lib/analytics'
 
@@ -256,6 +257,17 @@ export default function Home() {
         )}
       </div>
 
+      {/* Hero carousel */}
+      {!isPracticesLoading && practices.length > 0 && (
+        <HeroCarousel
+          practices={practices.slice(0, 3)}
+          catColors={CAT_COLORS}
+          onPracticeClick={handlePracticeClick}
+          isPremium={isPremium}
+          onSubscribe={() => router.push('/subscribe')}
+        />
+      )}
+
       {/* Subscription banner — free users only */}
       {!isPremium && (
         <div
@@ -318,6 +330,121 @@ export default function Home() {
         </div>
       )}
     </main>
+  )
+}
+
+const CAT_DISPLAY_HERO: Record<string, string> = {
+  relax: 'SLOW', balance: 'GROUND', energize: 'RISE',
+  slow: 'SLOW', ground: 'GROUND', rise: 'RISE',
+}
+
+function HeroCarousel({
+  practices,
+  catColors,
+  onPracticeClick,
+  isPremium,
+  onSubscribe,
+}: {
+  practices: Practice[]
+  catColors: Record<string, string>
+  onPracticeClick: (p: Practice) => void
+  isPremium: boolean
+  onSubscribe: () => void
+}) {
+  const [activeIdx, setActiveIdx] = useState(0)
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  const handleScroll = () => {
+    const el = scrollRef.current
+    if (!el) return
+    const idx = Math.round(el.scrollLeft / el.clientWidth)
+    setActiveIdx(idx)
+  }
+
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        style={{
+          display: 'flex',
+          overflowX: 'auto',
+          scrollSnapType: 'x mandatory',
+          scrollBehavior: 'smooth',
+          gap: 0,
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        }}
+      >
+        {practices.map((p) => {
+          const color = catColors[p.category] || '#CBCBCB'
+          const mins = Math.floor(p.duration_seconds / 60)
+          const locked = !isPremium && p.is_premium
+          return (
+            <div
+              key={p.id}
+              style={{
+                flexShrink: 0,
+                width: '100%',
+                scrollSnapAlign: 'start',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                background: '#0A0A0A',
+                borderRadius: 18,
+                padding: '14px 16px',
+                boxSizing: 'border-box',
+              }}
+            >
+              <div style={{ flexShrink: 0, borderRadius: 22, overflow: 'hidden' }}>
+                <BreathVisual category={p.category} size={112} borderRadius={22} animate={true} showBubbles={false} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ fontSize: 10, fontWeight: 600, color, letterSpacing: '0.06em', textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>
+                  {CAT_DISPLAY_HERO[p.category] ?? p.category}
+                </span>
+                <div style={{ fontSize: 17, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 4 }}>
+                  {p.title_ru || p.title}
+                </div>
+                <div style={{ fontSize: 12, color: '#CBCBCB', opacity: 0.5, marginBottom: 12 }}>
+                  {p.instructor_name} · {mins} мин
+                </div>
+                <button
+                  onClick={() => locked ? onSubscribe() : onPracticeClick(p)}
+                  style={{
+                    fontSize: 12, fontWeight: 600, color: '#000',
+                    background: '#fff', border: 'none', borderRadius: 20,
+                    padding: '7px 18px', cursor: 'pointer',
+                  }}
+                >
+                  {locked ? '[ black ]' : 'Дышать'}
+                </button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      {practices.length > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
+          {practices.map((_, i) => (
+            <div
+              key={i}
+              onClick={() => {
+                scrollRef.current?.scrollTo({ left: i * (scrollRef.current?.clientWidth ?? 0), behavior: 'smooth' })
+              }}
+              style={{
+                width: activeIdx === i ? 20 : 6,
+                height: 6,
+                borderRadius: 3,
+                background: activeIdx === i ? '#fff' : '#313333',
+                transition: 'all 0.25s',
+                cursor: 'pointer',
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 
