@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ONBOARDING_KEY } from '@/lib/constants'
 import { BrandMark } from '@/components/BrandMark'
+import { EnergyBlob } from '@/components/EnergyBlob'
 import { ymEvent } from '@/lib/analytics'
 
 function resolvePostOnboardingRoute(): string {
@@ -214,11 +215,11 @@ export default function OnboardingPage() {
               key={i}
               onClick={() => goToSlide(i)}
               style={{
-                width: i === currentSlide ? 24 : 8,
-                height: 8,
-                borderRadius: 4,
-                background: i === currentSlide ? '#FFFFFF' : '#313333',
-                transition: 'all 0.3s',
+                width: 56,
+                height: 3,
+                borderRadius: 2,
+                background: i <= currentSlide ? '#CBCBCB' : '#313333',
+                transition: 'background 0.3s',
                 cursor: 'pointer',
               }}
             />
@@ -246,66 +247,10 @@ export default function OnboardingPage() {
 /* ── Slide illustrations ──────────────────────────────────────────────────── */
 
 function SlideIllustration({ index }: { index: number }) {
-  switch (index) {
-    case 0:
-      return (
-        <div
-          style={{
-            width: 160,
-            height: 160,
-            borderRadius: '50%',
-            overflow: 'hidden',
-            marginBottom: 40,
-            backgroundImage: 'url(/images/onboarding-blob.png)',
-            backgroundSize: '180%',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-          }}
-        />
-      )
-    case 1:
-      return (
-        <div
-          style={{
-            width: 160,
-            height: 160,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 40,
-          }}
-        >
-          <img
-            src="/images/onboarding-cycle.png"
-            alt=""
-            width={100}
-            height={100}
-            style={{ opacity: 0.7 }}
-          />
-        </div>
-      )
-    case 2:
-      return (
-        <div
-          style={{
-            width: 160,
-            height: 160,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 40,
-          }}
-        >
-          <img
-            src="/images/onboarding-community.png"
-            alt=""
-            width={100}
-            height={100}
-            style={{ opacity: 0.7 }}
-          />
-        </div>
-      )
-    default:
-      return null
-  }
+  const types = ['slow', 'ground', 'rise']
+  return (
+    <div style={{ marginBottom: 40 }}>
+      <EnergyBlob type={types[index]} size={160} radius={80} />
+    </div>
+  )
 }
