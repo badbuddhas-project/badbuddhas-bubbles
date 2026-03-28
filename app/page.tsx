@@ -1,20 +1,18 @@
 'use client'
 
 /**
- * Home page: practice catalog with filters and favorites.
+ * Home screen: hero carousel, practices horizontal scroll, Black CTA.
  */
 
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
 import { usePractices } from '@/hooks/usePractices'
-import { useFavorites } from '@/hooks/useFavorites'
 import { useOnboarding } from '@/hooks/useOnboarding'
 import { useTranslation } from '@/lib/i18n'
-import { PracticeCard } from '@/components/PracticeCard'
-import { BrandMark } from '@/components/BrandMark'
 import BreathVisual from '@/components/BreathVisual'
-import type { Practice, PracticeCategory } from '@/types/database'
+import { BrandMark } from '@/components/BrandMark'
+import type { Practice } from '@/types/database'
 import { ymEvent, getPlatform } from '@/lib/analytics'
 
 const CAT_COLORS: Record<string, string> = {
@@ -23,16 +21,16 @@ const CAT_COLORS: Record<string, string> = {
   energize: '#ec4899',
 }
 
-type CategoryFilter = 'all' | PracticeCategory
-type LanguageFilter = 'all' | 'ru' | 'en'
-type DurationFilter = 'all' | 'up5' | 'up10' | 'from10'
+const CAT_DISPLAY: Record<string, string> = {
+  relax: 'SLOW', balance: 'GROUND', energize: 'RISE',
+  slow: 'SLOW', ground: 'GROUND', rise: 'RISE',
+}
 
 export default function Home() {
   const router = useRouter()
   const { t, language } = useTranslation()
   const { user, isLoading: isUserLoading } = useUser()
   const { practices, isLoading: isPracticesLoading } = usePractices()
-  const { isFavorite, toggleFavorite } = useFavorites()
   const { isCompleted: isOnboardingCompleted, isLoading: isOnboardingLoading } = useOnboarding()
 
   useEffect(() => {
@@ -59,76 +57,10 @@ export default function Home() {
     }
   }, [isPracticesLoading, practices.length])
 
-  const LANG_FILTER_KEY = 'badbuddhas-practice-lang-filter'
-
-  const [filterOpen, setFilterOpen] = useState(false)
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
-  const [languageFilter, setLanguageFilter] = useState<LanguageFilter>('all')
-  const [durationFilter, setDurationFilter] = useState<DurationFilter>('all')
-  const [instructorFilter, setInstructorFilter] = useState<string>('all')
-  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
-  const [blackFilter, setBlackFilter] = useState(false)
-
-  const handleLanguageFilterChange = useCallback((v: LanguageFilter) => {
-    setLanguageFilter(v)
-    localStorage.setItem(LANG_FILTER_KEY, v)
-    if (v !== 'all') ymEvent('filter_used', { filter_type: 'language', filter_value: v })
-  }, [])
-
   const isPremium = user?.is_premium ?? false
-
-  const instructors = useMemo(() => {
-    const set = new Set<string>()
-    practices.forEach((p) => set.add(p.instructor_name))
-    return Array.from(set).sort()
-  }, [practices])
-
-  // Reset instructor filter if selected instructor is no longer in the list
-  useEffect(() => {
-    if (instructorFilter !== 'all' && !instructors.includes(instructorFilter)) {
-      setInstructorFilter('all')
-    }
-  }, [instructors, instructorFilter])
-
-  const hasActiveFilters = categoryFilter !== 'all' || durationFilter !== 'all' || instructorFilter !== 'all' || languageFilter !== 'all' || blackFilter
-
-  const filterLabel = useMemo(() => {
-    if (!hasActiveFilters) return t('catalog.allPractices')
-    const parts: string[] = []
-    if (blackFilter) parts.push('Black')
-    if (categoryFilter !== 'all') parts.push(t(`catalog.${categoryFilter}`))
-    if (durationFilter !== 'all') {
-      const dLabels: Record<string, string> = { up5: t('catalog.upTo5min'), up10: t('catalog.upTo10min'), from10: t('catalog.from10min') }
-      parts.push(dLabels[durationFilter])
-    }
-    if (instructorFilter !== 'all') parts.push(instructorFilter)
-    if (languageFilter !== 'all') parts.push(languageFilter === 'ru' ? t('catalog.russian') : t('catalog.english'))
-    return parts.join(' · ')
-  }, [hasActiveFilters, blackFilter, categoryFilter, durationFilter, instructorFilter, languageFilter, t])
-
-  const filteredPractices = useMemo(() => {
-    return practices.filter((practice) => {
-      if (blackFilter && !practice.is_premium) return false
-      if (categoryFilter !== 'all' && practice.category !== categoryFilter) return false
-      if (languageFilter !== 'all' && practice.language && practice.language !== languageFilter) return false
-      if (showFavoritesOnly && !isFavorite(practice.id)) return false
-      if (instructorFilter !== 'all' && practice.instructor_name !== instructorFilter) return false
-      if (durationFilter !== 'all') {
-        const mins = practice.duration_seconds / 60
-        if (durationFilter === 'up5' && mins > 5) return false
-        if (durationFilter === 'up10' && mins > 10) return false
-        if (durationFilter === 'from10' && mins < 10) return false
-      }
-      return true
-    })
-  }, [practices, blackFilter, categoryFilter, languageFilter, showFavoritesOnly, isFavorite, instructorFilter, durationFilter])
 
   const handlePracticeClick = (practice: Practice) => {
     router.push(`/practice/${practice.id}`)
-  }
-
-  const handleProfileClick = () => {
-    router.push('/profile')
   }
 
   if (isUserLoading || isOnboardingLoading || !isOnboardingCompleted) {
@@ -139,217 +71,96 @@ export default function Home() {
     )
   }
 
+  const featuredPractice = practices.find(p => !p.is_premium) || practices[0]
+  const lockedPractices = practices.filter(p => p.is_premium)
+
   return (
     <main style={{ background: '#000', minHeight: '100vh', padding: '44px 16px 80px' }}>
+
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <BrandMark size={22} />
-        <button
-          onClick={handleProfileClick}
-          style={{ width: 32, height: 32, borderRadius: '50%', background: '#313333', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #1A1A1A', cursor: 'pointer', padding: 0 }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CBCBCB" strokeWidth="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        </button>
-      </div>
-
-      {/* Greeting */}
-      <div style={{ marginBottom: 4 }}>
-        <span style={{ fontSize: 17, fontWeight: 500, color: '#fff' }}>
-          {t('catalog.hi')} {user?.first_name || (language === 'en' ? 'breather' : 'дышатель')}
-        </span>
-      </div>
-      <div style={{ fontSize: 14, color: '#CBCBCB', opacity: 0.5, marginBottom: 20 }}>
-        [{t('catalog.letsBreath').toLowerCase()}]
-      </div>
-
-      {/* Filter bar */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: filterOpen ? 12 : 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <BrandMark size={22} />
+          <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', letterSpacing: '0.02em' }}>badbuddhas</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>
+            {t('catalog.hi')} {user?.first_name || (language === 'en' ? 'breather' : 'дышатель')}
+          </span>
           <button
-            onClick={() => setFilterOpen(!filterOpen)}
-            style={{
-              flex: 1,
-              background: '#313333',
-              border: '1px solid #1A1A1A',
-              borderRadius: 24,
-              padding: '10px 16px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 6,
-            }}
+            onClick={() => router.push('/profile')}
+            style={{ width: 32, height: 32, borderRadius: '50%', background: '#313333', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #1A1A1A', cursor: 'pointer', padding: 0 }}
           >
-            <span style={{ fontSize: 14, fontWeight: 500, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{filterLabel}</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#CBCBCB" strokeWidth="2" opacity="0.6" style={{ transform: filterOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }}><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <button
-            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-            style={{
-              width: 42,
-              height: 42,
-              background: 'transparent',
-              border: `1px solid ${showFavoritesOnly ? '#CBCBCB' : '#1A1A1A'}`,
-              borderRadius: '50%',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 0,
-              flexShrink: 0,
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill={showFavoritesOnly ? '#CBCBCB' : 'none'} stroke="#CBCBCB" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CBCBCB" strokeWidth="1.5">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
             </svg>
           </button>
         </div>
-
-        {/* Expandable filter panel */}
-        {filterOpen && (
-          <div style={{ background: '#0A0A0A', borderRadius: 16, border: '1px solid #1A1A1A', padding: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {/* Duration */}
-            <FilterGroup label={t('catalog.duration')}>
-              {([
-                { value: 'all', label: t('catalog.all') },
-                { value: 'up5', label: t('catalog.upTo5min') },
-                { value: 'up10', label: t('catalog.upTo10min') },
-                { value: 'from10', label: t('catalog.from10min') },
-              ] as const).map((d) => (
-                <Chip key={d.value} active={durationFilter === d.value} onClick={() => { setDurationFilter(d.value as DurationFilter); if (d.value !== 'all') ymEvent('filter_used', { filter_type: 'duration', filter_value: d.value }) }}>{d.label}</Chip>
-              ))}
-            </FilterGroup>
-
-            {/* Category */}
-            <FilterGroup label={t('catalog.category')}>
-              {([
-                { value: 'all', label: t('catalog.all') },
-                { value: 'relax', label: t('catalog.relax') },
-                { value: 'balance', label: t('catalog.balance') },
-                { value: 'energize', label: t('catalog.energize') },
-              ] as const).map((c) => (
-                <Chip key={c.value} active={categoryFilter === c.value && !blackFilter} onClick={() => { setBlackFilter(false); setCategoryFilter(c.value as CategoryFilter); if (c.value !== 'all') ymEvent('filter_used', { filter_type: 'category', filter_value: c.value }) }}>{c.label}</Chip>
-              ))}
-              {isPremium && (
-                <Chip active={blackFilter} onClick={() => { setBlackFilter(!blackFilter); if (!blackFilter) { setCategoryFilter('all'); ymEvent('filter_used', { filter_type: 'category', filter_value: 'black' }) } }}>Black</Chip>
-              )}
-            </FilterGroup>
-
-            {/* Instructor */}
-            <FilterGroup label={t('catalog.instructor')}>
-              <Chip active={instructorFilter === 'all'} onClick={() => setInstructorFilter('all')}>{t('catalog.all')}</Chip>
-              {instructors.map((name) => (
-                <Chip key={name} active={instructorFilter === name} onClick={() => { setInstructorFilter(name); ymEvent('filter_used', { filter_type: 'instructor', filter_value: name }) }}>{name}</Chip>
-              ))}
-            </FilterGroup>
-
-            {/* Language */}
-            <FilterGroup label={t('catalog.language')}>
-              {([
-                { value: 'all', label: t('catalog.all') },
-                { value: 'ru', label: t('catalog.russian') },
-                { value: 'en', label: t('catalog.english') },
-              ] as const).map((l) => (
-                <Chip key={l.value} active={languageFilter === l.value} onClick={() => handleLanguageFilterChange(l.value as LanguageFilter)}>{l.label}</Chip>
-              ))}
-            </FilterGroup>
-          </div>
-        )}
       </div>
 
       {/* Hero carousel */}
-      {!isPracticesLoading && practices.length > 0 && (
-        <HeroCarousel
-          practices={practices.slice(0, 3)}
-          catColors={CAT_COLORS}
-          onPracticeClick={handlePracticeClick}
-          isPremium={isPremium}
+      <HeroCarousel
+        featuredPractice={featuredPractice ?? null}
+        isPremium={isPremium}
+        onPracticeClick={handlePracticeClick}
+        onSubscribe={() => router.push('/subscribe')}
+        catColors={CAT_COLORS}
+      />
+
+      {/* Practices section */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <span style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>Практики</span>
+          <button
+            onClick={() => router.push('/catalog')}
+            style={{ fontSize: 11, fontWeight: 600, color: '#CBCBCB', opacity: 0.5, background: 'none', border: 'none', cursor: 'pointer', letterSpacing: '0.06em' }}
+          >
+            ВСЕ →
+          </button>
+        </div>
+        {isPracticesLoading ? (
+          <div style={{ display: 'flex', gap: 10, overflowX: 'auto' }}>
+            {[1, 2, 3].map(i => (
+              <div key={i} style={{ width: 160, height: 210, flexShrink: 0, borderRadius: 16, background: '#0A0A0A' }} />
+            ))}
+          </div>
+        ) : (
+          <PracticesScroll
+            practices={practices}
+            isPremium={isPremium}
+            onPracticeClick={handlePracticeClick}
+            onSubscribe={() => router.push('/subscribe')}
+            catColors={CAT_COLORS}
+          />
+        )}
+      </div>
+
+      {/* Black CTA — free users only */}
+      {!isPremium && (
+        <BlackCTA
+          lockedPractices={lockedPractices.slice(0, 3)}
           onSubscribe={() => router.push('/subscribe')}
         />
       )}
 
-      {/* Subscription banner — free users only */}
-      {!isPremium && (
-        <div
-          onClick={() => router.push('/subscribe')}
-          style={{
-            background: '#0A0A0A',
-            border: '1px solid #1A1A1A',
-            borderRadius: 14,
-            padding: '14px 16px',
-            marginBottom: 20,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            cursor: 'pointer',
-          }}
-        >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-              <span style={{ fontSize: 15, fontWeight: 500, color: '#fff' }}>[ чёрный баблс ]</span>
-              <span style={{ fontSize: 10, fontWeight: 600, color: '#C034A5', letterSpacing: '0.03em' }}>подписка</span>
-            </div>
-            <span style={{ fontSize: 12, color: '#CBCBCB', opacity: 0.5 }}>больше практик · теория · расписание</span>
-          </div>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#54C68C" strokeWidth="2" style={{ flexShrink: 0 }}>
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
-        </div>
-      )}
-
-      {/* Practice list */}
-      {isPracticesLoading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 rounded-xl bg-zinc-900/50 animate-pulse" />
-          ))}
-        </div>
-      ) : filteredPractices.length > 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {filteredPractices.map((practice, i) => (
-            <div key={practice.id}>
-              <PracticeCard
-                practice={practice}
-                isFavorite={isFavorite(practice.id)}
-                onToggleFavorite={toggleFavorite}
-                onClick={!isPremium && practice.is_premium ? () => router.push('/subscribe') : handlePracticeClick}
-                catColors={CAT_COLORS}
-                isLocked={!isPremium && practice.is_premium}
-              />
-              {i < filteredPractices.length - 1 && (
-                <div style={{ height: 1, background: '#1A1A1A', marginLeft: 92 }} />
-              )}
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div style={{ textAlign: 'center', padding: '48px 0' }}>
-          <span style={{ fontSize: 14, color: '#CBCBCB', opacity: 0.5 }}>
-            {showFavoritesOnly ? t('catalog.noFavorites') : t('catalog.noPractices')}
-          </span>
-        </div>
-      )}
     </main>
   )
 }
 
-const CAT_DISPLAY_HERO: Record<string, string> = {
-  relax: 'SLOW', balance: 'GROUND', energize: 'RISE',
-  slow: 'SLOW', ground: 'GROUND', rise: 'RISE',
-}
+// ─── Hero Carousel ────────────────────────────────────────────────────────────
 
 function HeroCarousel({
-  practices,
-  catColors,
-  onPracticeClick,
+  featuredPractice,
   isPremium,
+  onPracticeClick,
   onSubscribe,
+  catColors,
 }: {
-  practices: Practice[]
-  catColors: Record<string, string>
-  onPracticeClick: (p: Practice) => void
+  featuredPractice: Practice | null
   isPremium: boolean
+  onPracticeClick: (p: Practice) => void
   onSubscribe: () => void
+  catColors: Record<string, string>
 }) {
   const [activeIdx, setActiveIdx] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -357,12 +168,17 @@ function HeroCarousel({
   const handleScroll = () => {
     const el = scrollRef.current
     if (!el) return
-    const idx = Math.round(el.scrollLeft / el.clientWidth)
-    setActiveIdx(idx)
+    setActiveIdx(Math.round(el.scrollLeft / el.clientWidth))
+  }
+
+  const scrollTo = (idx: number) => {
+    const el = scrollRef.current
+    if (!el) return
+    el.scrollTo({ left: idx * el.clientWidth, behavior: 'smooth' })
   }
 
   return (
-    <div style={{ marginBottom: 20 }}>
+    <div style={{ marginBottom: 24 }}>
       <div
         ref={scrollRef}
         onScroll={handleScroll}
@@ -371,111 +187,254 @@ function HeroCarousel({
           overflowX: 'auto',
           scrollSnapType: 'x mandatory',
           scrollBehavior: 'smooth',
-          gap: 0,
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
+          gap: 0,
+          borderRadius: 22,
         }}
       >
-        {practices.map((p) => {
-          const color = catColors[p.category] || '#CBCBCB'
-          const mins = Math.floor(p.duration_seconds / 60)
-          const locked = !isPremium && p.is_premium
-          return (
-            <div
-              key={p.id}
-              style={{
-                flexShrink: 0,
-                width: '100%',
-                scrollSnapAlign: 'start',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 16,
-                background: '#0A0A0A',
-                borderRadius: 18,
-                padding: '14px 16px',
-                boxSizing: 'border-box',
-              }}
-            >
-              <div style={{ flexShrink: 0, borderRadius: 22, overflow: 'hidden' }}>
-                <BreathVisual category={p.category} size={112} borderRadius={22} animate={true} showBubbles={false} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ fontSize: 10, fontWeight: 600, color, letterSpacing: '0.06em', textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>
-                  {CAT_DISPLAY_HERO[p.category] ?? p.category}
-                </span>
-                <div style={{ fontSize: 17, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 4 }}>
-                  {p.title_ru || p.title}
-                </div>
-                <div style={{ fontSize: 12, color: '#CBCBCB', opacity: 0.5, marginBottom: 12 }}>
-                  {p.instructor_name} · {mins} мин
-                </div>
-                <button
-                  onClick={() => locked ? onSubscribe() : onPracticeClick(p)}
-                  style={{
-                    fontSize: 12, fontWeight: 600, color: '#000',
-                    background: '#fff', border: 'none', borderRadius: 20,
-                    padding: '7px 18px', cursor: 'pointer',
-                  }}
-                >
-                  {locked ? '[ black ]' : 'Дышать'}
-                </button>
-              </div>
+        {/* Slide 1: Featured practice */}
+        <div style={{ ...slideStyle }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ fontSize: 9, fontWeight: 700, color: featuredPractice ? (catColors[featuredPractice.category] || '#CBCBCB') : '#8b5cf6', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'block', marginBottom: 6, opacity: 0.9 }}>
+              НОВАЯ ПРАКТИКА
+            </span>
+            <div style={{ fontSize: 16, fontWeight: 600, color: '#fff', marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {featuredPractice ? (featuredPractice.title_ru || featuredPractice.title) : '—'}
             </div>
-          )
-        })}
-      </div>
-      {practices.length > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
-          {practices.map((_, i) => (
-            <div
-              key={i}
-              onClick={() => {
-                scrollRef.current?.scrollTo({ left: i * (scrollRef.current?.clientWidth ?? 0), behavior: 'smooth' })
-              }}
-              style={{
-                width: activeIdx === i ? 20 : 6,
-                height: 6,
-                borderRadius: 3,
-                background: activeIdx === i ? '#fff' : '#313333',
-                transition: 'all 0.25s',
-                cursor: 'pointer',
-              }}
-            />
-          ))}
+            <div style={{ fontSize: 12, color: '#CBCBCB', opacity: 0.5, marginBottom: 14 }}>
+              {featuredPractice ? `${featuredPractice.instructor_name} · ${Math.floor(featuredPractice.duration_seconds / 60)} мин` : ''}
+            </div>
+            <button
+              onClick={() => featuredPractice && onPracticeClick(featuredPractice)}
+              style={ctaBtnStyle}
+            >
+              Дышать
+            </button>
+          </div>
+          {featuredPractice && (
+            <div style={{ flexShrink: 0, borderRadius: 16, overflow: 'hidden' }}>
+              <BreathVisual category={featuredPractice.category} size={112} borderRadius={16} animate={true} showBubbles={false} />
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Slide 2: Group session */}
+        <div style={{ ...slideStyle }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ fontSize: 9, fontWeight: 700, color: '#3b82f6', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
+              ГРУППОВАЯ СЕССИЯ
+            </span>
+            <div style={{ fontSize: 11, color: '#CBCBCB', opacity: 0.4, marginBottom: 4 }}>каждую среду</div>
+            <div style={{ fontSize: 16, fontWeight: 600, color: '#fff', marginBottom: 14 }}>
+              Дыхание в потоке
+            </div>
+            <button onClick={onSubscribe} style={ctaBtnStyle}>Подробнее</button>
+          </div>
+          <div style={{ flexShrink: 0, borderRadius: 16, overflow: 'hidden' }}>
+            <BreathVisual category="balance" size={112} borderRadius={16} animate={true} showBubbles={false} />
+          </div>
+        </div>
+
+        {/* Slide 3: Black CTA slide */}
+        <div style={{ ...slideStyle }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ fontSize: 9, fontWeight: 700, background: 'linear-gradient(90deg,#C034A5,#8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '0.08em', display: 'block', marginBottom: 6 }}>
+              ● BLACK
+            </span>
+            <div style={{ fontSize: 16, fontWeight: 600, color: '#fff', marginBottom: 3 }}>
+              {isPremium ? 'Вы в [black]' : 'Открой [black]'}
+            </div>
+            <div style={{ fontSize: 12, color: '#CBCBCB', opacity: 0.5, marginBottom: 14 }}>
+              {isPremium ? 'Все практики доступны' : 'больше практик · теория · расписание'}
+            </div>
+            {!isPremium && (
+              <button onClick={onSubscribe} style={ctaBtnStyle}>Узнать больше</button>
+            )}
+          </div>
+          <div style={{ flexShrink: 0, borderRadius: 16, overflow: 'hidden' }}>
+            <BreathVisual category="energize" size={112} borderRadius={16} animate={true} showBubbles={false} />
+          </div>
+        </div>
+      </div>
+
+      {/* Dots */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
+        {[0, 1, 2].map(i => (
+          <div
+            key={i}
+            onClick={() => scrollTo(i)}
+            style={{
+              width: activeIdx === i ? 20 : 6,
+              height: 6,
+              borderRadius: 3,
+              background: activeIdx === i ? '#fff' : '#313333',
+              transition: 'all 0.25s',
+              cursor: 'pointer',
+            }}
+          />
+        ))}
+      </div>
     </div>
   )
 }
 
-function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <div style={{ fontSize: 10, fontWeight: 600, color: '#CBCBCB', opacity: 0.5, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }}>
-        {label}
-      </div>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        {children}
-      </div>
-    </div>
-  )
+const slideStyle: React.CSSProperties = {
+  flexShrink: 0,
+  width: '100%',
+  scrollSnapAlign: 'start',
+  display: 'flex',
+  alignItems: 'center',
+  gap: 16,
+  background: '#0A0A0A',
+  border: '1px solid #1A1A1A',
+  borderRadius: 22,
+  padding: '20px 18px',
+  height: 152,
+  boxSizing: 'border-box',
 }
 
-function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+const ctaBtnStyle: React.CSSProperties = {
+  fontSize: 12,
+  fontWeight: 600,
+  color: '#000',
+  background: '#fff',
+  border: 'none',
+  borderRadius: 20,
+  padding: '7px 18px',
+  cursor: 'pointer',
+}
+
+// ─── Practices Horizontal Scroll ─────────────────────────────────────────────
+
+function PracticesScroll({
+  practices,
+  isPremium,
+  onPracticeClick,
+  onSubscribe,
+  catColors,
+}: {
+  practices: Practice[]
+  isPremium: boolean
+  onPracticeClick: (p: Practice) => void
+  onSubscribe: () => void
+  catColors: Record<string, string>
+}) {
   return (
-    <button
-      onClick={onClick}
+    <div
       style={{
-        fontSize: 11,
-        color: active ? '#fff' : '#CBCBCB',
-        background: active ? '#313333' : 'transparent',
-        border: `1px solid ${active ? 'rgba(203,203,203,0.2)' : '#1A1A1A'}`,
-        borderRadius: 16,
-        padding: '5px 12px',
-        cursor: 'pointer',
+        display: 'flex',
+        overflowX: 'auto',
+        gap: 10,
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none',
+        paddingBottom: 4,
       }}
     >
-      {children}
-    </button>
+      {practices.map(p => {
+        const locked = !isPremium && p.is_premium
+        const color = catColors[p.category] || '#CBCBCB'
+        const mins = Math.floor(p.duration_seconds / 60)
+        return (
+          <div
+            key={p.id}
+            onClick={() => locked ? onSubscribe() : onPracticeClick(p)}
+            style={{
+              flexShrink: 0,
+              width: 160,
+              background: '#0A0A0A',
+              border: '1px solid #1A1A1A',
+              borderRadius: 16,
+              overflow: 'hidden',
+              cursor: 'pointer',
+            }}
+          >
+            <div style={{ position: 'relative' }}>
+              <BreathVisual category={p.category} size={160} borderRadius={0} animate={false} showBubbles={false} />
+              {locked && (
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C034A5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </div>
+              )}
+            </div>
+            <div style={{ padding: '10px 12px' }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 4 }}>
+                {CAT_DISPLAY[p.category] ?? p.category}
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2 }}>
+                {p.title_ru || p.title}
+              </div>
+              <div style={{ fontSize: 11, color: '#CBCBCB', opacity: 0.45 }}>
+                {p.instructor_name} · {mins} мин
+              </div>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ─── Black CTA ────────────────────────────────────────────────────────────────
+
+function BlackCTA({
+  lockedPractices,
+  onSubscribe,
+}: {
+  lockedPractices: Practice[]
+  onSubscribe: () => void
+}) {
+  return (
+    <div
+      onClick={onSubscribe}
+      style={{
+        background: '#0A0A0A',
+        border: '1px solid #1A1A1A',
+        borderRadius: 18,
+        padding: '18px 18px 20px',
+        cursor: 'pointer',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Glow */}
+      <div style={{ position: 'absolute', top: -40, right: -40, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(192,52,165,0.12), transparent 70%)', pointerEvents: 'none' }} />
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#C034A5', background: 'rgba(192,52,165,0.1)', borderRadius: 6, padding: '3px 8px', letterSpacing: '0.04em' }}>BLACK</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Ещё {lockedPractices.length > 0 ? `${lockedPractices.length}+` : '6+'} практик</span>
+          </div>
+          <div style={{ fontSize: 12, color: '#CBCBCB', opacity: 0.5, marginBottom: 14 }}>
+            Живые сессии · теория · эксклюзивный контент
+          </div>
+          <button
+            onClick={e => { e.stopPropagation(); onSubscribe() }}
+            style={{ fontSize: 12, fontWeight: 600, color: '#fff', background: 'rgba(192,52,165,0.15)', border: '1px solid rgba(192,52,165,0.3)', borderRadius: 20, padding: '8px 18px', cursor: 'pointer' }}
+          >
+            Открыть [black]
+          </button>
+        </div>
+
+        {/* Locked previews */}
+        {lockedPractices.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
+            {lockedPractices.slice(0, 3).map(p => (
+              <div key={p.id} style={{ position: 'relative', borderRadius: 10, overflow: 'hidden' }}>
+                <BreathVisual category={p.category} size={48} borderRadius={10} animate={false} showBubbles={false} />
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C034A5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
