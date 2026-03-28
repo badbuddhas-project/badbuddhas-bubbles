@@ -1,10 +1,11 @@
 'use client'
 
 /**
- * Home screen: hero carousel, practices horizontal scroll, Black CTA.
+ * Home screen — per docs/badbuddhas-redesign-mockup-black.jsx HomeScreen (lines 674-868)
+ * EnergyBlob/BlobPreview → BreathVisual
  */
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
 import { usePractices } from '@/hooks/usePractices'
@@ -15,12 +16,23 @@ import { BrandMark } from '@/components/BrandMark'
 import type { Practice } from '@/types/database'
 import { ymEvent, getPlatform } from '@/lib/analytics'
 
-const CAT_COLORS: Record<string, string> = {
-  relax: '#8b5cf6',
-  balance: '#3b82f6',
-  energize: '#ec4899',
+const C = {
+  bg: '#000',
+  card: '#0A0A0A',
+  border: '#1A1A1A',
+  border2: '#222',
+  white: '#fff',
+  text: '#CBCBCB',
+  text2: 'rgba(203,203,203,0.5)',
+  sub: 'rgba(203,203,203,0.45)',
+  slow: '#8b5cf6',
+  ground: '#3b82f6',
+  rise: '#ec4899',
+  pink: '#C034A5',
+  green: '#54C68C',
 }
 
+const CAT_COLORS: Record<string, string> = { relax: C.slow, balance: C.ground, energize: C.rise }
 const CAT_DISPLAY: Record<string, string> = {
   relax: 'SLOW', balance: 'GROUND', energize: 'RISE',
   slow: 'SLOW', ground: 'GROUND', rise: 'RISE',
@@ -33,14 +45,12 @@ export default function Home() {
   const { practices, isLoading: isPracticesLoading } = usePractices()
   const { isCompleted: isOnboardingCompleted, isLoading: isOnboardingLoading } = useOnboarding()
 
-  useEffect(() => {
-    ymEvent('app_opened', { platform: getPlatform() })
-  }, [])
+  const [slide, setSlide] = useState(0)
+
+  useEffect(() => { ymEvent('app_opened', { platform: getPlatform() }) }, [])
 
   useEffect(() => {
-    if (!isOnboardingLoading && !isOnboardingCompleted) {
-      router.replace('/onboarding')
-    }
+    if (!isOnboardingLoading && !isOnboardingCompleted) router.replace('/onboarding')
   }, [isOnboardingCompleted, isOnboardingLoading, router])
 
   useEffect(() => {
@@ -52,388 +62,297 @@ export default function Home() {
   }, [router, user?.is_premium])
 
   useEffect(() => {
-    if (!isPracticesLoading && practices.length > 0) {
-      ymEvent('practice_list_viewed', { platform: getPlatform() })
-    }
+    if (!isPracticesLoading && practices.length > 0) ymEvent('practice_list_viewed', { platform: getPlatform() })
   }, [isPracticesLoading, practices.length])
 
   const isPremium = user?.is_premium ?? false
 
-  const handlePracticeClick = (practice: Practice) => {
-    router.push(`/practice/${practice.id}`)
+  const freePractices = useMemo(() => practices.filter(p => !p.is_premium).slice(0, 3), [practices])
+  const lockedPractices = useMemo(() => practices.filter(p => p.is_premium), [practices])
+  const featuredPractice = freePractices[0] ?? null
+
+  const teachers = useMemo(() => {
+    const seen = new Set<string>()
+    return practices
+      .filter(p => { if (seen.has(p.instructor_name)) return false; seen.add(p.instructor_name); return true })
+      .map(p => ({
+        name: p.instructor_name,
+        avatarUrl: p.instructor_avatar_url,
+        category: p.category,
+        count: practices.filter(x => x.instructor_name === p.instructor_name).length,
+      }))
+  }, [practices])
+
+  const handlePractice = (p: Practice) => {
+    if (!isPremium && p.is_premium) router.push('/subscribe')
+    else router.push(`/practice/${p.id}`)
   }
 
   if (isUserLoading || isOnboardingLoading || !isOnboardingCompleted) {
     return (
-      <main style={{ height: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <main style={{ height: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div className="w-8 h-8 border-2 border-zinc-700 border-t-zinc-400 rounded-full animate-spin" />
       </main>
     )
   }
 
-  const featuredPractice = practices.find(p => !p.is_premium) || practices[0]
-  const lockedPractices = practices.filter(p => p.is_premium)
+  const greeting = `${t('catalog.hi')}, ${user?.first_name || (language === 'en' ? 'breather' : 'дышатель')}`
 
-  return (
-    <main style={{ background: '#000', minHeight: '100vh', padding: '44px 16px 80px' }}>
-
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <BrandMark size={22} />
-          <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', letterSpacing: '0.02em' }}>badbuddhas</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>
-            {t('catalog.hi')} {user?.first_name || (language === 'en' ? 'breather' : 'дышатель')}
-          </span>
-          <button
-            onClick={() => router.push('/profile')}
-            style={{ width: 32, height: 32, borderRadius: '50%', background: '#313333', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #1A1A1A', cursor: 'pointer', padding: 0 }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CBCBCB" strokeWidth="1.5">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      {/* Hero carousel */}
-      <HeroCarousel
-        featuredPractice={featuredPractice ?? null}
-        isPremium={isPremium}
-        onPracticeClick={handlePracticeClick}
-        onSubscribe={() => router.push('/subscribe')}
-        catColors={CAT_COLORS}
-      />
-
-      {/* Practices section */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <span style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>Практики</span>
-          <button
-            onClick={() => router.push('/catalog')}
-            style={{ fontSize: 11, fontWeight: 600, color: '#CBCBCB', opacity: 0.5, background: 'none', border: 'none', cursor: 'pointer', letterSpacing: '0.06em' }}
-          >
-            ВСЕ →
-          </button>
-        </div>
-        {isPracticesLoading ? (
-          <div style={{ display: 'flex', gap: 10, overflowX: 'auto' }}>
-            {[1, 2, 3].map(i => (
-              <div key={i} style={{ width: 160, height: 210, flexShrink: 0, borderRadius: 16, background: '#0A0A0A' }} />
-            ))}
-          </div>
-        ) : (
-          <PracticesScroll
-            practices={practices}
-            isPremium={isPremium}
-            onPracticeClick={handlePracticeClick}
-            onSubscribe={() => router.push('/subscribe')}
-            catColors={CAT_COLORS}
-          />
-        )}
-      </div>
-
-      {/* Black CTA — free users only */}
-      {!isPremium && (
-        <BlackCTA
-          lockedPractices={lockedPractices.slice(0, 3)}
-          onSubscribe={() => router.push('/subscribe')}
-        />
-      )}
-
-    </main>
-  )
-}
-
-// ─── Hero Carousel ────────────────────────────────────────────────────────────
-
-function HeroCarousel({
-  featuredPractice,
-  isPremium,
-  onPracticeClick,
-  onSubscribe,
-  catColors,
-}: {
-  featuredPractice: Practice | null
-  isPremium: boolean
-  onPracticeClick: (p: Practice) => void
-  onSubscribe: () => void
-  catColors: Record<string, string>
-}) {
-  const [activeIdx, setActiveIdx] = useState(0)
-  const scrollRef = useRef<HTMLDivElement>(null)
-
-  const handleScroll = () => {
-    const el = scrollRef.current
-    if (!el) return
-    setActiveIdx(Math.round(el.scrollLeft / el.clientWidth))
-  }
-
-  const scrollTo = (idx: number) => {
-    const el = scrollRef.current
-    if (!el) return
-    el.scrollTo({ left: idx * el.clientWidth, behavior: 'smooth' })
-  }
-
-  return (
-    <div style={{ marginBottom: 24 }}>
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        style={{
-          display: 'flex',
-          overflowX: 'auto',
-          scrollSnapType: 'x mandatory',
-          scrollBehavior: 'smooth',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-          gap: 0,
-          borderRadius: 22,
-        }}
-      >
-        {/* Slide 1: Featured practice */}
-        <div style={{ ...slideStyle }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ fontSize: 9, fontWeight: 700, color: featuredPractice ? (catColors[featuredPractice.category] || '#CBCBCB') : '#8b5cf6', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'block', marginBottom: 6, opacity: 0.9 }}>
+  const SLIDES = [
+    {
+      key: 'practice',
+      content: (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
+          <div style={{ flex: 1, minWidth: 0, paddingRight: 12 }}>
+            <div style={{ fontFamily: 'inherit', fontSize: 10, fontWeight: 700, color: featuredPractice ? (CAT_COLORS[featuredPractice.category] || C.slow) : C.slow, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 7 }}>
               НОВАЯ ПРАКТИКА
-            </span>
-            <div style={{ fontSize: 16, fontWeight: 600, color: '#fff', marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            </div>
+            <div style={{ fontSize: 20, fontWeight: 500, color: C.white, marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {featuredPractice ? (featuredPractice.title_ru || featuredPractice.title) : '—'}
             </div>
-            <div style={{ fontSize: 12, color: '#CBCBCB', opacity: 0.5, marginBottom: 14 }}>
+            <div style={{ fontSize: 12, color: C.text2, marginBottom: 13 }}>
               {featuredPractice ? `${featuredPractice.instructor_name} · ${Math.floor(featuredPractice.duration_seconds / 60)} мин` : ''}
             </div>
             <button
-              onClick={() => featuredPractice && onPracticeClick(featuredPractice)}
-              style={ctaBtnStyle}
+              onClick={() => featuredPractice && handlePractice(featuredPractice)}
+              style={{ fontSize: 12, fontWeight: 600, color: C.bg, background: C.white, border: 'none', borderRadius: 20, padding: '7px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
             >
+              <svg width="10" height="12" viewBox="0 0 10 12" fill="#000"><path d="M1 1l8 5-8 5V1z"/></svg>
               Дышать
             </button>
           </div>
           {featuredPractice && (
-            <div style={{ flexShrink: 0, borderRadius: 16, overflow: 'hidden' }}>
-              <BreathVisual category={featuredPractice.category} size={112} borderRadius={16} animate={true} showBubbles={false} />
+            <div style={{ flexShrink: 0, borderRadius: 22, overflow: 'hidden' }}>
+              <BreathVisual category={featuredPractice.category} size={112} borderRadius={22} animate={true} showBubbles={false} />
             </div>
           )}
         </div>
-
-        {/* Slide 2: Group session */}
-        <div style={{ ...slideStyle }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ fontSize: 9, fontWeight: 700, color: '#3b82f6', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
-              ГРУППОВАЯ СЕССИЯ
-            </span>
-            <div style={{ fontSize: 11, color: '#CBCBCB', opacity: 0.4, marginBottom: 4 }}>каждую среду</div>
-            <div style={{ fontSize: 16, fontWeight: 600, color: '#fff', marginBottom: 14 }}>
-              Дыхание в потоке
-            </div>
-            <button onClick={onSubscribe} style={ctaBtnStyle}>Подробнее</button>
+      ),
+    },
+    {
+      key: 'group',
+      content: (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.green, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 7 }}>ГРУППОВАЯ СЕССИЯ</div>
+            <div style={{ fontSize: 28, fontWeight: 500, color: C.white, marginBottom: 1 }}>28.05</div>
+            <div style={{ fontSize: 15, fontWeight: 500, color: C.text, marginBottom: 3 }}>MEGA breathwork</div>
+            <div style={{ fontSize: 12, color: C.text2, marginBottom: 13 }}>с Дашей Чен</div>
+            <button onClick={() => router.push('/subscribe')} style={{ fontSize: 12, fontWeight: 600, color: C.bg, background: C.green, border: 'none', borderRadius: 20, padding: '7px 16px', cursor: 'pointer' }}>Подробнее →</button>
           </div>
-          <div style={{ flexShrink: 0, borderRadius: 16, overflow: 'hidden' }}>
-            <BreathVisual category="balance" size={112} borderRadius={16} animate={true} showBubbles={false} />
+          <div style={{ flexShrink: 0, borderRadius: 22, overflow: 'hidden' }}>
+            <BreathVisual category="balance" size={92} borderRadius={22} animate={true} showBubbles={false} />
           </div>
         </div>
-
-        {/* Slide 3: Black CTA slide */}
-        <div style={{ ...slideStyle }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ fontSize: 9, fontWeight: 700, background: 'linear-gradient(90deg,#C034A5,#8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '0.08em', display: 'block', marginBottom: 6 }}>
-              ● BLACK
-            </span>
-            <div style={{ fontSize: 16, fontWeight: 600, color: '#fff', marginBottom: 3 }}>
-              {isPremium ? 'Вы в [black]' : 'Открой [black]'}
+      ),
+    },
+    {
+      key: 'black',
+      content: (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', right: -10, top: -30, width: 140, height: 140, borderRadius: '50%', background: 'radial-gradient(circle,rgba(192,52,165,0.28) 0%,transparent 70%)', pointerEvents: 'none' }} />
+          <div style={{ flex: 1, position: 'relative', zIndex: 1, minWidth: 0, paddingRight: 12 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', background: `linear-gradient(135deg,${C.pink},#7b1fa2)`, borderRadius: 20, padding: '3px 10px', marginBottom: 9 }}>
+              <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: 1.5 }}>BLACK</span>
             </div>
-            <div style={{ fontSize: 12, color: '#CBCBCB', opacity: 0.5, marginBottom: 14 }}>
-              {isPremium ? 'Все практики доступны' : 'больше практик · теория · расписание'}
-            </div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: C.white, marginBottom: 5 }}>[ ] black</div>
+            <div style={{ fontSize: 12, color: C.text2, marginBottom: 13, lineHeight: 1.45 }}>Эксклюзивные практики и живые сессии</div>
             {!isPremium && (
-              <button onClick={onSubscribe} style={ctaBtnStyle}>Узнать больше</button>
+              <button onClick={() => router.push('/subscribe')} style={{ fontSize: 12, fontWeight: 600, color: '#fff', background: 'transparent', border: `1px solid rgba(192,52,165,0.7)`, borderRadius: 20, padding: '7px 16px', cursor: 'pointer' }}>Узнать больше →</button>
             )}
           </div>
-          <div style={{ flexShrink: 0, borderRadius: 16, overflow: 'hidden' }}>
-            <BreathVisual category="energize" size={112} borderRadius={16} animate={true} showBubbles={false} />
+          <div style={{ flexShrink: 0, borderRadius: 22, overflow: 'hidden' }}>
+            <BreathVisual category="energize" size={92} borderRadius={22} animate={true} showBubbles={false} />
           </div>
         </div>
-      </div>
+      ),
+    },
+  ]
 
-      {/* Dots */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
-        {[0, 1, 2].map(i => (
-          <div
-            key={i}
-            onClick={() => scrollTo(i)}
-            style={{
-              width: activeIdx === i ? 20 : 6,
-              height: 6,
-              borderRadius: 3,
-              background: activeIdx === i ? '#fff' : '#313333',
-              transition: 'all 0.25s',
-              cursor: 'pointer',
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-const slideStyle: React.CSSProperties = {
-  flexShrink: 0,
-  width: '100%',
-  scrollSnapAlign: 'start',
-  display: 'flex',
-  alignItems: 'center',
-  gap: 16,
-  background: '#0A0A0A',
-  border: '1px solid #1A1A1A',
-  borderRadius: 22,
-  padding: '20px 18px',
-  height: 152,
-  boxSizing: 'border-box',
-}
-
-const ctaBtnStyle: React.CSSProperties = {
-  fontSize: 12,
-  fontWeight: 600,
-  color: '#000',
-  background: '#fff',
-  border: 'none',
-  borderRadius: 20,
-  padding: '7px 18px',
-  cursor: 'pointer',
-}
-
-// ─── Practices Horizontal Scroll ─────────────────────────────────────────────
-
-function PracticesScroll({
-  practices,
-  isPremium,
-  onPracticeClick,
-  onSubscribe,
-  catColors,
-}: {
-  practices: Practice[]
-  isPremium: boolean
-  onPracticeClick: (p: Practice) => void
-  onSubscribe: () => void
-  catColors: Record<string, string>
-}) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        overflowX: 'auto',
-        gap: 10,
-        scrollbarWidth: 'none',
-        msOverflowStyle: 'none',
-        paddingBottom: 4,
-      }}
-    >
-      {practices.map(p => {
-        const locked = !isPremium && p.is_premium
-        const color = catColors[p.category] || '#CBCBCB'
-        const mins = Math.floor(p.duration_seconds / 60)
-        return (
-          <div
-            key={p.id}
-            onClick={() => locked ? onSubscribe() : onPracticeClick(p)}
-            style={{
-              flexShrink: 0,
-              width: 160,
-              background: '#0A0A0A',
-              border: '1px solid #1A1A1A',
-              borderRadius: 16,
-              overflow: 'hidden',
-              cursor: 'pointer',
-            }}
-          >
-            <div style={{ position: 'relative' }}>
-              <BreathVisual category={p.category} size={160} borderRadius={0} animate={false} showBubbles={false} />
-              {locked && (
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C034A5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                  </svg>
-                </div>
-              )}
-            </div>
-            <div style={{ padding: '10px 12px' }}>
-              <div style={{ fontSize: 9, fontWeight: 700, color, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 4 }}>
-                {CAT_DISPLAY[p.category] ?? p.category}
-              </div>
-              <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2 }}>
-                {p.title_ru || p.title}
-              </div>
-              <div style={{ fontSize: 11, color: '#CBCBCB', opacity: 0.45 }}>
-                {p.instructor_name} · {mins} мин
-              </div>
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
+    <div style={{ overflowY: 'auto', minHeight: '100vh', background: C.bg, paddingBottom: 80 }}>
 
-// ─── Black CTA ────────────────────────────────────────────────────────────────
-
-function BlackCTA({
-  lockedPractices,
-  onSubscribe,
-}: {
-  lockedPractices: Practice[]
-  onSubscribe: () => void
-}) {
-  return (
-    <div
-      onClick={onSubscribe}
-      style={{
-        background: '#0A0A0A',
-        border: '1px solid #1A1A1A',
-        borderRadius: 18,
-        padding: '18px 18px 20px',
-        cursor: 'pointer',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Glow */}
-      <div style={{ position: 'absolute', top: -40, right: -40, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(192,52,165,0.12), transparent 70%)', pointerEvents: 'none' }} />
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: '#C034A5', background: 'rgba(192,52,165,0.1)', borderRadius: 6, padding: '3px 8px', letterSpacing: '0.04em' }}>BLACK</span>
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Ещё {lockedPractices.length > 0 ? `${lockedPractices.length}+` : '6+'} практик</span>
-          </div>
-          <div style={{ fontSize: 12, color: '#CBCBCB', opacity: 0.5, marginBottom: 14 }}>
-            Живые сессии · теория · эксклюзивный контент
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '44px 16px 12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <BrandMark size={18} />
+          <span style={{ fontSize: 14, fontWeight: 600, color: C.text, letterSpacing: '0.04em' }}>badbuddhas</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: C.text }}>{greeting}</div>
           </div>
           <button
-            onClick={e => { e.stopPropagation(); onSubscribe() }}
-            style={{ fontSize: 12, fontWeight: 600, color: '#fff', background: 'rgba(192,52,165,0.15)', border: '1px solid rgba(192,52,165,0.3)', borderRadius: 20, padding: '8px 18px', cursor: 'pointer' }}
+            onClick={() => router.push('/profile')}
+            style={{ width: 36, height: 36, borderRadius: '50%', background: C.card, border: `1.5px solid ${C.border2}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
           >
-            Открыть [black]
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           </button>
         </div>
+      </div>
 
-        {/* Locked previews */}
-        {lockedPractices.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
-            {lockedPractices.slice(0, 3).map(p => (
-              <div key={p.id} style={{ position: 'relative', borderRadius: 10, overflow: 'hidden' }}>
-                <BreathVisual category={p.category} size={48} borderRadius={10} animate={false} showBubbles={false} />
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C034A5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                  </svg>
-                </div>
-              </div>
+      {/* Hero Carousel */}
+      <div style={{ padding: '0 16px', marginBottom: 26 }}>
+        <div style={{ background: C.card, borderRadius: 22, padding: '20px 18px', height: 152, border: `1px solid ${C.border2}`, boxSizing: 'border-box' }}>
+          {SLIDES[slide].content}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
+          {SLIDES.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setSlide(i)}
+              style={{ width: i === slide ? 20 : 6, height: 6, borderRadius: 3, background: i === slide ? C.text2 : C.border2, border: 'none', cursor: 'pointer', padding: 0, transition: 'all 0.25s ease' }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Practices section */}
+      <div style={{ padding: '0 16px', marginBottom: 20 }}>
+        <SectionHdr title="Практики" onAll={() => router.push('/catalog')} />
+        {isPracticesLoading ? (
+          <div style={{ display: 'flex', gap: 12 }}>
+            {[1, 2, 3].map(i => <div key={i} style={{ width: 160, height: 220, flexShrink: 0, borderRadius: 18, background: C.card }} />)}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
+            {freePractices.map(p => (
+              <HomeCard key={p.id} p={p} onTap={() => handlePractice(p)} locked={false} />
             ))}
           </div>
         )}
+      </div>
+
+      {/* Black CTA */}
+      {!isPremium && (
+        <div style={{ margin: '0 16px 20px', borderRadius: 20, overflow: 'hidden', position: 'relative', cursor: 'pointer' }} onClick={() => router.push('/subscribe')}>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,#1a0030,#2d0050,#1a1a00)' }} />
+          <div style={{ position: 'absolute', top: -30, right: -30, width: 180, height: 180, borderRadius: '50%', background: `radial-gradient(circle,rgba(192,52,165,0.5) 0%,transparent 65%)`, pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', bottom: -20, left: 20, width: 120, height: 120, borderRadius: '50%', background: `radial-gradient(circle,rgba(84,198,140,0.25) 0%,transparent 65%)`, pointerEvents: 'none' }} />
+          <div style={{ position: 'relative', zIndex: 1, padding: '22px 20px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'inline-flex', background: `linear-gradient(135deg,${C.pink},#7b1fa2)`, borderRadius: 20, padding: '3px 12px', marginBottom: 10 }}>
+                  <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: 2 }}>BLACK</span>
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 500, color: C.white, lineHeight: 1.2, marginBottom: 6 }}>
+                  Ещё {lockedPractices.length > 0 ? `${lockedPractices.length}+` : '6+'} практик
+                </div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, marginBottom: 4 }}>
+                  Живые сессии, теория и эксклюзивный контент для подписчиков
+                </div>
+              </div>
+              {lockedPractices.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0, marginLeft: 12 }}>
+                  {lockedPractices.slice(0, 3).map(p => (
+                    <div key={p.id} style={{ width: 52, height: 52, borderRadius: 12, overflow: 'hidden', opacity: 0.8 }}>
+                      <BreathVisual category={p.category} size={52} borderRadius={12} animate={false} showBubbles={false} />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={e => { e.stopPropagation(); router.push('/subscribe') }}
+              style={{ width: '100%', fontSize: 14, fontWeight: 700, background: `linear-gradient(135deg,${C.pink},#7b1fa2)`, color: '#fff', border: 'none', borderRadius: 14, padding: '13px', cursor: 'pointer', boxShadow: `0 6px 24px rgba(192,52,165,0.5)` }}
+            >
+              Открыть [black]
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Teachers section */}
+      {teachers.length > 0 && (
+        <div style={{ padding: '0 16px', marginBottom: 20 }}>
+          <SectionHdr title="Преподаватели" onAll={() => {}} />
+          <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
+            {teachers.map((teacher, idx) => {
+              const isLocked = !isPremium && idx > 0
+              return (
+                <div
+                  key={teacher.name}
+                  style={{ flexShrink: 0, textAlign: 'center', width: 90, opacity: isLocked ? 0.3 : 1, cursor: isLocked ? 'default' : 'pointer' }}
+                >
+                  <div style={{ width: 90, height: 90, borderRadius: 18, marginBottom: 8, overflow: 'hidden', position: 'relative', border: `1px solid ${C.border}` }}>
+                    {teacher.avatarUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={teacher.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(100%) contrast(1.1) brightness(0.8)' }} />
+                    ) : (
+                      <div style={{ filter: 'grayscale(100%) brightness(0.7)' }}>
+                        <BreathVisual category={teacher.category} size={90} borderRadius={0} animate={false} showBubbles={false} />
+                      </div>
+                    )}
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 35%, rgba(0,0,0,0.72) 100%)' }} />
+                    <div style={{ position: 'absolute', bottom: 6, left: 0, right: 0, textAlign: 'center' }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.92)' }}>{teacher.name.split(' ')[0]}</span>
+                    </div>
+                    {isLocked && (
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={C.sub} strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                    <span style={{ fontSize: 10, color: C.sub }}>{teacher.count}</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+    </div>
+  )
+}
+
+// ─── Section Header ───────────────────────────────────────────────────────────
+
+function SectionHdr({ title, onAll }: { title: string; onAll: () => void }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+      <span style={{ fontSize: 15, fontWeight: 600, color: '#CBCBCB' }}>{title}</span>
+      {onAll && (
+        <button onClick={onAll} style={{ fontSize: 11, fontWeight: 600, color: '#CBCBCB', opacity: 0.45, background: 'none', border: 'none', cursor: 'pointer', letterSpacing: '0.06em' }}>
+          ВСЕ →
+        </button>
+      )}
+    </div>
+  )
+}
+
+// ─── Home Practice Card (square, full-bleed visual) ───────────────────────────
+
+function HomeCard({ p, onTap, locked }: { p: Practice; onTap: () => void; locked: boolean }) {
+  const catColor = { relax: '#8b5cf6', balance: '#3b82f6', energize: '#ec4899' }[p.category] || '#CBCBCB'
+  const mins = Math.floor(p.duration_seconds / 60)
+  return (
+    <div
+      onClick={onTap}
+      style={{ flexShrink: 0, width: 160, cursor: 'pointer', borderRadius: 18, overflow: 'hidden', position: 'relative', border: `1px solid #1A1A1A` }}
+    >
+      <BreathVisual category={p.category} size={160} borderRadius={0} animate={false} showBubbles={false} />
+      {locked && (
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C034A5" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        </div>
+      )}
+      {!locked && (
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 40, height: 40, borderRadius: '50%', background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="14" height="14" viewBox="0 0 12 14" fill="white"><path d="M1 1.5l10 5-10 5V1.5z"/></svg>
+        </div>
+      )}
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.82) 100%)' }} />
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '10px' }}>
+        <span style={{ fontSize: 9, fontWeight: 700, color: catColor, textTransform: 'uppercase', letterSpacing: 1 }}>
+          {CAT_DISPLAY[p.category] ?? p.category}
+        </span>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 1 }}>
+          {p.title_ru || p.title}
+        </div>
+        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>{mins} мин</div>
       </div>
     </div>
   )
