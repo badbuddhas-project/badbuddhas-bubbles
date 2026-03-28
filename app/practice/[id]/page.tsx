@@ -10,6 +10,7 @@ import { formatDurationFull } from '@/lib/utils'
 import { useTranslation } from '@/lib/i18n'
 import type { Practice } from '@/types/database'
 import { ymEvent, getPlatform } from '@/lib/analytics'
+import BreathVisual from '@/components/BreathVisual'
 
 const GRAIN_URL = "data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"
 
@@ -160,6 +161,11 @@ export default function PracticePage() {
           width: '100%', height: '100%', opacity: 0.08,
           backgroundImage: `url(${GRAIN_URL})`,
         }} />
+      </div>
+
+      {/* Layer 3: BreathVisual */}
+      <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', zIndex: 2 }}>
+        <BreathVisual category={practice.category} size={390} borderRadius={0} animate={true} />
       </div>
 
       {/* Content column */}
