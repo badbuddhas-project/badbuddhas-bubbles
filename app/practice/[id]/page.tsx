@@ -11,7 +11,6 @@ import { useTranslation } from '@/lib/i18n'
 import type { Practice } from '@/types/database'
 import { ymEvent, getPlatform } from '@/lib/analytics'
 
-const GRAIN_URL = "data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"
 
 export default function PracticePage() {
   const params = useParams()
@@ -114,6 +113,98 @@ export default function PracticePage() {
   const mins = practice ? Math.floor(practice.duration_seconds / 60) : 0
   const favorite = practice ? isFavorite(practice.id) : false
 
+  const playerCanvasRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = playerCanvasRef.current
+    if (!el || typeof window === 'undefined') return
+
+    const col = { main: [59, 130, 246] as [number,number,number], bg: [3, 6, 20] as [number,number,number] }
+    const [mr, mg, mb] = col.main
+
+    const W = 780, H = 1440
+    const src = document.createElement('canvas')
+    src.width = W; src.height = H
+    const ctx = src.getContext('2d')!
+    const cx = W / 2, cy = H * 0.44, S = Math.min(W, H * 0.55)
+
+    let seed = 42
+    const sr = () => { let x = Math.sin(seed++) * 10000; return x - Math.floor(x) }
+    const wob = [
+      Array.from({ length: 6 }, () => (sr() - 0.5) * 2),
+      Array.from({ length: 8 }, () => (sr() - 0.5) * 2),
+      Array.from({ length: 5 }, () => (sr() - 0.5) * 2),
+    ]
+    const layers = [
+      { R: S * 0.36, wc: 6, wa: 0.07, alpha: 0.85, lw: 0.011, wi: 0 },
+      { R: S * 0.28, wc: 8, wa: 0.05, alpha: 0.50, lw: 0.007, wi: 1 },
+      { R: S * 0.19, wc: 5, wa: 0.09, alpha: 0.30, lw: 0.005, wi: 2 },
+    ]
+
+    const myCanvas = document.createElement('canvas')
+    myCanvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%'
+    el.appendChild(myCanvas)
+    const myCtx = myCanvas.getContext('2d')!
+
+    let raf: number
+    function draw(ts: number) {
+      const T = ts * 0.001
+      const bs = 1 + 0.1 * Math.sin(T * (Math.PI * 2 / 7))
+
+      ctx.fillStyle = `rgb(${col.bg[0]},${col.bg[1]},${col.bg[2]})`
+      ctx.fillRect(0, 0, W, H)
+      const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, S * 0.9)
+      grd.addColorStop(0, `rgba(${mr},${mg},${mb},0.07)`)
+      grd.addColorStop(1, 'rgba(0,0,0,0)')
+      ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H)
+
+      ctx.globalCompositeOperation = 'lighter'
+      layers.forEach(layer => {
+        const r = layer.R * bs, wb = wob[layer.wi], steps = 150
+        ctx.beginPath()
+        for (let i = 0; i <= steps; i++) {
+          const a = (i / steps) * Math.PI * 2
+          let w = 0
+          for (let k = 0; k < layer.wc; k++) w += wb[k % wb.length] * Math.sin(a * (k + 1) + T * (0.14 + k * 0.04)) * layer.wa
+          const rr = r * (1 + w), x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+        }
+        ctx.closePath()
+        ctx.strokeStyle = `rgba(${mr},${mg},${mb},${layer.alpha * 0.1})`
+        ctx.lineWidth = S * layer.lw * 3; ctx.stroke()
+        ctx.strokeStyle = `rgba(${mr},${mg},${mb},${layer.alpha})`
+        ctx.lineWidth = S * layer.lw; ctx.stroke()
+        const fg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r)
+        fg.addColorStop(0, `rgba(${mr},${mg},${mb},${0.06 * layer.alpha})`)
+        fg.addColorStop(1, 'rgba(0,0,0,0)')
+        ctx.fillStyle = fg; ctx.fillRect(0, 0, W, H)
+      })
+
+      const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, S * 0.09)
+      cg.addColorStop(0, 'rgba(255,255,255,0.85)')
+      cg.addColorStop(0.4, `rgba(${mr},${mg},${mb},0.4)`)
+      cg.addColorStop(1, 'rgba(0,0,0,0)')
+      ctx.fillStyle = cg; ctx.fillRect(0, 0, W, H)
+      ctx.globalCompositeOperation = 'source-over'
+
+      const ef = ctx.createRadialGradient(cx, cy, S * 0.5, cx, cy, S * 0.8)
+      ef.addColorStop(0, 'rgba(0,0,0,0)')
+      ef.addColorStop(1, `rgba(${col.bg[0]},${col.bg[1]},${col.bg[2]},0.96)`)
+      ctx.fillStyle = ef; ctx.fillRect(0, 0, W, H)
+
+      myCanvas.width = el!.offsetWidth || 390
+      myCanvas.height = el!.offsetHeight || 720
+      myCtx.drawImage(src, 0, 0, W, H, 0, 0, myCanvas.width, myCanvas.height)
+      raf = requestAnimationFrame(draw)
+    }
+    raf = requestAnimationFrame(draw)
+
+    return () => {
+      cancelAnimationFrame(raf)
+      if (el.contains(myCanvas)) el.removeChild(myCanvas)
+    }
+  }, [])
+
   if (isLoadingPractice) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -137,30 +228,12 @@ export default function PracticePage() {
   }
 
   return (
-    <main style={{ position: 'relative', height: '100vh', overflow: 'hidden' }}>
-      {/* Layer 1: Animated gradient */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        background: 'linear-gradient(160deg, #0a0a2e, #1a0633, #2d1b4e, #4a1942, #1a2a0e, #0a2e2e, #0a0a2e)',
-        backgroundSize: '400% 400%',
-        animation: 'bbGradShift 12s ease infinite',
-      }}>
-        {/* Radial overlay */}
-        <div style={{
-          position: 'absolute', inset: 0, opacity: 0.5,
-          background: 'radial-gradient(circle at 30% 60%, rgba(139,92,246,0.4), transparent 60%), radial-gradient(circle at 70% 30%, rgba(59,130,246,0.3), transparent 50%)',
-        }} />
-      </div>
-
-      {/* Layer 2: Grain */}
-      <div style={{
-        position: 'absolute', inset: 0, zIndex: 1,
-      }}>
-        <div style={{
-          width: '100%', height: '100%', opacity: 0.08,
-          backgroundImage: `url(${GRAIN_URL})`,
-        }} />
-      </div>
+    <main style={{ position: 'relative', height: '100vh', overflow: 'hidden', background: 'rgb(3,6,20)' }}>
+      {/* Canvas animation layer */}
+      <div
+        ref={playerCanvasRef}
+        style={{ position: 'absolute', inset: 0, zIndex: 0 }}
+      />
 
       {/* Content column */}
       <div style={{ position: 'relative', zIndex: 10, height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -189,19 +262,8 @@ export default function PracticePage() {
         </button>
       </div>
 
-      {/* Middle: breathing watermark centered in free area */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/images/logo-ribs.png"
-          alt=""
-          width={180}
-          style={{
-            display: 'block', opacity: 0.02,
-            animation: 'bbBreathe 8s cubic-bezier(0.45, 0, 0.55, 1) infinite',
-          }}
-        />
-      </div>
+      {/* Middle: visual space for canvas animation */}
+      <div style={{ flex: 1 }} />
 
       {/* Bottom: progress + timer + controls */}
       <div style={{
@@ -292,15 +354,6 @@ export default function PracticePage() {
       </div>{/* end content column */}
 
       <style jsx global>{`
-        @keyframes bbBreathe {
-          0%, 100% { transform: scale(0.92); }
-          50% { transform: scale(1.08); }
-        }
-        @keyframes bbGradShift {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
