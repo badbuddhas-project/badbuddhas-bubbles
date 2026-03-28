@@ -3,6 +3,15 @@
 import type { Practice } from '@/types/database'
 import BreathVisual from './BreathVisual'
 
+const CAT_DISPLAY: Record<string, string> = {
+  relax: 'SLOW',
+  balance: 'GROUND',
+  energize: 'RISE',
+  slow: 'SLOW',
+  ground: 'GROUND',
+  rise: 'RISE',
+}
+
 interface PracticeCardProps {
   practice: Practice
   isFavorite: boolean
@@ -77,7 +86,7 @@ export function PracticeCard({
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
           <span style={{ fontSize: 10, fontWeight: 600, color: catColor, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-            {practice.category}
+            {CAT_DISPLAY[practice.category] ?? practice.category}
           </span>
           <span style={{ fontSize: 10, color: '#CBCBCB', opacity: 0.5 }}>
             {mins} {'\u043C\u0438\u043D'}
