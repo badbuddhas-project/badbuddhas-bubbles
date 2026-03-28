@@ -219,9 +219,9 @@ export default function Home() {
             <FilterGroup label={t('catalog.category')}>
               {([
                 { value: 'all', label: t('catalog.all') },
-                { value: 'relax', label: t('catalog.relax') },
-                { value: 'balance', label: t('catalog.balance') },
-                { value: 'energize', label: t('catalog.energize') },
+                { value: 'slow', label: t('catalog.slow') },
+                { value: 'ground', label: t('catalog.ground') },
+                { value: 'rise', label: t('catalog.rise') },
               ] as const).map((c) => (
                 <Chip key={c.value} active={categoryFilter === c.value} onClick={() => { setCategoryFilter(c.value as CategoryFilter); if (c.value !== 'all') ymEvent('filter_used', { filter_type: 'category', filter_value: c.value }) }}>{c.label}</Chip>
               ))}

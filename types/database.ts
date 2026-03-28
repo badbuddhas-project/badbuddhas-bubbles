@@ -1,4 +1,4 @@
-export type PracticeCategory = 'relax' | 'balance' | 'energize'
+export type PracticeCategory = 'slow' | 'ground' | 'rise'
 
 export interface Database {
   public: {

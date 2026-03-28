@@ -36,6 +36,9 @@ export interface Translations {
     relax: string
     balance: string
     energize: string
+    slow: string
+    ground: string
+    rise: string
     min: string
     noPractices: string
     noFavorites: string
