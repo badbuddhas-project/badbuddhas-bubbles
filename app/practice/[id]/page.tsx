@@ -272,10 +272,14 @@ export default function PracticePage() {
         {/* Progress bar */}
         <div style={{ marginBottom: 6 }}>
           <div
-            style={{ height: 2, background: 'rgba(255,255,255,0.15)', borderRadius: 2, overflow: 'hidden', cursor: 'pointer' }}
+            style={{ padding: '12px 0', margin: '-12px 0', cursor: 'pointer' }}
             onClick={handleProgressClick}
           >
-            <div style={{ width: `${progress}%`, height: '100%', background: 'rgba(255,255,255,0.5)', borderRadius: 2 }} />
+            <div
+              style={{ height: 2, background: 'rgba(255,255,255,0.15)', borderRadius: 2, overflow: 'hidden' }}
+            >
+              <div style={{ width: `${progress}%`, height: '100%', background: 'rgba(255,255,255,0.5)', borderRadius: 2 }} />
+            </div>
           </div>
         </div>
 
