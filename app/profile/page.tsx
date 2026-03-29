@@ -118,12 +118,31 @@ export default function ProfilePage() {
   const isPremium = user?.is_premium ?? false
   const displayName = user?.first_name || user?.username || user?.email?.split('@')[0] || 'User'
 
-  const menuItems = [
-    { label: t('profile.settings'), sub: t('profile.account'), onClick: () => router.push('/profile/settings') },
-    { label: t('profile.faq'), sub: '', onClick: () => router.push('/profile/faq') },
-    { label: t('profile.communityChat'), sub: '', onClick: () => window.open('https://t.me/+bb3fiUmoKGVjYmUy', '_blank') },
-    { label: t('profile.contactUs'), sub: '', onClick: () => window.open('https://badbuddhas.world/ask?utm_source=telegram&utm_medium=miniapp&utm_campaign=bubbles_contact', '_blank') },
+  const daysUntilExpiry = subscriptionExpiry
+    ? Math.ceil((new Date(subscriptionExpiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : null
+  const showRenewalWarning = isPremium && daysUntilExpiry !== null && daysUntilExpiry < 7
+
+  const formatExpiryLine = (dateStr: string) => {
+    const date = new Date(dateStr)
+    const monthsLeft = Math.max(0, Math.round((date.getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30)))
+    const formatted = date.toLocaleDateString(language === 'ru' ? 'ru-RU' : 'en-US', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    return language === 'ru' ? `до ${formatted} · ${monthsLeft} месяцев` : `until ${formatted} · ${monthsLeft} months`
+  }
+
+  const freeMenuItems = [
+    { label: t('profile.settings'), sub: t('profile.account'), onClick: () => router.push('/profile/settings'), red: false },
+    { label: t('profile.faq'), sub: '', onClick: () => router.push('/profile/faq'), red: false },
+    { label: t('profile.communityChat'), sub: '', onClick: () => window.open('https://t.me/+bb3fiUmoKGVjYmUy', '_blank'), red: false },
+    { label: t('profile.contactUs'), sub: '', onClick: () => window.open('https://badbuddhas.world/ask?utm_source=telegram&utm_medium=miniapp&utm_campaign=bubbles_contact', '_blank'), red: false },
   ]
+  const blackMenuItems = [
+    { label: language === 'ru' ? 'Настройки' : 'Settings', sub: t('profile.account'), onClick: () => router.push('/profile/settings'), red: false },
+    { label: language === 'ru' ? 'Уведомления' : 'Notifications', sub: '', onClick: () => router.push('/profile/settings'), red: false },
+    { label: language === 'ru' ? 'Поддержка' : 'Support', sub: '', onClick: () => window.open('https://badbuddhas.world/ask?utm_source=telegram&utm_medium=miniapp&utm_campaign=bubbles_contact', '_blank'), red: false },
+    { label: language === 'ru' ? 'Выйти' : 'Sign out', sub: '', onClick: handleLogout, red: true },
+  ]
+  const menuItems = isPremium ? blackMenuItems : freeMenuItems
 
   if (isUserLoading) {
     return (
@@ -160,19 +179,24 @@ export default function ProfilePage() {
             <circle
               cx="44" cy="44" r="40" fill="none"
               stroke={isPremium ? C.pink : C.green} strokeWidth="3.5"
-              strokeDasharray="180 251" strokeLinecap="round"
+              strokeDasharray={isPremium ? '230 251' : '180 251'} strokeLinecap="round"
               transform="rotate(-90 44 44)"
             />
           </svg>
           <div style={{
             width: 80, height: 80, borderRadius: '50%',
-            background: 'linear-gradient(135deg,#8b5cf6,#3b82f6)',
+            background: isPremium ? `linear-gradient(135deg,${C.pink},${C.green})` : 'linear-gradient(135deg,#8b5cf6,#3b82f6)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             position: 'relative', zIndex: 1,
           }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/images/logo-white-square.png" alt="" width={30} height={30} style={{ display: 'block', opacity: 0.9 }} />
           </div>
+          {isPremium && (
+            <div style={{ position: 'absolute', bottom: -2, left: '50%', transform: 'translateX(-50%)', zIndex: 3, background: C.pink, borderRadius: 6, padding: '2px 7px' }}>
+              <span style={{ fontSize: 9, fontWeight: 700, color: '#fff', letterSpacing: 1.5 }}>BLACK</span>
+            </div>
+          )}
         </div>
 
         {/* Meta */}
@@ -184,7 +208,12 @@ export default function ProfilePage() {
             {user?.created_at ? formatJoinDate(user.created_at) : '—'}
           </div>
           {isPremium ? (
-            <span style={{ fontSize: 12, fontWeight: 600, color: C.pink }}>[ black ]</span>
+            <>
+              <div style={{ fontSize: 12, fontWeight: 600, color: C.pink, marginBottom: 2 }}>bubbles [black]</div>
+              {subscriptionExpiry && (
+                <div style={{ fontSize: 11, color: C.sub }}>{formatExpiryLine(subscriptionExpiry)}</div>
+              )}
+            </>
           ) : (
             <span style={{ fontSize: 12, fontWeight: 600, color: C.green }}>bubbles</span>
           )}
@@ -241,14 +270,31 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Premium subscription expiry */}
-      {isPremium && subscriptionExpiry && (
-        <div style={{ margin: '0 16px 18px', background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: C.pink }}>[ black ] {language === 'ru' ? 'активна' : 'active'}</span>
-          <span style={{ fontSize: 12, color: C.sub }}>
-            {language === 'ru' ? 'до ' : 'until '}
-            {new Date(subscriptionExpiry).toLocaleDateString(language === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'long' })}
-          </span>
+      {/* Renewal warning — premium users, < 7 days until expiry */}
+      {showRenewalWarning && subscriptionExpiry && (
+        <div style={{ margin: '0 16px 18px', borderRadius: 16, padding: '16px', background: 'rgba(192,52,165,0.10)', border: '1px solid rgba(192,52,165,0.35)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.pink, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>
+                {language === 'ru' ? 'Подписка истекает' : 'Subscription expiring'}
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: C.text }}>
+                {language === 'ru'
+                  ? `Осталось ${daysUntilExpiry} ${daysUntilExpiry === 1 ? 'день' : 'дня'} · до ${new Date(subscriptionExpiry).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })}`
+                  : `${daysUntilExpiry} day${daysUntilExpiry === 1 ? '' : 's'} left · until ${new Date(subscriptionExpiry).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                }
+              </div>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="2" opacity="0.7" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 2h14M5 22h14M6 2v6l4 4-4 4v6M18 2v6l-4 4 4 4v6"/>
+            </svg>
+          </div>
+          <button
+            onClick={() => router.push('/subscribe')}
+            style={{ width: '100%', fontSize: 13, fontWeight: 700, color: '#fff', background: `linear-gradient(135deg,${C.pink},#7b1fa2)`, border: 'none', borderRadius: 12, padding: '11px', cursor: 'pointer' }}
+          >
+            {language === 'ru' ? 'Продлить доступ' : 'Renew access'}
+          </button>
         </div>
       )}
 
@@ -314,13 +360,15 @@ export default function ProfilePage() {
             onClick={item.onClick}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: i < menuItems.length - 1 ? `1px solid ${C.border}` : 'none', cursor: 'pointer' }}
           >
-            <span style={{ fontSize: 15, color: C.white }}>{item.label}</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {item.sub && <span style={{ fontSize: 13, color: C.sub }}>{item.sub}</span>}
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.sub} strokeWidth="1.5">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </div>
+            <span style={{ fontSize: 15, color: item.red ? '#e04040' : C.white }}>{item.label}</span>
+            {!item.red && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {item.sub && <span style={{ fontSize: 13, color: C.sub }}>{item.sub}</span>}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.sub} strokeWidth="1.5">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
+            )}
           </div>
         ))}
       </div>
