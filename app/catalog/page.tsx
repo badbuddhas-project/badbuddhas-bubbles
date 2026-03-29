@@ -41,7 +41,6 @@ export default function CatalogPage() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [instrFilter, setInstrFilter] = useState('all')
   const [durFilter, setDurFilter] = useState('all')
-  const [langFilter, setLangFilter] = useState('all')
 
   const instructors = useMemo(() => {
     const names = Array.from(new Set(practices.map(p => p.instructor_name)))
@@ -49,7 +48,6 @@ export default function CatalogPage() {
   }, [practices])
 
   const durations = ['all', 'до 10 мин', '10–20 мин', '20+ мин']
-  const langs = ['all', 'Русский', 'English']
 
   const cats = [
     { id: 'all', label: language === 'ru' ? 'Все' : 'All', color: C.text },
@@ -62,10 +60,6 @@ export default function CatalogPage() {
     return practices.filter(p => {
       if (cat !== 'all' && p.category !== cat) return false
       if (instrFilter !== 'all' && p.instructor_name !== instrFilter) return false
-      if (langFilter !== 'all') {
-        const lang = langFilter === 'Русский' ? 'ru' : 'en'
-        if (p.language !== lang) return false
-      }
       if (durFilter !== 'all') {
         const mins = Math.floor(p.duration_seconds / 60)
         if (durFilter === 'до 10 мин' && mins >= 10) return false
@@ -74,9 +68,9 @@ export default function CatalogPage() {
       }
       return true
     })
-  }, [practices, cat, instrFilter, durFilter, langFilter])
+  }, [practices, cat, instrFilter, durFilter])
 
-  const activeFiltersCount = [instrFilter, durFilter, langFilter].filter(f => f !== 'all').length
+  const activeFiltersCount = [instrFilter, durFilter].filter(f => f !== 'all').length
 
   const handlePractice = (p: Practice) => {
     if (!isPremium && p.is_premium) router.push('/subscribe')
@@ -173,22 +167,6 @@ export default function CatalogPage() {
                     label={d === 'all' ? (language === 'ru' ? 'Любая' : 'Any') : d}
                     active={durFilter === d}
                     onClick={() => setDurFilter(d)}
-                  />
-                ))}
-              </div>
-            </div>
-            {/* Language */}
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: C.sub, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>
-                {language === 'ru' ? 'Язык' : 'Language'}
-              </div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                {langs.map(l => (
-                  <FilterChip
-                    key={l}
-                    label={l === 'all' ? (language === 'ru' ? 'Все' : 'All') : l}
-                    active={langFilter === l}
-                    onClick={() => setLangFilter(l)}
                   />
                 ))}
               </div>
