@@ -9,7 +9,7 @@ export async function GET() {
   }
 
   try {
-    const res = await fetch('https://api.addevent.com/calevent/v2/events?calendar_id=vfycmmn2sx2t&page_size=20&sort=start&sort_direction=asc', {
+    const res = await fetch('https://api.addevent.com/calevent/v2/events?calendar_id=cal_81f819ac9f68449aab0497578be903fa&page_size=20&sort=start&sort_direction=asc', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/json',
@@ -23,7 +23,10 @@ export async function GET() {
     }
 
     const data = await res.json();
-    return NextResponse.json({ events: data.events || data.data || [] });
+    const events = (data.events || data.data || []).filter(
+      (e: { calendar_id?: string }) => e.calendar_id === 'cal_81f819ac9f68449aab0497578be903fa'
+    );
+    return NextResponse.json({ events });
   } catch (error) {
     console.error('AddEvent fetch error:', error);
     return NextResponse.json({ events: [] });
