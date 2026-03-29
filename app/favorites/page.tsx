@@ -86,7 +86,7 @@ export default function FavoritesPage() {
                 return (
                   <div key={p.id} onClick={() => handleTap(p)} style={{ flexShrink: 0, width: 120, cursor: 'pointer' }}>
                     <div style={{ position: 'relative' }}>
-                      <BreathVisual category={p.category} size={120} borderRadius={18} animate={false} showBubbles={false} />
+                      <BreathVisual category={p.category} size={120} borderRadius={16} animate={false} showBubbles={false} />
                       <div style={{ position: 'absolute', top: 8, right: 8 }}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill={catColor} stroke={catColor} strokeWidth="1.5">
                           <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
@@ -118,7 +118,7 @@ export default function FavoritesPage() {
                   style={{ display: 'flex', gap: 12, padding: '11px 0', borderBottom: `1px solid ${C.border}`, alignItems: 'center', cursor: 'pointer' }}
                 >
                   <div style={{ flexShrink: 0, width: 60, height: 60, borderRadius: 14, overflow: 'hidden' }}>
-                    <BreathVisual category={p.category} size={60} borderRadius={0} animate={false} showBubbles={false} />
+                    <BreathVisual category={p.category} size={60} borderRadius={12} animate={false} showBubbles={false} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2 }}>

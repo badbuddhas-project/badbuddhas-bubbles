@@ -143,7 +143,7 @@ export default function Home() {
             <button onClick={() => router.push('/subscribe')} style={{ fontSize: 12, fontWeight: 600, color: C.bg, background: C.green, border: 'none', borderRadius: 20, padding: '7px 16px', cursor: 'pointer' }}>Подробнее →</button>
           </div>
           <div style={{ flexShrink: 0, borderRadius: 22, overflow: 'hidden' }}>
-            <BreathVisual category="balance" size={92} borderRadius={22} animate={true} showBubbles={false} />
+            <BreathVisual category="balance" size={112} borderRadius={22} animate={true} showBubbles={false} />
           </div>
         </div>
       ),
@@ -164,7 +164,7 @@ export default function Home() {
             )}
           </div>
           <div style={{ flexShrink: 0, borderRadius: 22, overflow: 'hidden' }}>
-            <BreathVisual category="energize" size={92} borderRadius={22} animate={true} showBubbles={false} />
+            <BreathVisual category="energize" size={112} borderRadius={22} animate={true} showBubbles={false} />
           </div>
         </div>
       ),
@@ -321,9 +321,9 @@ function HomeCard({ p, onTap, locked }: { p: Practice; onTap: () => void; locked
   return (
     <div
       onClick={onTap}
-      style={{ flexShrink: 0, width: 160, cursor: 'pointer', borderRadius: 18, overflow: 'hidden', position: 'relative', border: `1px solid #1A1A1A` }}
+      style={{ flexShrink: 0, width: 120, cursor: 'pointer', borderRadius: 16, overflow: 'hidden', position: 'relative', border: `1px solid #1A1A1A` }}
     >
-      <BreathVisual category={p.category} size={160} borderRadius={0} animate={true} showBubbles={false} />
+      <BreathVisual category={p.category} size={120} borderRadius={16} animate={false} showBubbles={false} />
       {locked && (
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C034A5" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>

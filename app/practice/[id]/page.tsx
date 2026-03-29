@@ -346,8 +346,8 @@ export default function PracticePage() {
                   onClick={() => router.push(rpLocked ? '/subscribe' : `/practice/${rp.id}?from=${fromTab}`)}
                   style={{ display: 'flex', gap: 12, padding: '11px 0', borderBottom: `1px solid ${C.border}`, alignItems: 'center', cursor: 'pointer' }}
                 >
-                  <div style={{ flexShrink: 0, width: 52, height: 52, borderRadius: 12, overflow: 'hidden', position: 'relative' }}>
-                    <BreathVisual category={rp.category} size={52} borderRadius={0} animate={false} showBubbles={false} />
+                  <div style={{ flexShrink: 0, width: 60, height: 60, borderRadius: 12, overflow: 'hidden', position: 'relative' }}>
+                    <BreathVisual category={rp.category} size={60} borderRadius={12} animate={false} showBubbles={false} />
                     {rpLocked && (
                       <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C034A5" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>

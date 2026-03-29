@@ -237,7 +237,7 @@ function PracticeRow({ p, onTap, isPremium }: { p: Practice; onTap: () => void; 
       style={{ display: 'flex', gap: 12, padding: '11px 0', borderBottom: `1px solid #1A1A1A`, alignItems: 'center', cursor: 'pointer' }}
     >
       <div style={{ flexShrink: 0, width: 60, height: 60, borderRadius: 14, overflow: 'hidden', position: 'relative' }}>
-        <BreathVisual category={p.category} size={60} borderRadius={0} animate={false} showBubbles={false} />
+        <BreathVisual category={p.category} size={60} borderRadius={12} animate={false} showBubbles={false} />
         {locked && (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C034A5" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
