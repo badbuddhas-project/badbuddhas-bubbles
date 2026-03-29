@@ -80,7 +80,7 @@ export function TabBar({ isPremium }: TabBarProps) {
   const freeTabs = [
     { id: 'home',      label: language === 'ru' ? 'Главная'  : 'Home',      Icon: IconHome     },
     { id: 'catalog',   label: language === 'ru' ? 'Каталог'  : 'Catalog',   Icon: IconMusic    },
-    { id: 'theory',    label: language === 'ru' ? 'Теория'   : 'Theory',    Icon: IconBook     },
+    { id: 'schedule',  label: language === 'ru' ? 'Расписание': 'Schedule',  Icon: IconCalendar },
     { id: 'favorites', label: language === 'ru' ? 'Избранное': 'Favorites', Icon: IconHeart    },
   ]
 
