@@ -89,16 +89,6 @@ export default function Home() {
     else router.push(`/practice/${p.id}`)
   }
 
-  const handleTabChange = (tab: string) => {
-    const routes: Record<string, string> = {
-      home: '/',
-      catalog: '/catalog',
-      theory: '/theory',
-      favorites: '/favorites',
-      schedule: '/schedule',
-    }
-    if (routes[tab]) router.push(routes[tab])
-  }
 
   if (isUserLoading || isOnboardingLoading || !isOnboardingCompleted) {
     return (
@@ -303,7 +293,7 @@ export default function Home() {
         </div>
       )}
 
-      <TabBar isPremium={isPremium} activeTab="home" onTabChange={handleTabChange} />
+      <TabBar isPremium={isPremium} />
     </div>
   )
 }

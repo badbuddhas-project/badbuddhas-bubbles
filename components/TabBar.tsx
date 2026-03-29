@@ -1,11 +1,10 @@
 'use client'
 
+import { useRouter, usePathname } from 'next/navigation'
 import { useTranslation } from '@/lib/i18n'
 
 interface TabBarProps {
   isPremium: boolean
-  activeTab: string
-  onTabChange: (tab: string) => void
 }
 
 function IconHome({ color }: { color: string }) {
@@ -55,8 +54,28 @@ function IconCalendar({ color }: { color: string }) {
   )
 }
 
-export function TabBar({ isPremium, activeTab, onTabChange }: TabBarProps) {
+const TAB_ROUTES: Record<string, string> = {
+  home: '/',
+  catalog: '/catalog',
+  theory: '/theory',
+  favorites: '/favorites',
+  schedule: '/schedule',
+}
+
+const ROUTE_TO_TAB: Record<string, string> = {
+  '/': 'home',
+  '/catalog': 'catalog',
+  '/theory': 'theory',
+  '/favorites': 'favorites',
+  '/schedule': 'schedule',
+}
+
+export function TabBar({ isPremium }: TabBarProps) {
+  const router = useRouter()
+  const pathname = usePathname()
   const { language } = useTranslation()
+
+  const activeTab = (pathname && ROUTE_TO_TAB[pathname]) || 'home'
 
   const freeTabs = [
     { id: 'home',      label: language === 'ru' ? 'Главная'  : 'Home',      Icon: IconHome     },
@@ -96,7 +115,7 @@ export function TabBar({ isPremium, activeTab, onTabChange }: TabBarProps) {
           return (
             <button
               key={id}
-              onClick={() => onTabChange(id)}
+              onClick={() => { if (TAB_ROUTES[id]) router.push(TAB_ROUTES[id]) }}
               style={{
                 background: active ? activeBg : 'none',
                 border: 'none',
