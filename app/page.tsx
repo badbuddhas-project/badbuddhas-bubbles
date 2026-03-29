@@ -103,11 +103,11 @@ export default function Home() {
     {
       key: 'black',
       content: (
-        <div style={{ position: 'relative', height: '100%', overflow: 'hidden' }}>
+        <div style={{ position: 'relative', height: '100%', overflow: 'hidden', borderRadius: 22 }}>
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #1a0030, #2d0050)' }} />
           <div style={{ position: 'absolute', top: -30, right: -30, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(192,52,165,0.5) 0%, transparent 65%)' }} />
           <div style={{ position: 'absolute', bottom: -20, left: 20, width: 100, height: 100, borderRadius: '50%', background: 'radial-gradient(circle, rgba(84,198,140,0.25) 0%, transparent 65%)' }} />
-          <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '20px 18px' }}>
             <div style={{ display: 'inline-flex', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', borderRadius: 20, padding: '3px 12px', marginBottom: 10, alignSelf: 'flex-start' }}>
               <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: 2 }}>BLACK</span>
             </div>
@@ -161,7 +161,15 @@ export default function Home() {
 
       {/* Hero Carousel */}
       <div style={{ padding: '0 16px', marginBottom: 26 }}>
-        <div style={{ background: C.card, borderRadius: 22, padding: '20px 18px', height: 200, border: `1px solid ${C.border}`, boxSizing: 'border-box' }}>
+        <div style={{
+          borderRadius: 22,
+          height: 200,
+          boxSizing: 'border-box',
+          overflow: 'hidden',
+          ...(SLIDES[slide].key === 'black'
+            ? { background: 'transparent', border: 'none', padding: 0 }
+            : { background: C.card, border: `1px solid ${C.border}`, padding: '20px 18px' }),
+        }}>
           {SLIDES[slide].content}
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
