@@ -282,7 +282,7 @@ export default function PracticePage() {
       </div>
 
       {/* Info section */}
-      <div style={{ padding: '0 16px 24px', marginTop: -8 }}>
+      <div style={{ padding: '0 20px 24px', marginTop: 16 }}>
 
         {/* Title row + actions */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -313,7 +313,7 @@ export default function PracticePage() {
         </div>
 
         {/* About section */}
-        <div style={{ marginBottom: 20 }}>
+        <div style={{ marginTop: 20, marginBottom: 20 }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: C.sub, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 10 }}>
             {language === 'ru' ? 'О ПРАКТИКЕ' : 'ABOUT'}
           </div>
