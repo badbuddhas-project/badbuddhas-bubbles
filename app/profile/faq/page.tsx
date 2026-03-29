@@ -54,9 +54,9 @@ export default function FAQPage() {
       <header className="flex items-center gap-4 p-4 border-b border-zinc-800">
         <button
           onClick={handleBack}
-          className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center"
+          style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
-          <ArrowLeftIcon className="w-5 h-5 text-white" />
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#CBCBCB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <h1 className="text-lg font-semibold text-white">{t('faq.title')}</h1>
       </header>
