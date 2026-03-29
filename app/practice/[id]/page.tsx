@@ -10,6 +10,7 @@ import { usePractices } from '@/hooks/usePractices'
 import { formatDurationFull } from '@/lib/utils'
 import { useTranslation } from '@/lib/i18n'
 import type { Practice } from '@/types/database'
+import { useUser } from '@/hooks/useUser'
 import { ymEvent, getPlatform } from '@/lib/analytics'
 import BreathVisual from '@/components/BreathVisual'
 
@@ -43,6 +44,8 @@ export default function PracticePage() {
   const hasCompletedRef = useRef(false)
   const hasStartedRef = useRef(false)
 
+  const { user } = useUser()
+  const isPremium = user?.is_premium ?? false
   const { practices } = usePractices()
   const { recordPractice } = usePracticeCompletion()
   const { isFavorite, toggleFavorite } = useFavorites()
@@ -333,14 +336,20 @@ export default function PracticePage() {
             {morePractices.map(rp => {
               const rpMins = Math.floor(rp.duration_seconds / 60)
               const rpCatColor = CAT_COLORS[rp.category] || C.slow
+              const rpLocked = !isPremium && rp.is_premium
               return (
                 <div
                   key={rp.id}
-                  onClick={() => router.push(`/practice/${rp.id}`)}
+                  onClick={() => router.push(rpLocked ? '/subscribe' : `/practice/${rp.id}`)}
                   style={{ display: 'flex', gap: 12, padding: '11px 0', borderBottom: `1px solid ${C.border}`, alignItems: 'center', cursor: 'pointer' }}
                 >
-                  <div style={{ flexShrink: 0, width: 52, height: 52, borderRadius: 12, overflow: 'hidden' }}>
+                  <div style={{ flexShrink: 0, width: 52, height: 52, borderRadius: 12, overflow: 'hidden', position: 'relative' }}>
                     <BreathVisual category={rp.category} size={52} borderRadius={0} animate={false} showBubbles={false} />
+                    {rpLocked && (
+                      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C034A5" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                      </div>
+                    )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2 }}>
