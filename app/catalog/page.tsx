@@ -229,7 +229,7 @@ function FilterChip({ label, active, onClick }: { label: string; active: boolean
 // ─── Practice Row (list mode) ─────────────────────────────────────────────────
 
 function PracticeRow({ p, onTap, isPremium, favorite, onToggleFav }: { p: Practice; onTap: () => void; isPremium: boolean; favorite: boolean; onToggleFav: () => void }) {
-  const catColor = { relax: '#8b5cf6', balance: '#3b82f6', energize: '#ec4899' }[p.category] || '#CBCBCB'
+  const catColor = ({ relax: '#8b5cf6', slow: '#8b5cf6', balance: '#3b82f6', ground: '#3b82f6', energize: '#ec4899', rise: '#ec4899' } as Record<string, string>)[p.category] || '#8b5cf6'
   const mins = Math.floor(p.duration_seconds / 60)
   const locked = !isPremium && p.is_premium
 
@@ -276,7 +276,7 @@ function PracticeRow({ p, onTap, isPremium, favorite, onToggleFav }: { p: Practi
 // ─── Grid Card (grid mode) ────────────────────────────────────────────────────
 
 function GridCard({ p, onTap, isPremium, favorite, onToggleFav }: { p: Practice; onTap: () => void; isPremium: boolean; favorite: boolean; onToggleFav: () => void }) {
-  const catColor = { relax: '#8b5cf6', balance: '#3b82f6', energize: '#ec4899' }[p.category] || '#CBCBCB'
+  const catColor = ({ relax: '#8b5cf6', slow: '#8b5cf6', balance: '#3b82f6', ground: '#3b82f6', energize: '#ec4899', rise: '#ec4899' } as Record<string, string>)[p.category] || '#8b5cf6'
   const mins = Math.floor(p.duration_seconds / 60)
   const locked = !isPremium && p.is_premium
 

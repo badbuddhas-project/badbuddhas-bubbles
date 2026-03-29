@@ -316,7 +316,7 @@ function SectionHdr({ title, onAll }: { title: string; onAll: () => void }) {
 // ─── Home Practice Card (square, full-bleed visual) ───────────────────────────
 
 function HomeCard({ p, onTap, locked }: { p: Practice; onTap: () => void; locked: boolean }) {
-  const catColor = { relax: '#8b5cf6', balance: '#3b82f6', energize: '#ec4899' }[p.category] || '#CBCBCB'
+  const catColor = ({ relax: '#8b5cf6', slow: '#8b5cf6', balance: '#3b82f6', ground: '#3b82f6', energize: '#ec4899', rise: '#ec4899' } as Record<string, string>)[p.category] || '#8b5cf6'
   const mins = Math.floor(p.duration_seconds / 60)
   return (
     <div
@@ -335,11 +335,12 @@ function HomeCard({ p, onTap, locked }: { p: Practice; onTap: () => void; locked
           <svg width="14" height="14" viewBox="0 0 12 14" fill="white"><path d="M1 1.5l10 5-10 5V1.5z"/></svg>
         </div>
       )}
+      {/* Category tag — top left */}
+      <span style={{ position: 'absolute', top: 8, left: 8, zIndex: 10, fontSize: 9, fontWeight: 700, color: catColor, textTransform: 'uppercase', letterSpacing: 1 }}>
+        {CAT_DISPLAY[p.category] ?? p.category}
+      </span>
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '10px', zIndex: 2 }}>
-        <span style={{ fontSize: 9, fontWeight: 700, color: catColor, textTransform: 'uppercase', letterSpacing: 1 }}>
-          {CAT_DISPLAY[p.category] ?? p.category}
-        </span>
-        <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 1 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {p.title_ru || p.title}
         </div>
         <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>{mins} мин</div>
