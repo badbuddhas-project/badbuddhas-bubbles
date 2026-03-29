@@ -13,6 +13,7 @@ import { useOnboarding } from '@/hooks/useOnboarding'
 import { useTranslation } from '@/lib/i18n'
 import BreathVisual from '@/components/BreathVisual'
 import { BrandMark } from '@/components/BrandMark'
+import { TabBar } from '@/components/TabBar'
 import type { Practice } from '@/types/database'
 import { ymEvent, getPlatform } from '@/lib/analytics'
 
@@ -86,6 +87,17 @@ export default function Home() {
   const handlePractice = (p: Practice) => {
     if (!isPremium && p.is_premium) router.push('/subscribe')
     else router.push(`/practice/${p.id}`)
+  }
+
+  const handleTabChange = (tab: string) => {
+    const routes: Record<string, string> = {
+      home: '/',
+      catalog: '/catalog',
+      theory: '/theory',
+      favorites: '/favorites',
+      schedule: '/schedule',
+    }
+    if (routes[tab]) router.push(routes[tab])
   }
 
   if (isUserLoading || isOnboardingLoading || !isOnboardingCompleted) {
@@ -291,6 +303,7 @@ export default function Home() {
         </div>
       )}
 
+      <TabBar isPremium={isPremium} activeTab="home" onTabChange={handleTabChange} />
     </div>
   )
 }
