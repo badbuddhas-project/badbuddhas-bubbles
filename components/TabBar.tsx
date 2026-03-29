@@ -5,6 +5,7 @@ import { useTranslation } from '@/lib/i18n'
 
 interface TabBarProps {
   isPremium: boolean
+  activeOverride?: string
 }
 
 function IconHome({ color }: { color: string }) {
@@ -70,12 +71,12 @@ const ROUTE_TO_TAB: Record<string, string> = {
   '/schedule': 'schedule',
 }
 
-export function TabBar({ isPremium }: TabBarProps) {
+export function TabBar({ isPremium, activeOverride }: TabBarProps) {
   const router = useRouter()
   const pathname = usePathname()
   const { language } = useTranslation()
 
-  const activeTab = (pathname && ROUTE_TO_TAB[pathname]) || 'home'
+  const activeTab = activeOverride || (pathname && ROUTE_TO_TAB[pathname]) || 'home'
 
   const freeTabs = [
     { id: 'home',      label: language === 'ru' ? 'Главная'  : 'Home',      Icon: IconHome     },

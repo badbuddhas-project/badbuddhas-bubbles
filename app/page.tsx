@@ -86,7 +86,7 @@ export default function Home() {
 
   const handlePractice = (p: Practice) => {
     if (!isPremium && p.is_premium) router.push('/subscribe')
-    else router.push(`/practice/${p.id}`)
+    else router.push(`/practice/${p.id}?from=home`)
   }
 
 

@@ -74,7 +74,7 @@ export default function CatalogPage() {
 
   const handlePractice = (p: Practice) => {
     if (!isPremium && p.is_premium) router.push('/subscribe')
-    else router.push(`/practice/${p.id}`)
+    else router.push(`/practice/${p.id}?from=catalog`)
   }
 
   return (

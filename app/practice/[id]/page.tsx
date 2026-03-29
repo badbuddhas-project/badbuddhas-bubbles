@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { getSupabaseClient } from '@/lib/supabase'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 import { usePracticeCompletion } from '@/hooks/usePracticeCompletion'
@@ -34,7 +34,9 @@ const CAT_DISPLAY: Record<string, string> = { relax: 'SLOW', balance: 'GROUND', 
 export default function PracticePage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const practiceId = params?.id as string
+  const fromTab = searchParams?.get('from') || 'home'
   const { t, language } = useTranslation()
 
   const [practice, setPractice] = useState<Practice | null>(null)
@@ -341,7 +343,7 @@ export default function PracticePage() {
               return (
                 <div
                   key={rp.id}
-                  onClick={() => router.push(rpLocked ? '/subscribe' : `/practice/${rp.id}`)}
+                  onClick={() => router.push(rpLocked ? '/subscribe' : `/practice/${rp.id}?from=${fromTab}`)}
                   style={{ display: 'flex', gap: 12, padding: '11px 0', borderBottom: `1px solid ${C.border}`, alignItems: 'center', cursor: 'pointer' }}
                 >
                   <div style={{ flexShrink: 0, width: 52, height: 52, borderRadius: 12, overflow: 'hidden', position: 'relative' }}>
@@ -369,7 +371,7 @@ export default function PracticePage() {
           </div>
         )}
       </div>
-      <TabBar isPremium={isPremium} />
+      <TabBar isPremium={isPremium} activeOverride={fromTab} />
     </main>
   )
 }
