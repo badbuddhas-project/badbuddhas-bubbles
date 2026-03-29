@@ -76,7 +76,7 @@ export function TabBar({ isPremium, activeOverride }: TabBarProps) {
   const pathname = usePathname()
   const { language } = useTranslation()
 
-  const activeTab = activeOverride || (pathname && ROUTE_TO_TAB[pathname]) || 'home'
+  const activeTab = activeOverride || (pathname === '/profile' ? null : (pathname && ROUTE_TO_TAB[pathname]) || 'home')
 
   const freeTabs = [
     { id: 'home',      label: language === 'ru' ? 'Главная'  : 'Home',      Icon: IconHome     },
