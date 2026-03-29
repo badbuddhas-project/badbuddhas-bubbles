@@ -68,10 +68,16 @@ function drawBubbles(
 function drawSlow(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: number, showBubbles: boolean) {
   const cx = S / 2
   const cy = S / 2
-  const cr = S * 0.28
+  const cr = S * 0.20
   const breathe = 1 + 0.06 * Math.sin(t * 0.4)
   const rot = t * 0.08
   const scaledR = cr * breathe
+
+  // Clip to canvas bounds
+  ctx.save()
+  ctx.beginPath()
+  ctx.rect(0, 0, S, S)
+  ctx.clip()
 
   // Glow layer
   ctx.save()
@@ -124,6 +130,8 @@ function drawSlow(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: numb
     const rng = seededRng(42)
     drawBubbles(ctx, S, c, t, rng)
   }
+
+  ctx.restore() // clip
 }
 
 function drawRise(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: number) {
@@ -134,6 +142,12 @@ function drawRise(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: numb
   const rot = t * 0.08
   const scaledR = cr * breathe
   const r2 = cr * 1.5
+
+  // Clip to canvas bounds
+  ctx.save()
+  ctx.beginPath()
+  ctx.rect(0, 0, S, S)
+  ctx.clip()
 
   const petalCount = 6
 
@@ -212,6 +226,8 @@ function drawRise(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: numb
   ctx.arc(cx, cy, S * 0.025, 0, Math.PI * 2)
   ctx.fillStyle = rgb(c, 0.9)
   ctx.fill()
+
+  ctx.restore() // clip
 }
 
 function drawGround(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: number, showBubbles: boolean) {
@@ -222,6 +238,12 @@ function drawGround(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: nu
   const wobbleCount = 8
   const wobbleAmt = 0.05
   const layers = 3
+
+  // Clip to canvas bounds
+  ctx.save()
+  ctx.beginPath()
+  ctx.rect(0, 0, S, S)
+  ctx.clip()
 
   for (let l = 0; l < layers; l++) {
     const r = R * (1 - l * 0.25)
@@ -270,6 +292,8 @@ function drawGround(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: nu
     const rng = seededRng(seed)
     drawBubbles(ctx, S, c, t, rng)
   }
+
+  ctx.restore() // clip
 }
 
 export default function BreathVisual({
