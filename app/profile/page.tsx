@@ -253,7 +253,7 @@ export default function ProfilePage() {
                 <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: 2 }}>BLACK</span>
               </div>
               <div style={{ fontSize: 18, fontWeight: 500, color: C.white, lineHeight: 1.2, marginBottom: 6 }}>
-                {language === 'ru' ? 'Ещё 10+ практик' : '10+ more practices'}
+                {language === 'ru' ? 'Ещё 30+ практик' : '30+ more practices'}
               </div>
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>
                 {language === 'ru' ? 'Живые сессии, теория и эксклюзивный контент для подписчиков' : 'Live sessions, theory and exclusive content for subscribers'}
