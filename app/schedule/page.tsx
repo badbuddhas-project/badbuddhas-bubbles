@@ -18,8 +18,12 @@ const C = {
 interface ScheduleEvent {
   id?: string
   title: string
-  start: string
+  datetime_start: string
+  datetime_end?: string
   description?: string
+  location?: string
+  link_short?: string
+  timezone?: string
 }
 
 export default function SchedulePage() {
@@ -103,8 +107,8 @@ export default function SchedulePage() {
                 flexShrink: 0,
                 minWidth: 46,
               }}>
-                <div style={{ fontSize: 20, fontWeight: 800, color: C.green }}>{formatDay(ev.start)}</div>
-                <div style={{ fontSize: 10, color: C.green, textTransform: 'uppercase' }}>{formatMonth(ev.start)}</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: C.green }}>{formatDay(ev.datetime_start)}</div>
+                <div style={{ fontSize: 10, color: C.green, textTransform: 'uppercase' }}>{formatMonth(ev.datetime_start)}</div>
               </div>
 
               {/* Details */}
@@ -113,12 +117,18 @@ export default function SchedulePage() {
                   {ev.title}
                 </div>
                 <div style={{ fontSize: 12, color: C.sub, marginBottom: 8 }}>
-                  {formatTime(ev.start)} · {formatDate(ev.start)}
+                  {formatTime(ev.datetime_start)} · {formatDate(ev.datetime_start)}
                 </div>
-                {ev.description && (
-                  <div style={{ fontSize: 11, color: C.sub, lineHeight: 1.4 }}>
-                    {ev.description.length > 80 ? ev.description.slice(0, 80) + '...' : ev.description}
-                  </div>
+                {ev.location && (
+                  <a
+                    href={ev.location}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={e => e.stopPropagation()}
+                    style={{ fontSize: 11, color: C.green, textDecoration: 'none' }}
+                  >
+                    {language === 'ru' ? 'Подробнее →' : 'Details →'}
+                  </a>
                 )}
               </div>
             </div>
