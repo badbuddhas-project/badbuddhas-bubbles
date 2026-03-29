@@ -129,7 +129,7 @@ function drawSlow(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: numb
 function drawRise(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: number) {
   const cx = S / 2
   const cy = S / 2
-  const cr = S * 0.28
+  const cr = S * 0.18
   const breathe = 1 + 0.06 * Math.sin(t * 0.4)
   const rot = t * 0.08
   const scaledR = cr * breathe
