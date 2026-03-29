@@ -193,7 +193,7 @@ export default function Home() {
 
       {/* Hero Carousel */}
       <div style={{ padding: '0 16px', marginBottom: 26 }}>
-        <div style={{ background: C.card, borderRadius: 22, padding: '20px 18px', height: 152, border: `1px solid ${C.border2}`, boxSizing: 'border-box' }}>
+        <div style={{ background: C.card, borderRadius: 22, padding: '20px 18px', height: 152, border: `1px solid ${C.border}`, boxSizing: 'border-box' }}>
           {SLIDES[slide].content}
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
@@ -333,7 +333,7 @@ function HomeCard({ p, onTap, locked }: { p: Practice; onTap: () => void; locked
       onClick={onTap}
       style={{ flexShrink: 0, width: 160, cursor: 'pointer', borderRadius: 18, overflow: 'hidden', position: 'relative', border: `1px solid #1A1A1A` }}
     >
-      <BreathVisual category={p.category} size={160} borderRadius={0} animate={false} showBubbles={false} />
+      <BreathVisual category={p.category} size={160} borderRadius={0} animate={true} showBubbles={false} />
       {locked && (
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C034A5" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
