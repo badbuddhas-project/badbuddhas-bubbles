@@ -13,6 +13,7 @@ import type { Practice } from '@/types/database'
 import { useUser } from '@/hooks/useUser'
 import { ymEvent, getPlatform } from '@/lib/analytics'
 import BreathVisual from '@/components/BreathVisual'
+import { TabBar } from '@/components/TabBar'
 
 const C = {
   bg: '#000',
@@ -368,6 +369,7 @@ export default function PracticePage() {
           </div>
         )}
       </div>
+      <TabBar isPremium={isPremium} />
     </main>
   )
 }
