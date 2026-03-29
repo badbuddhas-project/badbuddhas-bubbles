@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { getSupabaseClient } from '@/lib/supabase'
+import { useUser } from '@/hooks/useUser'
 import type { Practice, PracticeCategory } from '@/types/database'
 
 interface UsePracticesOptions {
@@ -9,6 +10,7 @@ interface UsePracticesOptions {
 }
 
 export function usePractices(options: UsePracticesOptions = {}) {
+  const { user } = useUser()
   const [practices, setPractices] = useState<Practice[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -49,8 +51,9 @@ export function usePractices(options: UsePracticesOptions = {}) {
   }, [options.category])
 
   useEffect(() => {
+    if (!user) return
     fetchPractices()
-  }, [fetchPractices])
+  }, [user, fetchPractices])
 
   return {
     practices,
