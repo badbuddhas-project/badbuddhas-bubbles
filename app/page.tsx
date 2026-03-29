@@ -70,7 +70,6 @@ export default function Home() {
 
   const freePractices = useMemo(() => practices.filter(p => !p.is_premium).slice(0, 3), [practices])
 
-  const featuredPractice = freePractices[0] ?? null
 
   const teachers = useMemo(() => {
     const seen = new Set<string>()
@@ -102,32 +101,22 @@ export default function Home() {
 
   const SLIDES = [
     {
-      key: 'practice',
+      key: 'black',
       content: (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
-          <div style={{ flex: 1, minWidth: 0, paddingRight: 12 }}>
-            <div style={{ fontFamily: 'inherit', fontSize: 10, fontWeight: 700, color: featuredPractice ? (CAT_COLORS[featuredPractice.category] || C.slow) : C.slow, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 7 }}>
-              НОВАЯ ПРАКТИКА
+        <div style={{ position: 'relative', height: '100%', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #1a0030, #2d0050)' }} />
+          <div style={{ position: 'absolute', top: -30, right: -30, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(192,52,165,0.5) 0%, transparent 65%)' }} />
+          <div style={{ position: 'absolute', bottom: -20, left: 20, width: 100, height: 100, borderRadius: '50%', background: 'radial-gradient(circle, rgba(84,198,140,0.25) 0%, transparent 65%)' }} />
+          <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ display: 'inline-flex', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', borderRadius: 20, padding: '3px 12px', marginBottom: 10, alignSelf: 'flex-start' }}>
+              <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: 2 }}>BLACK</span>
             </div>
-            <div style={{ fontSize: 20, fontWeight: 500, color: C.white, marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {featuredPractice ? (featuredPractice.title_ru || featuredPractice.title) : '—'}
-            </div>
-            <div style={{ fontSize: 12, color: C.text2, marginBottom: 13 }}>
-              {featuredPractice ? `${featuredPractice.instructor_name} · ${Math.floor(featuredPractice.duration_seconds / 60)} мин` : ''}
-            </div>
-            <button
-              onClick={() => featuredPractice && handlePractice(featuredPractice)}
-              style={{ fontSize: 12, fontWeight: 600, color: C.bg, background: C.white, border: 'none', borderRadius: 20, padding: '7px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
-            >
-              <svg width="10" height="12" viewBox="0 0 10 12" fill="#000"><path d="M1 1l8 5-8 5V1z"/></svg>
-              Дышать
+            <div style={{ fontSize: 18, fontWeight: 500, color: '#fff', marginBottom: 6 }}>Ещё 30+ практик</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, marginBottom: 12 }}>Живые сессии, теория и эксклюзивный контент</div>
+            <button onClick={() => router.push('/subscribe')} style={{ width: '100%', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', color: '#fff', fontSize: 13, fontWeight: 700, borderRadius: 14, padding: '11px', border: 'none', cursor: 'pointer' }}>
+              Открыть [black]
             </button>
           </div>
-          {featuredPractice && (
-            <div style={{ flexShrink: 0, borderRadius: 22, overflow: 'hidden' }}>
-              <BreathVisual category={featuredPractice.category} size={112} borderRadius={22} animate={true} showBubbles={false} />
-            </div>
-          )}
         </div>
       ),
     },
