@@ -58,18 +58,9 @@ export default function CatalogPage() {
     { id: 'rise', label: 'Rise', color: C.rise },
   ]
 
-  const CAT_MAP: Record<string, string> = {
-    slow: 'relax',
-    ground: 'balance',
-    rise: 'energize',
-  }
-
   const filtered = useMemo(() => {
     return practices.filter(p => {
-      if (cat !== 'all') {
-        const dbCategory = CAT_MAP[cat]
-        if (p.category !== dbCategory) return false
-      }
+      if (cat !== 'all' && p.category !== cat) return false
       if (instrFilter !== 'all' && p.instructor_name !== instrFilter) return false
       if (durFilter !== 'all') {
         const mins = Math.floor(p.duration_seconds / 60)
