@@ -96,7 +96,7 @@ export default function Home() {
     )
   }
 
-  const greeting = `${t('catalog.hi')}, ${user?.first_name || (language === 'en' ? 'breather' : 'дышатель')}`
+  const greeting = `${t('catalog.hi')} ${user?.first_name || (language === 'en' ? 'breather' : 'дышатель')}`
 
   const SLIDES = [
     {
@@ -174,21 +174,19 @@ export default function Home() {
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '44px 16px 12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <BrandMark size={18} />
-          <span style={{ fontSize: 14, fontWeight: 600, color: C.text, letterSpacing: '0.04em' }}>badbuddhas</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: C.text }}>{greeting}</div>
-          </div>
-          <button
-            onClick={() => router.push('/profile')}
-            style={{ width: 36, height: 36, borderRadius: '50%', background: C.card, border: `1.5px solid ${C.border2}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          </button>
-        </div>
+        <BrandMark size={18} />
+        <button
+          onClick={() => router.push('/profile')}
+          style={{ width: 36, height: 36, borderRadius: '50%', background: C.card, border: `1.5px solid ${C.border2}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </button>
+      </div>
+
+      {/* Greeting */}
+      <div style={{ padding: '0 16px 16px' }}>
+        <div style={{ fontSize: 16, fontWeight: 600, color: C.text }}>{greeting}</div>
+        <div style={{ fontSize: 13, fontWeight: 400, color: '#6b7280', marginTop: 2 }}>[{t('catalog.letsBreath')}]</div>
       </div>
 
       {/* Hero Carousel */}

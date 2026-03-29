@@ -68,7 +68,7 @@ function drawBubbles(
 function drawSlow(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: number, showBubbles: boolean) {
   const cx = S / 2
   const cy = S / 2
-  const cr = S * 0.22
+  const cr = S * 0.28
   const breathe = 1 + 0.06 * Math.sin(t * 0.4)
   const rot = t * 0.08
   const scaledR = cr * breathe
@@ -129,11 +129,11 @@ function drawSlow(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: numb
 function drawRise(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: number) {
   const cx = S / 2
   const cy = S / 2
-  const cr = S * 0.22
+  const cr = S * 0.28
   const breathe = 1 + 0.06 * Math.sin(t * 0.4)
   const rot = t * 0.08
   const scaledR = cr * breathe
-  const r2 = scaledR * 1.72
+  const r2 = cr * 1.5
 
   const petalCount = 6
 
@@ -164,7 +164,7 @@ function drawRise(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: numb
     const px = Math.cos(angle) * r2
     const py = Math.sin(angle) * r2
     ctx.beginPath()
-    ctx.arc(px, py, scaledR, 0, Math.PI * 2)
+    ctx.arc(px, py, cr * 0.7, 0, Math.PI * 2)
     ctx.strokeStyle = rgb(c, 0.12)
     ctx.lineWidth = S * 0.02
     ctx.stroke()
@@ -199,7 +199,7 @@ function drawRise(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: numb
     const px = Math.cos(angle) * r2
     const py = Math.sin(angle) * r2
     ctx.beginPath()
-    ctx.arc(px, py, scaledR, 0, Math.PI * 2)
+    ctx.arc(px, py, cr * 0.7, 0, Math.PI * 2)
     ctx.strokeStyle = rgb(c, 0.7)
     ctx.lineWidth = S * 0.008
     ctx.stroke()
