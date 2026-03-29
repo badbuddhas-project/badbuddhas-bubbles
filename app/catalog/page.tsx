@@ -59,6 +59,9 @@ export default function CatalogPage() {
   ]
 
   const filtered = useMemo(() => {
+    if (practices.length > 0 && cat !== 'all') {
+      console.log('[Catalog] filter cat:', cat, '| practice categories:', Array.from(new Set(practices.map(p => p.category))))
+    }
     return practices.filter(p => {
       if (cat !== 'all' && p.category !== cat) return false
       if (instrFilter !== 'all' && p.instructor_name !== instrFilter) return false
