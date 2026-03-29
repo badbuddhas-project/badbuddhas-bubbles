@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
 import { useTranslation } from '@/lib/i18n'
+import { BrandMark } from '@/components/BrandMark'
 import { TabBar } from '@/components/TabBar'
 
 const C = {
@@ -27,6 +29,7 @@ interface ScheduleEvent {
 }
 
 export default function SchedulePage() {
+  const router = useRouter()
   const { user } = useUser()
   const { language } = useTranslation()
   const isPremium = user?.is_premium ?? false
@@ -65,10 +68,14 @@ export default function SchedulePage() {
     <main style={{ minHeight: '100vh', background: C.bg, overflowY: 'auto', paddingBottom: 80 }}>
 
       {/* Header */}
-      <div style={{ padding: '44px 16px 12px' }}>
-        <div style={{ fontSize: 18, fontWeight: 800, color: C.text }}>
-          {language === 'ru' ? 'Расписание' : 'Schedule'}
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '44px 16px 12px' }}>
+        <BrandMark size={18} />
+        <button
+          onClick={() => router.push('/profile')}
+          style={{ width: 36, height: 36, borderRadius: '50%', background: C.card, border: `1.5px solid ${C.border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </button>
       </div>
 
       {/* Content */}

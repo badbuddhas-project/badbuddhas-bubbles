@@ -84,24 +84,31 @@ export default function CatalogPage() {
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '44px 16px 10px', borderBottom: `1px solid ${C.border}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <BrandMark size={16} />
-        </div>
-        {/* View toggle */}
-        <div style={{ display: 'flex', background: C.card, borderRadius: 10, padding: 3, border: `1px solid ${C.border}` }}>
-          {(['list', 'grid'] as const).map(mode => (
-            <button
-              key={mode}
-              onClick={() => setViewMode(mode)}
-              style={{ background: viewMode === mode ? C.border2 : 'none', border: 'none', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-            >
-              {mode === 'list' ? (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={viewMode === mode ? C.text : C.sub} strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-              ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={viewMode === mode ? C.text : C.sub} strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-              )}
-            </button>
-          ))}
+        <BrandMark size={18} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* View toggle */}
+          <div style={{ display: 'flex', background: C.card, borderRadius: 10, padding: 3, border: `1px solid ${C.border}` }}>
+            {(['list', 'grid'] as const).map(mode => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                style={{ background: viewMode === mode ? C.border2 : 'none', border: 'none', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              >
+                {mode === 'list' ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={viewMode === mode ? C.text : C.sub} strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={viewMode === mode ? C.text : C.sub} strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                )}
+              </button>
+            ))}
+          </div>
+          {/* Profile */}
+          <button
+            onClick={() => router.push('/profile')}
+            style={{ width: 36, height: 36, borderRadius: '50%', background: C.card, border: `1.5px solid ${C.border2}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </button>
         </div>
       </div>
 
