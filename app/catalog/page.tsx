@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
 import { usePractices } from '@/hooks/usePractices'
+import { useFavorites } from '@/hooks/useFavorites'
 import { useTranslation } from '@/lib/i18n'
 import BreathVisual from '@/components/BreathVisual'
 import { BrandMark } from '@/components/BrandMark'
@@ -33,6 +34,7 @@ export default function CatalogPage() {
   const router = useRouter()
   const { user } = useUser()
   const { practices, isLoading } = usePractices()
+  const { isFavorite, toggleFavorite } = useFavorites()
   const { language } = useTranslation()
   const isPremium = user?.is_premium ?? false
 
@@ -67,7 +69,7 @@ export default function CatalogPage() {
         if (durFilter === '20+ мин' && mins <= 20) return false
       }
       return true
-    })
+    }).sort((a, b) => Number(a.is_premium) - Number(b.is_premium))
   }, [practices, cat, instrFilter, durFilter])
 
   const activeFiltersCount = [instrFilter, durFilter].filter(f => f !== 'all').length
@@ -190,13 +192,13 @@ export default function CatalogPage() {
       ) : viewMode === 'list' ? (
         <div style={{ padding: '4px 16px' }}>
           {filtered.map(p => (
-            <PracticeRow key={p.id} p={p} onTap={() => handlePractice(p)} isPremium={isPremium} />
+            <PracticeRow key={p.id} p={p} onTap={() => handlePractice(p)} isPremium={isPremium} favorite={isFavorite(p.id)} onToggleFav={() => toggleFavorite(p.id)} />
           ))}
         </div>
       ) : (
         <div style={{ padding: '8px 16px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {filtered.map(p => (
-            <GridCard key={p.id} p={p} onTap={() => handlePractice(p)} isPremium={isPremium} />
+            <GridCard key={p.id} p={p} onTap={() => handlePractice(p)} isPremium={isPremium} favorite={isFavorite(p.id)} onToggleFav={() => toggleFavorite(p.id)} />
           ))}
         </div>
       )}
@@ -226,7 +228,7 @@ function FilterChip({ label, active, onClick }: { label: string; active: boolean
 
 // ─── Practice Row (list mode) ─────────────────────────────────────────────────
 
-function PracticeRow({ p, onTap, isPremium }: { p: Practice; onTap: () => void; isPremium: boolean }) {
+function PracticeRow({ p, onTap, isPremium, favorite, onToggleFav }: { p: Practice; onTap: () => void; isPremium: boolean; favorite: boolean; onToggleFav: () => void }) {
   const catColor = { relax: '#8b5cf6', balance: '#3b82f6', energize: '#ec4899' }[p.category] || '#CBCBCB'
   const mins = Math.floor(p.duration_seconds / 60)
   const locked = !isPremium && p.is_premium
@@ -249,6 +251,9 @@ function PracticeRow({ p, onTap, isPremium }: { p: Practice; onTap: () => void; 
           <span style={{ fontSize: 9, fontWeight: 700, color: catColor, textTransform: 'uppercase', letterSpacing: 1 }}>
             {CAT_DISPLAY[p.category] ?? p.category}
           </span>
+          {p.is_premium && (
+            <span style={{ display: 'inline-flex', background: 'rgba(192,52,165,0.2)', borderRadius: 6, padding: '2px 8px', fontSize: 9, fontWeight: 700, color: '#C034A5', letterSpacing: 1 }}>BLACK</span>
+          )}
           <span style={{ fontSize: 10, color: 'rgba(203,203,203,0.35)' }}>{mins} мин</span>
         </div>
         <div style={{ fontSize: 14, fontWeight: 600, color: '#CBCBCB', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2 }}>
@@ -256,13 +261,21 @@ function PracticeRow({ p, onTap, isPremium }: { p: Practice; onTap: () => void; 
         </div>
         <div style={{ fontSize: 12, color: 'rgba(203,203,203,0.45)' }}>{p.instructor_name}</div>
       </div>
+      <button
+        onClick={e => { e.stopPropagation(); onToggleFav() }}
+        style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill={favorite ? catColor : 'none'} stroke={favorite ? catColor : 'rgba(203,203,203,0.3)'} strokeWidth="1.8">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+        </svg>
+      </button>
     </div>
   )
 }
 
 // ─── Grid Card (grid mode) ────────────────────────────────────────────────────
 
-function GridCard({ p, onTap, isPremium }: { p: Practice; onTap: () => void; isPremium: boolean }) {
+function GridCard({ p, onTap, isPremium, favorite, onToggleFav }: { p: Practice; onTap: () => void; isPremium: boolean; favorite: boolean; onToggleFav: () => void }) {
   const catColor = { relax: '#8b5cf6', balance: '#3b82f6', energize: '#ec4899' }[p.category] || '#CBCBCB'
   const mins = Math.floor(p.duration_seconds / 60)
   const locked = !isPremium && p.is_premium
@@ -281,9 +294,14 @@ function GridCard({ p, onTap, isPremium }: { p: Practice; onTap: () => void; isP
         )}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(10,10,10,0.85) 100%)' }} />
         <div style={{ position: 'absolute', bottom: 8, left: 8, right: 8 }}>
-          <span style={{ fontSize: 9, fontWeight: 700, color: catColor, textTransform: 'uppercase', letterSpacing: 1 }}>
-            {CAT_DISPLAY[p.category] ?? p.category}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ fontSize: 9, fontWeight: 700, color: catColor, textTransform: 'uppercase', letterSpacing: 1 }}>
+              {CAT_DISPLAY[p.category] ?? p.category}
+            </span>
+            {p.is_premium && (
+              <span style={{ display: 'inline-flex', background: 'rgba(192,52,165,0.2)', borderRadius: 6, padding: '2px 6px', fontSize: 8, fontWeight: 700, color: '#C034A5', letterSpacing: 1 }}>BLACK</span>
+            )}
+          </div>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {p.title_ru || p.title}
           </div>
@@ -291,7 +309,9 @@ function GridCard({ p, onTap, isPremium }: { p: Practice; onTap: () => void; isP
       </div>
       <div style={{ padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontSize: 11, color: 'rgba(203,203,203,0.45)' }}>{mins} мин</span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(203,203,203,0.3)" strokeWidth="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <button onClick={e => { e.stopPropagation(); onToggleFav() }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill={favorite ? catColor : 'none'} stroke={favorite ? catColor : 'rgba(203,203,203,0.3)'} strokeWidth="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </button>
       </div>
     </div>
   )
