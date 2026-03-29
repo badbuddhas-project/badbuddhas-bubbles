@@ -69,7 +69,7 @@ export default function Home() {
   const isPremium = user?.is_premium ?? false
 
   const freePractices = useMemo(() => practices.filter(p => !p.is_premium).slice(0, 3), [practices])
-  const lockedPractices = useMemo(() => practices.filter(p => p.is_premium), [practices])
+
   const featuredPractice = freePractices[0] ?? null
 
   const teachers = useMemo(() => {
@@ -148,27 +148,6 @@ export default function Home() {
         </div>
       ),
     },
-    {
-      key: 'black',
-      content: (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', right: -10, top: -30, width: 140, height: 140, borderRadius: '50%', background: 'radial-gradient(circle,rgba(192,52,165,0.28) 0%,transparent 70%)', pointerEvents: 'none' }} />
-          <div style={{ flex: 1, position: 'relative', zIndex: 1, minWidth: 0, paddingRight: 12 }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', background: `linear-gradient(135deg,${C.pink},#7b1fa2)`, borderRadius: 20, padding: '3px 10px', marginBottom: 9 }}>
-              <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: 1.5 }}>BLACK</span>
-            </div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: C.white, marginBottom: 5 }}>[ ] black</div>
-            <div style={{ fontSize: 12, color: C.text2, marginBottom: 13, lineHeight: 1.45 }}>Эксклюзивные практики и живые сессии</div>
-            {!isPremium && (
-              <button onClick={() => router.push('/subscribe')} style={{ fontSize: 12, fontWeight: 600, color: '#fff', background: 'transparent', border: `1px solid rgba(192,52,165,0.7)`, borderRadius: 20, padding: '7px 16px', cursor: 'pointer' }}>Узнать больше →</button>
-            )}
-          </div>
-          <div style={{ flexShrink: 0, borderRadius: 22, overflow: 'hidden' }}>
-            <BreathVisual category="energize" size={112} borderRadius={22} animate={true} showBubbles={false} />
-          </div>
-        </div>
-      ),
-    },
   ]
 
   return (
@@ -222,34 +201,6 @@ export default function Home() {
           </div>
         )}
       </div>
-
-      {/* Black CTA */}
-      {!isPremium && (
-        <div style={{ margin: '0 16px 20px', borderRadius: 20, overflow: 'hidden', position: 'relative', cursor: 'pointer' }} onClick={() => router.push('/subscribe')}>
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,#1a0030,#2d0050,#1a1a00)' }} />
-          <div style={{ position: 'absolute', top: -30, right: -30, width: 180, height: 180, borderRadius: '50%', background: `radial-gradient(circle,rgba(192,52,165,0.5) 0%,transparent 65%)`, pointerEvents: 'none' }} />
-          <div style={{ position: 'absolute', bottom: -20, left: 20, width: 120, height: 120, borderRadius: '50%', background: `radial-gradient(circle,rgba(84,198,140,0.25) 0%,transparent 65%)`, pointerEvents: 'none' }} />
-          <div style={{ position: 'relative', zIndex: 1, padding: '22px 20px' }}>
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ display: 'inline-flex', background: `linear-gradient(135deg,${C.pink},#7b1fa2)`, borderRadius: 20, padding: '3px 12px', marginBottom: 10 }}>
-                <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: 2 }}>BLACK</span>
-              </div>
-              <div style={{ fontSize: 20, fontWeight: 500, color: C.white, lineHeight: 1.2, marginBottom: 6 }}>
-                Ещё {lockedPractices.length > 0 ? `${lockedPractices.length}+` : '6+'} практик
-              </div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, marginBottom: 4 }}>
-                Живые сессии, теория и эксклюзивный контент для подписчиков
-              </div>
-            </div>
-            <button
-              onClick={e => { e.stopPropagation(); router.push('/subscribe') }}
-              style={{ width: '100%', fontSize: 14, fontWeight: 700, background: `linear-gradient(135deg,${C.pink},#7b1fa2)`, color: '#fff', border: 'none', borderRadius: 14, padding: '13px', cursor: 'pointer', boxShadow: `0 6px 24px rgba(192,52,165,0.5)` }}
-            >
-              Открыть [black]
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Teachers section */}
       {teachers.length > 0 && (
