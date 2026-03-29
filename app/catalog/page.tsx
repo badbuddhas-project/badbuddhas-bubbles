@@ -53,17 +53,23 @@ export default function CatalogPage() {
 
   const cats = [
     { id: 'all', label: language === 'ru' ? 'Все' : 'All', color: C.text },
-    { id: 'relax', label: 'Slow', color: C.slow },
-    { id: 'balance', label: 'Ground', color: C.ground },
-    { id: 'energize', label: 'Rise', color: C.rise },
+    { id: 'slow', label: 'Slow', color: C.slow },
+    { id: 'ground', label: 'Ground', color: C.ground },
+    { id: 'rise', label: 'Rise', color: C.rise },
   ]
 
+  const CAT_MAP: Record<string, string> = {
+    slow: 'relax',
+    ground: 'balance',
+    rise: 'energize',
+  }
+
   const filtered = useMemo(() => {
-    if (practices.length > 0 && cat !== 'all') {
-      console.log('[Catalog] filter cat:', cat, '| practice categories:', Array.from(new Set(practices.map(p => p.category))))
-    }
     return practices.filter(p => {
-      if (cat !== 'all' && p.category !== cat) return false
+      if (cat !== 'all') {
+        const dbCategory = CAT_MAP[cat]
+        if (p.category !== dbCategory) return false
+      }
       if (instrFilter !== 'all' && p.instructor_name !== instrFilter) return false
       if (durFilter !== 'all') {
         const mins = Math.floor(p.duration_seconds / 60)
@@ -73,6 +79,7 @@ export default function CatalogPage() {
       }
       return true
     }).sort((a, b) => Number(a.is_premium) - Number(b.is_premium))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [practices, cat, instrFilter, durFilter])
 
   const activeFiltersCount = [instrFilter, durFilter].filter(f => f !== 'all').length
