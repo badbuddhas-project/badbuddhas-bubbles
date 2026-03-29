@@ -73,42 +73,7 @@ export default function FavoritesPage() {
         </div>
       ) : (
         <div style={{ padding: '4px 16px' }}>
-
-          {/* Horizontal scroll — top picks */}
-          <div style={{ paddingTop: 16, marginBottom: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: C.sub, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 14 }}>
-              {language === 'ru' ? 'ЧАСТО СЛУШАЮ' : 'TOP PICKS'}
-            </div>
-            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8, scrollbarWidth: 'none' }}>
-              {favPractices.map(p => {
-                const catColor = CAT_COLORS[p.category] || C.slow
-                const mins = Math.floor(p.duration_seconds / 60)
-                return (
-                  <div key={p.id} onClick={() => handleTap(p)} style={{ flexShrink: 0, width: 120, cursor: 'pointer' }}>
-                    <div style={{ position: 'relative' }}>
-                      <BreathVisual category={p.category} size={120} borderRadius={16} animate={false} showBubbles={false} />
-                      <div style={{ position: 'absolute', top: 8, right: 8 }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill={catColor} stroke={catColor} strokeWidth="1.5">
-                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                        </svg>
-                      </div>
-                    </div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: C.text, marginTop: 8, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {p.title_ru || p.title}
-                    </div>
-                    <div style={{ fontSize: 11, color: C.sub }}>{mins} мин</div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Full list */}
-          <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 4 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: C.sub, letterSpacing: 2, textTransform: 'uppercase', margin: '12px 0 4px' }}>
-              {language === 'ru' ? 'ВСЕ ИЗБРАННЫЕ' : 'ALL FAVORITES'}
-            </div>
-            {favPractices.map(p => {
+          {favPractices.map(p => {
               const catColor = CAT_COLORS[p.category] || C.slow
               const mins = Math.floor(p.duration_seconds / 60)
               return (
@@ -134,7 +99,6 @@ export default function FavoritesPage() {
                 </div>
               )
             })}
-          </div>
         </div>
       )}
 
