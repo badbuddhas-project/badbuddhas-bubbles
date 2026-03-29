@@ -22,10 +22,6 @@ const FEATURES = [
   'Расписание и чат сообщества',
 ]
 
-const PLANS = [
-  { id: '6m', label: '6 месяцев', price: '9 600 ₽', perMonth: '1 600 ₽/мес', badge: 'ЛУЧШИЙ ВЫБОР', trial: 'Первые 7 дней бесплатно' },
-  { id: '1m', label: '1 месяц', price: '1 990 ₽', perMonth: null, badge: null, trial: 'Первые 7 дней бесплатно' },
-]
 
 type Step = 'landing' | 'payment' | 'activate' | 'success'
 
@@ -43,7 +39,6 @@ function SubscribePage() {
   const { user } = useUser()
 
   const [step, setStep] = useState<Step>('landing')
-  const [selectedPlan, setSelectedPlan] = useState('6m')
   const [email, setEmail] = useState('')
   const [isChecking, setIsChecking] = useState(false)
   const [error, setError] = useState('')
@@ -217,45 +212,10 @@ function SubscribePage() {
             </div>
           </div>
 
-          {/* Plan selection */}
-          <div style={{ padding: '0 16px 20px' }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: C.sub, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>ВЫБЕРИТЕ ТАРИФ</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {PLANS.map(plan => {
-                const active = selectedPlan === plan.id
-                return (
-                  <div
-                    key={plan.id}
-                    onClick={() => setSelectedPlan(plan.id)}
-                    style={{
-                      background: active ? 'rgba(192,52,165,0.1)' : C.card,
-                      borderRadius: 16,
-                      padding: '14px 16px',
-                      border: `1.5px solid ${active ? C.pink : C.border}`,
-                      cursor: 'pointer',
-                      position: 'relative',
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    {plan.badge && (
-                      <div style={{ position: 'absolute', top: -10, right: 16, background: `linear-gradient(135deg,${C.pink},#7b1fa2)`, borderRadius: 20, padding: '2px 10px' }}>
-                        <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: 1 }}>{plan.badge}</span>
-                      </div>
-                    )}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div>
-                        <div style={{ fontSize: 16, fontWeight: 700, color: C.white, marginBottom: 3 }}>{plan.label}</div>
-                        {plan.trial && <div style={{ fontSize: 12, color: C.sub }}>{plan.trial}</div>}
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 18, fontWeight: 800, color: active ? C.white : C.text }}>{plan.price}</div>
-                        {plan.perMonth && <div style={{ fontSize: 11, color: C.sub }}>{plan.perMonth}</div>}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+          {/* Price */}
+          <div style={{ textAlign: 'center', marginBottom: 20, padding: '0 16px' }}>
+            <span style={{ fontSize: 24, fontWeight: 800, color: '#fff' }}>1 990 ₽</span>
+            <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginLeft: 8 }}>/ месяц</span>
           </div>
 
           {/* CTA */}
@@ -283,7 +243,7 @@ function SubscribePage() {
       {step === 'payment' && (
         <div style={{ padding: '0 16px', maxWidth: 480, margin: '0 auto' }}>
           <iframe
-            src={selectedPlan === '1m' ? '/gc-widget-1m.html' : '/gc-widget-6m.html'}
+            src="/gc-widget.html"
             style={{ width: '100%', minHeight: 600, background: C.card, border: 'none', borderRadius: 16 }}
             title="Оплата подписки"
           />

@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bubbles — Brand-inspired Variations</title>
+<link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#111;color:#ccc;font-family:'Wix Madefor Display',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center}
+
+.page-header{text-align:center;padding:24px 16px 8px}
+.page-header h1{font-size:16px;font-weight:600;color:#fff;letter-spacing:.5px}
+.page-header p{font-size:11px;color:#555;margin-top:4px;letter-spacing:1.5px;text-transform:uppercase}
+
+.tabs{display:flex;gap:5px;padding:0 12px 14px;justify-content:center;flex-wrap:wrap}
+.tab{background:#0A0A0A;border:1px solid #1A1A1A;color:#666;font-family:inherit;font-size:11px;font-weight:500;padding:7px 12px;border-radius:18px;cursor:pointer;transition:all .3s;white-space:nowrap}
+.tab.active{border-color:#444;color:#fff;background:#1a1a1a}
+.tab:hover{border-color:#333}
+
+.phone-frame{width:375px;max-width:calc(100vw - 32px);height:720px;background:#000;border-radius:32px;border:3px solid #222;overflow:hidden;position:relative;margin-bottom:32px}
+.phone-scroll{width:100%;height:100%;overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
+.phone-scroll::-webkit-scrollbar{display:none}
+
+.app{background:#000;min-height:100%;padding-bottom:40px}
+.app-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px}
+.brand{display:flex;align-items:center;gap:6px}
+.brand-name{font-size:14px;font-weight:600;color:#CBCBCB;letter-spacing:.04em}
+.avatar-btn{width:34px;height:34px;border-radius:50%;background:#0A0A0A;border:1.5px solid #242424;display:flex;align-items:center;justify-content:center}
+.greet{font-size:12px;font-weight:600;color:#CBCBCB;margin-right:8px}
+
+.hero-card{margin:0 16px 22px;background:#0A0A0A;border-radius:22px;padding:18px 16px;border:1px solid #242424;display:flex;align-items:center;justify-content:space-between;min-height:140px}
+.hero-info{flex:1}
+.hero-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px}
+.hero-title{font-size:20px;font-weight:500;color:#fff;margin-bottom:2px}
+.hero-meta{font-size:12px;color:#999;margin-bottom:12px}
+.hero-btn{font-size:12px;font-weight:600;color:#000;background:#fff;border:none;border-radius:20px;padding:7px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.hero-dots{display:flex;justify-content:center;gap:5px;margin-top:10px;padding:0 16px}
+.hero-dot{width:6px;height:6px;border-radius:3px;background:#242424}
+.hero-dot.active{width:18px;background:#999}
+
+.section{padding:0 16px;margin-bottom:18px}
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section-title{font-size:11px;font-weight:700;letter-spacing:2.5px;color:#666;text-transform:uppercase}
+.section-all{font-size:11px;color:#666;letter-spacing:1px;background:none;border:none;cursor:pointer;font-family:inherit}
+
+.practice-cards{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+.practice-cards::-webkit-scrollbar{display:none}
+.pcard{flex-shrink:0;width:150px;border-radius:16px;overflow:hidden;position:relative;border:1px solid #1A1A1A}
+.pcard canvas{display:block;width:150px;height:150px}
+.pcard-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,.82) 100%)}
+.pcard-info{position:absolute;bottom:0;left:0;right:0;padding:9px 10px}
+.pcard-cat{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.pcard-name{font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.pcard-dur{font-size:10px;color:rgba(255,255,255,.55);margin-top:2px}
+.pcard-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center}
+
+.black-cta{margin:0 16px 18px;border-radius:18px;overflow:hidden;position:relative}
+.black-cta-bg{position:absolute;inset:0;background:linear-gradient(135deg,#1a0030,#2d0050,#1a1a00)}
+.black-cta-glow1{position:absolute;top:-30px;right:-30px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(192,52,165,.5) 0%,transparent 65%)}
+.black-cta-glow2{position:absolute;bottom:-20px;left:20px;width:110px;height:110px;border-radius:50%;background:radial-gradient(circle,rgba(84,198,140,.25) 0%,transparent 65%)}
+.black-cta-inner{position:relative;z-index:1;padding:18px 16px}
+.black-badge{display:inline-flex;background:linear-gradient(135deg,#C034A5,#7b1fa2);border-radius:20px;padding:3px 10px;margin-bottom:8px}
+.black-badge span{font-size:9px;font-weight:800;color:#fff;letter-spacing:1.5px}
+.black-cta-title{font-size:18px;font-weight:500;color:#fff;line-height:1.2;margin-bottom:5px}
+.black-cta-desc{font-size:12px;color:rgba(255,255,255,.6);line-height:1.4;margin-bottom:3px}
+.black-cta-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+.black-locked{display:flex;flex-direction:column;gap:4px;flex-shrink:0;margin-left:12px}
+.black-locked-item{width:48px;height:48px;border-radius:10px;overflow:hidden;opacity:.8;position:relative}
+.black-locked-item canvas{display:block;width:48px;height:48px}
+.black-locked-lock{position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center}
+.black-cta-btn{width:100%;font-family:inherit;font-size:13px;font-weight:700;background:linear-gradient(135deg,#C034A5,#7b1fa2);color:#fff;border:none;border-radius:13px;padding:12px;cursor:pointer;box-shadow:0 6px 24px rgba(192,52,165,.5)}
+
+.teachers-row{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+.teachers-row::-webkit-scrollbar{display:none}
+.teacher{flex-shrink:0;text-align:center;width:80px}
+.teacher-img{width:80px;height:80px;border-radius:16px;overflow:hidden;position:relative;border:1px solid #242424;margin-bottom:6px}
+.teacher-img canvas{display:block;width:80px;height:80px}
+.teacher-img-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 35%,rgba(0,0,0,.72) 100%)}
+.teacher-name-overlay{position:absolute;bottom:5px;left:0;right:0;text-align:center;font-size:10px;font-weight:700;color:rgba(255,255,255,.92)}
+.teacher-count{font-size:10px;color:#666;display:flex;align-items:center;justify-content:center;gap:3px}
+
+.dir-label{text-align:center;margin-bottom:12px}
+.dir-label h2{font-size:14px;font-weight:600;color:#fff}
+.dir-label p{font-size:11px;color:#555;margin-top:3px;max-width:340px;margin-left:auto;margin-right:auto;line-height:1.4}
+.lock-svg{width:18px;height:18px}
+canvas{image-rendering:auto}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>[ bubbles ] — brand-inspired variations</h1>
+  <p>На основе элементов брендбука</p>
+</div>
+
+<div class="tabs" id="tabs"></div>
+<div id="phone-container"></div>
+
+<script>
+const COLORS={relax:{r:139,g:92,b:246},balance:{r:59,g:130,b:246},energize:{r:236,g:72,b:153}};
+const CAT_HEX={relax:'#8b5cf6',balance:'#3b82f6',energize:'#ec4899'};
+const CAT_LABEL={relax:'Slow',balance:'Ground',energize:'Rise'};
+const PRACTICES=[
+  {id:1,name:'Exhale',category:'relax',duration:'14 мин'},
+  {id:2,name:'Wind Down',category:'balance',duration:'15 мин'},
+  {id:3,name:'Activate',category:'energize',duration:'6 мин'},
+];
+const LOCKED=[{id:4,category:'relax'},{id:5,category:'energize'}];
+const TEACHERS=[{name:'Даша',count:12,category:'relax',seed:42},{name:'Света',count:8,category:'balance',seed:77},{name:'Максим',count:6,category:'energize',seed:13},{name:'Аня',count:5,category:'relax',seed:99}];
+
+const DIRS=[
+  {label:'Flower Bloom',desc:'Из брендбука: круг → цветок жизни. Slow=простой, Ground=средний, Rise=полный цветок'},
+  {label:'Box Breath',desc:'Квадратное дыхание из брендбука: пульсирующий квадрат с фазами вдох-задержка-выдох'},
+  {label:'Organic Circle',desc:'Живой несовершенный круг, линии разной толщины пульсируют. Как рисунок от руки'},
+  {label:'Morph + Flower',desc:'Morphing Shapes встречает цветок жизни: суперэллипсы собираются в паттерн'},
+  {label:'Lissajous Bloom',desc:'Кривые Лиссажу, которые расцветают в цветочные паттерны из брендбука'},
+  {label:'Symbol Line',desc:'Линейные символы из брендбука: точки → полумесяцы → звёзды. Морфинг между формами'},
+];
+
+let currentDir=0;
+const allCanvases=[];
+
+function rgba(c,a){return`rgba(${c.r},${c.g},${c.b},${Math.min(a,1)})`}
+function seededRng(s){let v=s;return()=>{v=(v*16807)%2147483647;return(v-1)/2147483646}}
+
+function drawTintedBg(ctx,W,H,color){
+  ctx.fillStyle='#060608';ctx.fillRect(0,0,W,H);
+  const g=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*0.5);
+  g.addColorStop(0,rgba(color,0.06));g.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+}
+
+function drawBubbles(ctx,W,H,color,seed,T,count){
+  const rng=seededRng(seed+999);
+  for(let i=0;i<count;i++){
+    const bx=rng()*W,by=rng()*H,br=Math.min(W,H)*(0.025+rng()*0.055);
+    const ph=rng()*Math.PI*2;
+    const ax=bx+Math.sin(T*0.3+ph)*W*0.02,ay=by+Math.cos(T*0.25+ph*1.2)*H*0.018;
+    const ba=(0.25+rng()*0.35)*(0.85+0.15*Math.sin(T*0.4+ph));
+    ctx.beginPath();ctx.arc(ax,ay,br,0,Math.PI*2);
+    ctx.fillStyle=rgba(color,ba*0.08);ctx.fill();
+    ctx.strokeStyle=rgba(color,ba*0.65);ctx.lineWidth=Math.min(W,H)*0.004;ctx.stroke();
+  }
+}
+
+// ===== 0. FLOWER BLOOM — from brandbook =====
+function drawFlowerBloom(ctx,W,H,color,cat,seed,T){
+  ctx.clearRect(0,0,W,H);drawTintedBg(ctx,W,H,color);
+  const cx=W/2,cy=H/2,S=Math.min(W,H);
+  const R=S*0.22;
+  const petals=cat==='relax'?1:cat==='balance'?3:6;
+  const breathe=1+0.06*Math.sin(T*0.4);
+  const rot=T*0.08;
+
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(rot);
+
+  // Center circle always
+  const cr=R*breathe;
+  ctx.beginPath();ctx.arc(0,0,cr,0,Math.PI*2);
+  ctx.strokeStyle=rgba(color,0.12);ctx.lineWidth=S*0.02;ctx.stroke();
+  ctx.beginPath();ctx.arc(0,0,cr,0,Math.PI*2);
+  ctx.strokeStyle=rgba(color,0.7);ctx.lineWidth=S*0.008;ctx.stroke();
+
+  // Petal circles
+  for(let i=0;i<petals;i++){
+    const a=(i/Math.max(petals,1))*Math.PI*2;
+    const px=Math.cos(a)*cr,py=Math.sin(a)*cr;
+    const pa=0.5+0.15*Math.sin(T*0.3+i*0.7);
+    ctx.beginPath();ctx.arc(px,py,cr,0,Math.PI*2);
+    ctx.strokeStyle=rgba(color,pa*0.12);ctx.lineWidth=S*0.018;ctx.stroke();
+    ctx.beginPath();ctx.arc(px,py,cr,0,Math.PI*2);
+    ctx.strokeStyle=rgba(color,pa);ctx.lineWidth=S*0.007;ctx.stroke();
+  }
+
+  // For energize: add second ring of petals
+  if(cat==='energize'){
+    const r2=cr*1.72;
+    for(let i=0;i<6;i++){
+      const a=(i/6)*Math.PI*2+Math.PI/6;
+      const px=Math.cos(a)*r2*0.58,py=Math.sin(a)*r2*0.58;
+      const pa=0.3+0.1*Math.sin(T*0.35+i);
+      ctx.beginPath();ctx.arc(px,py,cr,0,Math.PI*2);
+      ctx.strokeStyle=rgba(color,pa);ctx.lineWidth=S*0.005;ctx.stroke();
+    }
+  }
+
+  // Center dot
+  ctx.beginPath();ctx.arc(0,0,S*0.018,0,Math.PI*2);
+  ctx.fillStyle=rgba(color,0.85);ctx.fill();
+
+  ctx.restore();
+  drawBubbles(ctx,W,H,color,seed,T,3);
+}
+
+// ===== 1. BOX BREATH — квадратное дыхание =====
+function drawBoxBreath(ctx,W,H,color,cat,seed,T){
+  ctx.clearRect(0,0,W,H);drawTintedBg(ctx,W,H,color);
+  const cx=W/2,cy=H/2,S=Math.min(W,H);
+  const baseSize=S*0.28;
+  const cycle=T*0.125; // full breath cycle — 8 sec, synced with dot
+  const phase=(cycle%1); // 0→1 through 4 phases
+  const segment=Math.floor(phase*4); // 0=inhale,1=hold,2=exhale,3=hold
+  const segProgress=(phase*4)%1;
+
+  // Breathing size modulation
+  let size=baseSize;
+  if(segment===0) size=baseSize*(1+0.15*segProgress); // inhale: grow
+  else if(segment===1) size=baseSize*1.15; // hold top
+  else if(segment===2) size=baseSize*(1.15-0.15*segProgress); // exhale: shrink
+  else size=baseSize; // hold bottom
+
+  // Corner radius morphs by category
+  const cornerRatio=cat==='relax'?0.4:cat==='balance'?0.2:0.05;
+  const cornerR=size*cornerRatio;
+
+  // Number of nested shapes
+  const layers=cat==='relax'?2:cat==='balance'?3:4;
+  const rot=T*0.05*(cat==='energize'?3:1);
+
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(rot);
+
+  for(let l=0;l<layers;l++){
+    const s=size*(1-l*0.22);
+    const cr=cornerR*(1-l*0.15);
+    const alpha=0.75-l*0.18;
+    const r2=T*0.03*(l+1)*(cat==='energize'?2:1);
+
+    ctx.save();ctx.rotate(r2);
+
+    // Glow
+    ctx.beginPath();
+    ctx.roundRect(-s,-s,s*2,s*2,cr);
+    ctx.strokeStyle=rgba(color,alpha*0.15);ctx.lineWidth=S*0.02;ctx.stroke();
+    // Sharp
+    ctx.beginPath();
+    ctx.roundRect(-s,-s,s*2,s*2,cr);
+    ctx.strokeStyle=rgba(color,alpha);ctx.lineWidth=S*0.007;ctx.stroke();
+
+    ctx.restore();
+  }
+
+  // Breathing dot traveling along the perimeter
+  const dotPhase=(T*0.125)%(1);
+  const side=Math.floor(dotPhase*4);
+  const sp=(dotPhase*4)%1;
+  const hs=size;
+  let dx,dy;
+  if(side===0){dx=-hs+sp*2*hs;dy=-hs} // top: left→right
+  else if(side===1){dx=hs;dy=-hs+sp*2*hs} // right: top→bottom
+  else if(side===2){dx=hs-sp*2*hs;dy=hs} // bottom: right→left
+  else{dx=-hs;dy=hs-sp*2*hs} // left: bottom→top
+
+  const dg=ctx.createRadialGradient(dx,dy,0,dx,dy,S*0.06);
+  dg.addColorStop(0,rgba(color,0.6));dg.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=dg;ctx.beginPath();ctx.arc(dx,dy,S*0.06,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(dx,dy,S*0.014,0,Math.PI*2);
+  ctx.fillStyle=rgba(color,0.95);ctx.fill();
+
+  ctx.restore();
+  drawBubbles(ctx,W,H,color,seed,T,3);
+}
+
+// ===== 2. ORGANIC CIRCLE — hand-drawn imperfect =====
+function drawOrganicCircle(ctx,W,H,color,cat,seed,T){
+  ctx.clearRect(0,0,W,H);drawTintedBg(ctx,W,H,color);
+  const cx=W/2,cy=H/2,S=Math.min(W,H);
+  const R=S*0.32;
+  const rng=seededRng(seed);
+  const wobbleCount=cat==='relax'?5:cat==='balance'?8:12;
+  const wobbleAmt=cat==='relax'?0.08:cat==='balance'?0.05:0.12;
+  const layers=cat==='relax'?2:cat==='balance'?2:3;
+
+  for(let l=0;l<layers;l++){
+    const r=R*(1-l*0.25);
+    const breathe=1+0.06*Math.sin(T*(0.3+l*0.1));
+    const steps=120;
+
+    // Generate wobble offsets (stable per seed)
+    const rng2=seededRng(seed+l*100);
+    const wobbles=[];
+    for(let i=0;i<wobbleCount;i++)wobbles.push((rng2()-0.5)*2);
+
+    ctx.beginPath();
+    for(let i=0;i<=steps;i++){
+      const t=i/steps;const a=t*Math.PI*2;
+      // Perlin-like wobble
+      let wobble=0;
+      for(let w=0;w<wobbleCount;w++){
+        wobble+=wobbles[w]*Math.sin(a*(w+1)+T*(0.2+w*0.05))*wobbleAmt;
+      }
+      const rr=r*breathe*(1+wobble);
+
+      // Variable line width via slight offset
+      const x=cx+Math.cos(a)*rr;
+      const y=cy+Math.sin(a)*rr;
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+
+    const alpha=0.8-l*0.25;
+    // Glow
+    ctx.strokeStyle=rgba(color,alpha*0.12);ctx.lineWidth=S*0.025;ctx.stroke();
+    // Sharp — variable width effect with two passes
+    ctx.strokeStyle=rgba(color,alpha*0.9);ctx.lineWidth=S*(0.01-l*0.002);ctx.stroke();
+  }
+
+  // Center presence
+  const cg=ctx.createRadialGradient(cx,cy,0,cx,cy,R*0.15);
+  cg.addColorStop(0,rgba(color,0.35));cg.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=cg;ctx.beginPath();ctx.arc(cx,cy,R*0.15,0,Math.PI*2);ctx.fill();
+
+  drawBubbles(ctx,W,H,color,seed,T,3);
+}
+
+// ===== 3. MORPH + FLOWER — superellipses arranged in flower pattern =====
+function superellipse(t,n,R){const a=t*Math.PI*2;const ca=Math.cos(a),sa=Math.sin(a);return[Math.sign(ca)*Math.pow(Math.abs(ca),2/n)*R,Math.sign(sa)*Math.pow(Math.abs(sa),2/n)*R]}
+
+function drawMorphFlower(ctx,W,H,color,cat,seed,T){
+  ctx.clearRect(0,0,W,H);drawTintedBg(ctx,W,H,color);
+  const cx=W/2,cy=H/2,S=Math.min(W,H);
+  const R=S*0.16;
+  const n=cat==='relax'?2.5:cat==='balance'?3.5:5;
+  const petals=cat==='relax'?3:cat==='balance'?5:6;
+  const breathe=1+0.05*Math.sin(T*0.4);
+  const rot=T*0.1;
+  const steps=80;
+
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(rot);
+
+  // Center shape
+  ctx.beginPath();
+  for(let i=0;i<=steps;i++){const[x,y]=superellipse(i/steps,n,R*breathe);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)}
+  ctx.closePath();ctx.strokeStyle=rgba(color,0.12);ctx.lineWidth=S*0.018;ctx.stroke();
+  ctx.beginPath();
+  for(let i=0;i<=steps;i++){const[x,y]=superellipse(i/steps,n,R*breathe);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)}
+  ctx.closePath();ctx.strokeStyle=rgba(color,0.7);ctx.lineWidth=S*0.007;ctx.stroke();
+
+  // Petal shapes
+  for(let p=0;p<petals;p++){
+    const a=(p/petals)*Math.PI*2;
+    const px=Math.cos(a)*R*breathe,py=Math.sin(a)*R*breathe;
+    const pa=0.5+0.15*Math.sin(T*0.3+p*0.8);
+    const pRot=a+T*0.05;
+
+    ctx.save();ctx.translate(px,py);ctx.rotate(pRot);
+    ctx.beginPath();
+    for(let i=0;i<=steps;i++){const[x,y]=superellipse(i/steps,n,R*breathe*0.95);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)}
+    ctx.closePath();ctx.strokeStyle=rgba(color,pa*0.1);ctx.lineWidth=S*0.015;ctx.stroke();
+    ctx.beginPath();
+    for(let i=0;i<=steps;i++){const[x,y]=superellipse(i/steps,n,R*breathe*0.95);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)}
+    ctx.closePath();ctx.strokeStyle=rgba(color,pa);ctx.lineWidth=S*0.006;ctx.stroke();
+    ctx.restore();
+  }
+
+  ctx.restore();
+  drawBubbles(ctx,W,H,color,seed,T,3);
+}
+
+// ===== 4. LISSAJOUS BLOOM — Lissajous that forms flower pattern =====
+function drawLissajousBloom(ctx,W,H,color,cat,seed,T){
+  ctx.clearRect(0,0,W,H);drawTintedBg(ctx,W,H,color);
+  const cx=W/2,cy=H/2,S=Math.min(W,H);
+  const R=S*0.32;
+  // Rose curve parameters (rhodonea): r = cos(k*theta)
+  const k=cat==='relax'?2:cat==='balance'?3:5;
+  const ps=T*0.2;
+  const steps=400;
+
+  // Lissajous-rose hybrid
+  ctx.beginPath();
+  for(let i=0;i<=steps;i++){
+    const t=i/steps*Math.PI*2*k;
+    const r=R*Math.abs(Math.cos(k*t/k + ps));
+    const x=cx+Math.cos(t)*r;
+    const y=cy+Math.sin(t)*r;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.strokeStyle=rgba(color,0.12);ctx.lineWidth=S*0.025;ctx.stroke();
+
+  ctx.beginPath();
+  for(let i=0;i<=steps;i++){
+    const t=i/steps*Math.PI*2*k;
+    const r=R*Math.abs(Math.cos(k*t/k + ps));
+    const x=cx+Math.cos(t)*r;
+    const y=cy+Math.sin(t)*r;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.strokeStyle=rgba(color,0.85);ctx.lineWidth=S*0.009;ctx.stroke();
+
+  // Inner echo with phase offset
+  ctx.beginPath();
+  for(let i=0;i<=steps;i++){
+    const t=i/steps*Math.PI*2*k;
+    const r=R*0.6*Math.abs(Math.cos(k*t/k + ps + 0.5));
+    const x=cx+Math.cos(t+0.3)*r;
+    const y=cy+Math.sin(t+0.3)*r;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.strokeStyle=rgba(color,0.35);ctx.lineWidth=S*0.005;ctx.stroke();
+
+  // Center
+  ctx.beginPath();ctx.arc(cx,cy,S*0.015,0,Math.PI*2);
+  ctx.fillStyle=rgba(color,0.8);ctx.fill();
+
+  drawBubbles(ctx,W,H,color,seed,T,3);
+}
+
+// ===== 5. SYMBOL LINE — morphing brand symbols =====
+function drawSymbolLine(ctx,W,H,color,cat,seed,T){
+  ctx.clearRect(0,0,W,H);drawTintedBg(ctx,W,H,color);
+  const cx=W/2,cy=H/2,S=Math.min(W,H);
+  const R=S*0.25;
+
+  // Morphing between: dots grid → crescent → starburst
+  const morphPhase=(T*0.15)%3;
+  const morphSeg=Math.floor(morphPhase);
+  const morphT=morphPhase-morphSeg;
+  // Smooth easing
+  const ease=morphT*morphT*(3-2*morphT);
+
+  ctx.save();ctx.translate(cx,cy);
+
+  if(morphSeg===0){
+    // Dots grid → Crescent
+    const dotCount=cat==='relax'?4:cat==='balance'?6:9;
+    const side=Math.ceil(Math.sqrt(dotCount));
+    const spacing=R*0.6/Math.max(side-1,1);
+
+    for(let i=0;i<side;i++){
+      for(let j=0;j<side;j++){
+        if(i*side+j>=dotCount)continue;
+        const gx=(i-(side-1)/2)*spacing;
+        const gy=(j-(side-1)/2)*spacing;
+        // Morph toward crescent positions
+        const a=Math.atan2(gy,gx)+Math.PI/2;
+        const cr=R*0.7;
+        const tx=Math.cos(a)*cr*0.5;
+        const ty=Math.sin(a)*cr*0.5-R*0.1;
+        const x=gx+(tx-gx)*ease;
+        const y=gy+(ty-gy)*ease;
+        const dotR=S*0.02*(1+ease*1.5);
+
+        ctx.beginPath();ctx.arc(x,y,dotR,0,Math.PI*2);
+        ctx.fillStyle=rgba(color,0.15);ctx.fill();
+        ctx.strokeStyle=rgba(color,0.7);ctx.lineWidth=S*0.005;ctx.stroke();
+      }
+    }
+  } else if(morphSeg===1){
+    // Crescent → Starburst
+    const r1=R*0.7,r2=R*0.55;
+    const offset=R*0.2;
+    // Draw morphing arc/lines
+    const rays=cat==='relax'?5:cat==='balance'?7:10;
+    for(let i=0;i<rays;i++){
+      const a=(i/rays)*Math.PI*2;
+      // Crescent arc position
+      const cx1=Math.cos(a)*r1*0.5;
+      const cy1=Math.sin(a)*r1*0.5-offset*(1-ease);
+      // Starburst ray end
+      const rx=Math.cos(a)*R*(0.6+0.4*ease);
+      const ry=Math.sin(a)*R*(0.6+0.4*ease);
+      const x=cx1+(rx-cx1)*ease;
+      const y=cy1+(ry-cy1)*ease;
+
+      ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(x,y);
+      ctx.strokeStyle=rgba(color,0.1);ctx.lineWidth=S*0.015;ctx.stroke();
+      ctx.strokeStyle=rgba(color,0.6+0.2*ease);ctx.lineWidth=S*0.006;ctx.stroke();
+
+      // Dot at end
+      ctx.beginPath();ctx.arc(x,y,S*0.015,0,Math.PI*2);
+      ctx.fillStyle=rgba(color,0.5);ctx.fill();
+    }
+  } else {
+    // Starburst → Dots grid (closing the loop)
+    const rays=cat==='relax'?5:cat==='balance'?7:10;
+    const dotCount=cat==='relax'?4:cat==='balance'?6:9;
+    const side=Math.ceil(Math.sqrt(dotCount));
+    const spacing=R*0.6/Math.max(side-1,1);
+
+    for(let i=0;i<Math.max(rays,dotCount);i++){
+      // Starburst position
+      const a=(i/rays)*Math.PI*2;
+      const sx=Math.cos(a)*R;
+      const sy=Math.sin(a)*R;
+      // Grid position
+      const gi=i%side,gj=Math.floor(i/side)%side;
+      const gx=(gi-(side-1)/2)*spacing;
+      const gy=(gj-(side-1)/2)*spacing;
+      const x=sx+(gx-sx)*ease;
+      const y=sy+(gy-sy)*ease;
+
+      // Fade rays, grow dots
+      const lineAlpha=(1-ease)*0.5;
+      if(lineAlpha>0.05){
+        ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(x,y);
+        ctx.strokeStyle=rgba(color,lineAlpha);ctx.lineWidth=S*0.005;ctx.stroke();
+      }
+      ctx.beginPath();ctx.arc(x,y,S*(0.015+0.008*ease),0,Math.PI*2);
+      ctx.fillStyle=rgba(color,0.12);ctx.fill();
+      ctx.strokeStyle=rgba(color,0.6);ctx.lineWidth=S*0.005;ctx.stroke();
+    }
+  }
+
+  // Center dot always
+  ctx.beginPath();ctx.arc(0,0,S*0.022,0,Math.PI*2);
+  ctx.fillStyle=rgba(color,0.7);ctx.fill();
+
+  ctx.restore();
+  drawBubbles(ctx,W,H,color,seed,T,3);
+}
+
+// ===== DISPATCHER =====
+const DRAW_FNS=[drawFlowerBloom,drawBoxBreath,drawOrganicCircle,drawMorphFlower,drawLissajousBloom,drawSymbolLine];
+
+function drawVisual(ctx,W,H,category,dirIdx,seed,T){
+  DRAW_FNS[dirIdx](ctx,W,H,COLORS[category]||COLORS.relax,category,seed,T);
+}
+
+// ===== ICONS =====
+const LOCK_SVG=`<svg class="lock-svg" viewBox="0 0 24 24" fill="none" stroke="#C034A5" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>`;
+const PLAY_TRI=`<svg width="12" height="12" viewBox="0 0 12 14" fill="white"><path d="M1 1.5l10 5-10 5V1.5z"/></svg>`;
+const USER_SVG=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+const BRAND_SVG=`<svg width="16" height="16" viewBox="0 0 110 116" fill="none"><path d="M55 2L2 30v56l53 28 53-28V30L55 2z" stroke="#CBCBCB" stroke-width="5"/><path d="M55 30L30 44v28l25 14 25-14V44L55 30z" stroke="#CBCBCB" stroke-width="4"/></svg>`;
+
+// ===== BUILD =====
+function cid(d,b,i){return`cv-${d}-${b}-${i}`}
+function buildHome(di){
+  let h=`<div class="app"><div class="app-header"><div class="brand">${BRAND_SVG}<span class="brand-name">badbuddhas</span></div><div style="display:flex;align-items:center"><span class="greet">Привет, дышатель</span><div class="avatar-btn">${USER_SVG}</div></div></div>`;
+  h+=`<div class="hero-card"><div class="hero-info"><div class="hero-label" style="color:#ec4899">НОВАЯ ПРАКТИКА</div><div class="hero-title">Activate</div><div class="hero-meta">с Дашей Чен · 6 мин</div><button class="hero-btn">${PLAY_TRI} Дышать</button></div><canvas id="${cid(di,'h',0)}" width="224" height="224" style="width:112px;height:112px;border-radius:22px;flex-shrink:0"></canvas></div>`;
+  h+=`<div class="hero-dots"><div class="hero-dot active"></div><div class="hero-dot"></div><div class="hero-dot"></div></div>`;
+  h+=`<div class="section" style="margin-top:22px"><div class="section-hdr"><span class="section-title">Практики</span><button class="section-all">ВСЕ →</button></div><div class="practice-cards">`;
+  PRACTICES.forEach((p,i)=>{h+=`<div class="pcard"><canvas id="${cid(di,'p',i)}" width="300" height="300" style="width:150px;height:150px"></canvas><div class="pcard-play">${PLAY_TRI}</div><div class="pcard-overlay"></div><div class="pcard-info"><div class="pcard-cat" style="color:${CAT_HEX[p.category]}">${CAT_LABEL[p.category]}</div><div class="pcard-name">${p.name}</div><div class="pcard-dur">${p.duration}</div></div></div>`});
+  h+=`</div></div>`;
+  h+=`<div class="black-cta"><div class="black-cta-bg"></div><div class="black-cta-glow1"></div><div class="black-cta-glow2"></div><div class="black-cta-inner"><div class="black-cta-row"><div><div class="black-badge"><span>BLACK</span></div><div class="black-cta-title">Ещё 6+ практик</div><div class="black-cta-desc">Живые сессии, теория и эксклюзивный контент</div></div><div class="black-locked">`;
+  LOCKED.forEach((p,i)=>{h+=`<div class="black-locked-item"><canvas id="${cid(di,'l',i)}" width="96" height="96" style="width:48px;height:48px"></canvas><div class="black-locked-lock">${LOCK_SVG}</div></div>`});
+  h+=`</div></div><button class="black-cta-btn">Открыть [black]</button></div></div>`;
+  h+=`<div class="section"><div class="section-hdr"><span class="section-title">Преподаватели</span><button class="section-all">ВСЕ →</button></div><div class="teachers-row">`;
+  TEACHERS.forEach((t,i)=>{const lk=i>0;h+=`<div class="teacher"${lk?' style="opacity:0.3"':''}><div class="teacher-img"><canvas id="${cid(di,'t',i)}" width="160" height="160" style="width:80px;height:80px;${lk?'filter:grayscale(100%) brightness(0.5)':''}"></canvas><div class="teacher-img-overlay"></div><div class="teacher-name-overlay">${t.name}</div>${lk?`<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">${LOCK_SVG}</div>`:''}</div><div class="teacher-count">♪ ${t.count}</div></div>`});
+  h+=`</div></div></div>`;
+  return h;
+}
+
+function buildTabs(){document.getElementById('tabs').innerHTML=DIRS.map((d,i)=>`<button class="tab${i===0?' active':''}" onclick="switchDir(${i})">${d.label}</button>`).join('')}
+
+function switchDir(i){currentDir=i;document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',j===i));render()}
+
+function render(){
+  const d=DIRS[currentDir],di=currentDir;
+  document.getElementById('phone-container').innerHTML=`<div class="dir-label"><h2>${d.label}</h2><p>${d.desc}</p></div><div class="phone-frame"><div class="phone-scroll">${buildHome(di)}</div></div>`;
+  allCanvases.length=0;
+  const add=(id,W,H,cat,seed)=>{const c=document.getElementById(id);if(c)allCanvases.push({el:c,W,H,cat,seed})};
+  add(cid(di,'h',0),224,224,'energize',42);
+  PRACTICES.forEach((p,i)=>add(cid(di,'p',i),300,300,p.category,10+i*31));
+  LOCKED.forEach((p,i)=>add(cid(di,'l',i),96,96,p.category,50+i*23));
+  TEACHERS.forEach((t,i)=>add(cid(di,'t',i),160,160,t.category,t.seed));
+}
+
+function animate(ts){
+  const T=ts*0.001;
+  for(const it of allCanvases){const ctx=it.el.getContext('2d');if(ctx)drawVisual(ctx,it.W,it.H,it.cat,currentDir,it.seed,T)}
+  requestAnimationFrame(animate);
+}
+
+buildTabs();render();requestAnimationFrame(animate);
+</script>
+</body>
+</html>
