@@ -161,7 +161,7 @@ export default function Home() {
 
       {/* Hero Carousel */}
       <div style={{ padding: '0 16px', marginBottom: 26 }}>
-        <div style={{ background: C.card, borderRadius: 22, padding: '20px 18px', height: 152, border: `1px solid ${C.border}`, boxSizing: 'border-box' }}>
+        <div style={{ background: C.card, borderRadius: 22, padding: '20px 18px', height: 200, border: `1px solid ${C.border}`, boxSizing: 'border-box' }}>
           {SLIDES[slide].content}
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
