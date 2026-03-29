@@ -228,27 +228,16 @@ export default function Home() {
           <div style={{ position: 'absolute', top: -30, right: -30, width: 180, height: 180, borderRadius: '50%', background: `radial-gradient(circle,rgba(192,52,165,0.5) 0%,transparent 65%)`, pointerEvents: 'none' }} />
           <div style={{ position: 'absolute', bottom: -20, left: 20, width: 120, height: 120, borderRadius: '50%', background: `radial-gradient(circle,rgba(84,198,140,0.25) 0%,transparent 65%)`, pointerEvents: 'none' }} />
           <div style={{ position: 'relative', zIndex: 1, padding: '22px 20px' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'inline-flex', background: `linear-gradient(135deg,${C.pink},#7b1fa2)`, borderRadius: 20, padding: '3px 12px', marginBottom: 10 }}>
-                  <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: 2 }}>BLACK</span>
-                </div>
-                <div style={{ fontSize: 20, fontWeight: 500, color: C.white, lineHeight: 1.2, marginBottom: 6 }}>
-                  Ещё {lockedPractices.length > 0 ? `${lockedPractices.length}+` : '6+'} практик
-                </div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, marginBottom: 4 }}>
-                  Живые сессии, теория и эксклюзивный контент для подписчиков
-                </div>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ display: 'inline-flex', background: `linear-gradient(135deg,${C.pink},#7b1fa2)`, borderRadius: 20, padding: '3px 12px', marginBottom: 10 }}>
+                <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: 2 }}>BLACK</span>
               </div>
-              {lockedPractices.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0, marginLeft: 12 }}>
-                  {lockedPractices.slice(0, 3).map(p => (
-                    <div key={p.id} style={{ width: 52, height: 52, borderRadius: 12, overflow: 'hidden', opacity: 0.8 }}>
-                      <BreathVisual category={p.category} size={52} borderRadius={12} animate={false} showBubbles={false} />
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div style={{ fontSize: 20, fontWeight: 500, color: C.white, lineHeight: 1.2, marginBottom: 6 }}>
+                Ещё {lockedPractices.length > 0 ? `${lockedPractices.length}+` : '6+'} практик
+              </div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, marginBottom: 4 }}>
+                Живые сессии, теория и эксклюзивный контент для подписчиков
+              </div>
             </div>
             <button
               onClick={e => { e.stopPropagation(); router.push('/subscribe') }}
