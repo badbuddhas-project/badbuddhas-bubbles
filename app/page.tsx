@@ -324,18 +324,18 @@ function HomeCard({ p, onTap, locked }: { p: Practice; onTap: () => void; locked
       style={{ flexShrink: 0, width: 120, cursor: 'pointer', borderRadius: 16, overflow: 'hidden', position: 'relative', border: `1px solid #1A1A1A` }}
     >
       <BreathVisual category={p.category} size={120} borderRadius={16} animate={false} showBubbles={false} />
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.82) 100%)', zIndex: 1 }} />
       {locked && (
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3 }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C034A5" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
         </div>
       )}
       {!locked && (
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 40, height: 40, borderRadius: '50%', background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 40, height: 40, borderRadius: '50%', background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
           <svg width="14" height="14" viewBox="0 0 12 14" fill="white"><path d="M1 1.5l10 5-10 5V1.5z"/></svg>
         </div>
       )}
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.82) 100%)' }} />
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '10px' }}>
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '10px', zIndex: 2 }}>
         <span style={{ fontSize: 9, fontWeight: 700, color: catColor, textTransform: 'uppercase', letterSpacing: 1 }}>
           {CAT_DISPLAY[p.category] ?? p.category}
         </span>
