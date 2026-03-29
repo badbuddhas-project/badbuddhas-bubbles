@@ -7,6 +7,7 @@ import { useUser } from '@/hooks/useUser'
 import { useUserStats } from '@/hooks/useUserStats'
 import { ConnectEmailModal } from '@/components/ConnectEmailModal'
 import { BrandMark } from '@/components/BrandMark'
+import { TabBar } from '@/components/TabBar'
 import { useTranslation } from '@/lib/i18n'
 import { ymEvent, getPlatform } from '@/lib/analytics'
 import { closeTelegramApp } from '@/lib/telegram'
@@ -153,7 +154,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <main style={{ minHeight: '100vh', background: C.bg, overflowY: 'auto', paddingBottom: 40 }}>
+    <main style={{ minHeight: '100vh', background: C.bg, overflowY: 'auto', paddingBottom: 80 }}>
 
       {/* Header: back left, logo right */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '44px 16px 12px' }}>
@@ -389,6 +390,8 @@ export default function ProfilePage() {
           onSuccess={() => { void refreshUser() }}
         />
       )}
+
+      <TabBar isPremium={isPremium} />
     </main>
   )
 }
