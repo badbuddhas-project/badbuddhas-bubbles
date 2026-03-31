@@ -1,6 +1,6 @@
 'use client'
 
-/* eslint-disable @next/next/no-img-element */
+import { BreathingLogo } from './BreathingLogo'
 
 export function TgSplashScreen() {
   return (
@@ -33,7 +33,7 @@ export function TgSplashScreen() {
 
       {/* Logo + text */}
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <img src="/images/logo-ribs.png" width={120} height={120} alt="badbuddhas" style={{ marginBottom: 20 }} />
+        <div style={{ marginBottom: 20 }}><BreathingLogo size={120} /></div>
         <div style={{ fontSize: 16, fontWeight: 600, color: '#fff', letterSpacing: '0.04em' }}>badbuddhas</div>
         <div style={{ fontSize: 13, color: '#6b7280', marginTop: 5 }}>[bubbles]</div>
       </div>
