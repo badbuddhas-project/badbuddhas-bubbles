@@ -18,8 +18,8 @@ function resolvePostOnboardingRoute(): string {
 }
 
 const steps = [
-  { category: 'slow', title: 'Дышите осознанно' },
-  { category: 'ground', title: 'Найдите свой темп' },
+  { category: 'slow', title: 'Дышите осознанно', desc: 'Практики дыхания для снятия стресса, восстановления энергии и внутреннего баланса' },
+  { category: 'ground', title: 'Найдите свой темп', desc: 'От 5 до 30 минут — выбирайте практику под своё настроение и расписание' },
   { category: 'rise', title: 'Практикуйте каждый день' },
 ]
 
@@ -125,7 +125,7 @@ export default function OnboardingPage() {
             ))}
           </div>
 
-          {/* Title only — no description */}
+          {/* Title */}
           <div
             style={{
               fontSize: 20,
@@ -136,6 +136,18 @@ export default function OnboardingPage() {
           >
             {s.title}
           </div>
+          {s.desc && (
+            <div
+              style={{
+                fontSize: 15,
+                color: '#666',
+                lineHeight: 1.6,
+                marginTop: 12,
+              }}
+            >
+              {s.desc}
+            </div>
+          )}
         </div>
 
         {/* Button */}
