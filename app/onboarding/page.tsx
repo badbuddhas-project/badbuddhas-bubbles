@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ONBOARDING_KEY } from '@/lib/constants'
-import { BrandMark } from '@/components/BrandMark'
+import BreathVisual from '@/components/BreathVisual'
 import { ymEvent } from '@/lib/analytics'
 
 function resolvePostOnboardingRoute(): string {
@@ -17,49 +17,17 @@ function resolvePostOnboardingRoute(): string {
   return '/login'
 }
 
-const onboardingTexts = {
-  ru: {
-    slide1_title: 'КАК ТЫ ХОЧЕШЬ СЕБЯ ЧУВСТВОВАТЬ?',
-    slide1_desc: 'Релакс, баланс или заряд энергии — выбери своё состояние',
-    slide2_title: 'ПОЧУВСТВУЙ СИЛУ ДЫХАНИЯ',
-    slide2_desc: 'Дыхательные практики под электронную музыку от лучших ведущих',
-    slide3_title: 'ПРИСОЕДИНЯЙСЯ К СООБЩЕСТВУ',
-    slide3_desc: 'Присоединяйся к сообществу тех, кто дышит осознанно',
-    next: 'далее',
-    start: 'начать',
-    skip: 'пропустить',
-  },
-  en: {
-    slide1_title: 'HOW DO YOU WANT TO FEEL?',
-    slide1_desc: 'Relax, balance or energy boost — choose your state',
-    slide2_title: 'FEEL THE POWER OF BREATH',
-    slide2_desc: 'Breathwork practices with electronic music from top instructors',
-    slide3_title: 'JOIN A GROWING COMMUNITY',
-    slide3_desc: 'Join the community of conscious breathers',
-    next: 'next',
-    start: 'start',
-    skip: 'skip',
-  },
-}
-
-function detectLang(): 'ru' | 'en' {
-  if (typeof window !== 'undefined') {
-    const code = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.language_code?.slice(0, 2)
-    if (code === 'en') return 'en'
-  }
-  return 'ru'
-}
+const steps = [
+  { category: 'slow', title: 'Дышите осознанно' },
+  { category: 'ground', title: 'Найдите свой темп' },
+  { category: 'rise', title: 'Практикуйте каждый день' },
+]
 
 export default function OnboardingPage() {
   const router = useRouter()
-  const [currentSlide, setCurrentSlide] = useState(0)
+  const [currentStep, setCurrentStep] = useState(0)
   const [touchStart, setTouchStart] = useState(0)
   const [touchEnd, setTouchEnd] = useState(0)
-  const [t, setT] = useState(onboardingTexts.ru)
-
-  useEffect(() => {
-    setT(onboardingTexts[detectLang()])
-  }, [])
 
   useEffect(() => {
     if (localStorage.getItem(ONBOARDING_KEY) === 'true') {
@@ -68,14 +36,8 @@ export default function OnboardingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const slides = [
-    { title: t.slide1_title, subtitle: t.slide1_desc },
-    { title: t.slide2_title, subtitle: t.slide2_desc },
-    { title: t.slide3_title, subtitle: t.slide3_desc },
-  ]
-
-  const goToSlide = useCallback((index: number) => {
-    setCurrentSlide(Math.max(0, Math.min(index, 2)))
+  const goToStep = useCallback((index: number) => {
+    setCurrentStep(Math.max(0, Math.min(index, steps.length - 1)))
   }, [])
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -90,8 +52,8 @@ export default function OnboardingPage() {
   const handleTouchEnd = () => {
     const diff = touchStart - touchEnd
     const threshold = 50
-    if (diff > threshold) goToSlide(currentSlide + 1)
-    else if (diff < -threshold) goToSlide(currentSlide - 1)
+    if (diff > threshold) goToStep(currentStep + 1)
+    else if (diff < -threshold) goToStep(currentStep - 1)
   }
 
   const handleFinish = () => {
@@ -100,212 +62,100 @@ export default function OnboardingPage() {
     router.replace(resolvePostOnboardingRoute())
   }
 
-  const isLastSlide = currentSlide === slides.length - 1
+  const isLastStep = currentStep === steps.length - 1
+  const s = steps[currentStep]
 
   return (
-    <main
+    <div
       style={{
-        height: '100%',
-        minHeight: '100vh',
-        background: '#000000',
+        height: '100vh',
+        background: '#000',
         display: 'flex',
         flexDirection: 'column',
-        padding: '44px 24px 36px',
       }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
-      {/* Header: logo left + skip right */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 40,
-        }}
-      >
-        <BrandMark size={20} />
-        <span
+      {/* Skip — top right */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '14px 16px' }}>
+        <button
           onClick={handleFinish}
           style={{
-            fontSize: 12,
-            color: '#CBCBCB',
-            opacity: 0.5,
+            background: 'none',
+            border: 'none',
+            fontSize: 13,
+            color: '#6b7280',
             cursor: 'pointer',
           }}
         >
-          {t.skip}
-        </span>
+          Пропустить
+        </button>
       </div>
 
-      {/* Slides area */}
-      <div
-        style={{ flex: 1, overflow: 'hidden' }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        <div
-          style={{
-            display: 'flex',
-            height: '100%',
-            transition: 'transform 0.3s ease-out',
-            transform: `translateX(-${currentSlide * 100}%)`,
-          }}
-        >
-          {slides.map((slide, index) => (
-            <div
-              key={index}
-              style={{
-                width: '100%',
-                flexShrink: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <SlideIllustration index={index} />
-
-              <h2
-                style={{
-                  fontSize: 22,
-                  fontWeight: 600,
-                  color: '#FFFFFF',
-                  textAlign: 'center',
-                  marginBottom: 12,
-                  letterSpacing: '0.02em',
-                  margin: 0,
-                  marginTop: 0,
-                }}
-              >
-                {slide.title}
-              </h2>
-
-              <p
-                style={{
-                  fontSize: 14,
-                  color: '#CBCBCB',
-                  opacity: 0.6,
-                  textAlign: 'center',
-                  lineHeight: 1.5,
-                  maxWidth: 260,
-                  marginTop: 12,
-                }}
-              >
-                {slide.subtitle}
-              </p>
-            </div>
-          ))}
-        </div>
+      {/* BreathVisual */}
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 24px' }}>
+        <BreathVisual category={s.category} size={280} borderRadius={0} animate />
       </div>
 
-      {/* Bottom: pagination + next */}
+      {/* Bottom content */}
       <div
         style={{
+          flex: 1,
+          padding: '0 28px 40px',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
-          gap: 20,
+          justifyContent: 'space-between',
         }}
       >
-        {/* Dots */}
-        <div style={{ display: 'flex', gap: 8 }}>
-          {slides.map((_, i) => (
-            <div
-              key={i}
-              onClick={() => goToSlide(i)}
-              style={{
-                width: i === currentSlide ? 24 : 8,
-                height: 8,
-                borderRadius: 4,
-                background: i === currentSlide ? '#FFFFFF' : '#313333',
-                transition: 'all 0.3s',
-                cursor: 'pointer',
-              }}
-            />
-          ))}
+        <div>
+          {/* Progress bar */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 28 }}>
+            {steps.map((_, i) => (
+              <div
+                key={i}
+                style={{
+                  height: 3,
+                  borderRadius: 2,
+                  background: i <= currentStep ? 'rgba(203,203,203,0.7)' : '#1A1A1A',
+                  flex: i === currentStep ? 2 : 1,
+                  transition: 'all 0.3s ease',
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Title only — no description */}
+          <div
+            style={{
+              fontSize: 28,
+              fontWeight: 800,
+              color: '#fff',
+              lineHeight: 1.2,
+            }}
+          >
+            {s.title}
+          </div>
         </div>
 
-        {/* Next / Start */}
-        <span
-          onClick={isLastSlide ? handleFinish : () => goToSlide(currentSlide + 1)}
+        {/* Button */}
+        <button
+          onClick={isLastStep ? handleFinish : () => goToStep(currentStep + 1)}
           style={{
+            width: '100%',
             fontSize: 15,
-            fontWeight: 500,
-            color: '#FFFFFF',
+            fontWeight: 700,
+            color: '#000',
+            background: '#CBCBCB',
+            border: 'none',
+            borderRadius: 16,
+            padding: '16px',
             cursor: 'pointer',
           }}
         >
-          {isLastSlide ? t.start : t.next}
-        </span>
+          {isLastStep ? 'Начать' : 'Далее'}
+        </button>
       </div>
-
-    </main>
+    </div>
   )
-}
-
-/* ── Slide illustrations ──────────────────────────────────────────────────── */
-
-function SlideIllustration({ index }: { index: number }) {
-  switch (index) {
-    case 0:
-      return (
-        <div
-          style={{
-            width: 160,
-            height: 160,
-            borderRadius: '50%',
-            overflow: 'hidden',
-            marginBottom: 40,
-            backgroundImage: 'url(/images/onboarding-blob.png)',
-            backgroundSize: '180%',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-          }}
-        />
-      )
-    case 1:
-      return (
-        <div
-          style={{
-            width: 160,
-            height: 160,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 40,
-          }}
-        >
-          <img
-            src="/images/onboarding-cycle.png"
-            alt=""
-            width={100}
-            height={100}
-            style={{ opacity: 0.7 }}
-          />
-        </div>
-      )
-    case 2:
-      return (
-        <div
-          style={{
-            width: 160,
-            height: 160,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 40,
-          }}
-        >
-          <img
-            src="/images/onboarding-community.png"
-            alt=""
-            width={100}
-            height={100}
-            style={{ opacity: 0.7 }}
-          />
-        </div>
-      )
-    default:
-      return null
-  }
 }
