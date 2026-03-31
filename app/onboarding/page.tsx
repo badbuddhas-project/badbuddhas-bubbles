@@ -95,7 +95,7 @@ export default function OnboardingPage() {
 
       {/* BreathVisual */}
       <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 24px' }}>
-        <BreathVisual category={s.category} size={280} borderRadius={0} animate />
+        <BreathVisual category={s.category} size={280} borderRadius={0} animate showBubbles={false} />
       </div>
 
       {/* Bottom content */}
@@ -118,7 +118,7 @@ export default function OnboardingPage() {
                   height: 3,
                   borderRadius: 2,
                   background: i <= currentStep ? 'rgba(203,203,203,0.7)' : '#1A1A1A',
-                  flex: i === currentStep ? 2 : 1,
+                  flex: 1,
                   transition: 'all 0.3s ease',
                 }}
               />
@@ -128,7 +128,7 @@ export default function OnboardingPage() {
           {/* Title only — no description */}
           <div
             style={{
-              fontSize: 28,
+              fontSize: 20,
               fontWeight: 800,
               color: '#fff',
               lineHeight: 1.2,
