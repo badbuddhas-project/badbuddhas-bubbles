@@ -185,18 +185,30 @@ export default function Home() {
               resetAutoRotate()
             }
           }}
-          style={{
-            borderRadius: 22,
-            height: 200,
-            boxSizing: 'border-box',
-            overflow: 'hidden',
-            transition: 'opacity 0.3s ease',
-            ...(SLIDES[slide].key === 'black'
-              ? { background: 'transparent', border: 'none', padding: 0 }
-              : { background: C.card, border: `1px solid ${C.border}`, padding: '20px 18px' }),
-          }}
+          style={{ borderRadius: 22, height: 200, overflow: 'hidden' }}
         >
-          {SLIDES[slide].content}
+          <div style={{
+            display: 'flex',
+            transform: `translateX(-${slide * 100}%)`,
+            transition: 'transform 0.5s ease-in-out',
+            height: '100%',
+          }}>
+            {SLIDES.map((s, i) => (
+              <div key={s.key} style={{
+                flexShrink: 0,
+                width: '100%',
+                height: '100%',
+                boxSizing: 'border-box',
+                borderRadius: 22,
+                overflow: 'hidden',
+                ...(s.key === 'black'
+                  ? { background: 'transparent', border: 'none', padding: 0 }
+                  : { background: C.card, border: `1px solid ${C.border}`, padding: '20px 18px' }),
+              }}>
+                {s.content}
+              </div>
+            ))}
+          </div>
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
           {SLIDES.map((_, i) => (
