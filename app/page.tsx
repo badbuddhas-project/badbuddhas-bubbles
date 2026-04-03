@@ -5,7 +5,7 @@
  * EnergyBlob/BlobPreview → BreathVisual
  */
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
 import { usePractices } from '@/hooks/usePractices'
@@ -47,6 +47,20 @@ export default function Home() {
   const { isCompleted: isOnboardingCompleted, isLoading: isOnboardingLoading } = useOnboarding()
 
   const [slide, setSlide] = useState(0)
+  const touchStartX = useRef(0)
+  const autoTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const resetAutoRotate = useCallback(() => {
+    if (autoTimer.current) clearInterval(autoTimer.current)
+    autoTimer.current = setInterval(() => {
+      setSlide(prev => (prev + 1) % 2)
+    }, 4000)
+  }, [])
+
+  useEffect(() => {
+    resetAutoRotate()
+    return () => { if (autoTimer.current) clearInterval(autoTimer.current) }
+  }, [resetAutoRotate])
 
   useEffect(() => { ymEvent('app_opened', { platform: getPlatform() }) }, [])
 
@@ -161,22 +175,34 @@ export default function Home() {
 
       {/* Hero Carousel */}
       <div style={{ padding: '0 16px', marginBottom: 26 }}>
-        <div style={{
-          borderRadius: 22,
-          height: 200,
-          boxSizing: 'border-box',
-          overflow: 'hidden',
-          ...(SLIDES[slide].key === 'black'
-            ? { background: 'transparent', border: 'none', padding: 0 }
-            : { background: C.card, border: `1px solid ${C.border}`, padding: '20px 18px' }),
-        }}>
+        <div
+          onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX }}
+          onTouchEnd={(e) => {
+            const diff = touchStartX.current - e.changedTouches[0].clientX
+            if (Math.abs(diff) > 50) {
+              if (diff > 0) setSlide(prev => Math.min(prev + 1, SLIDES.length - 1))
+              else setSlide(prev => Math.max(prev - 1, 0))
+              resetAutoRotate()
+            }
+          }}
+          style={{
+            borderRadius: 22,
+            height: 200,
+            boxSizing: 'border-box',
+            overflow: 'hidden',
+            transition: 'opacity 0.3s ease',
+            ...(SLIDES[slide].key === 'black'
+              ? { background: 'transparent', border: 'none', padding: 0 }
+              : { background: C.card, border: `1px solid ${C.border}`, padding: '20px 18px' }),
+          }}
+        >
           {SLIDES[slide].content}
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
           {SLIDES.map((_, i) => (
             <button
               key={i}
-              onClick={() => setSlide(i)}
+              onClick={() => { setSlide(i); resetAutoRotate() }}
               style={{ width: i === slide ? 20 : 6, height: 6, borderRadius: 3, background: i === slide ? C.text2 : C.border2, border: 'none', cursor: 'pointer', padding: 0, transition: 'all 0.25s ease' }}
             />
           ))}
