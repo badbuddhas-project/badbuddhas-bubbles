@@ -240,7 +240,7 @@ export default function Home() {
       {/* Teachers section */}
       {teachers.length > 0 && (
         <div style={{ padding: '0 16px', marginBottom: 20 }}>
-          <SectionHdr title="Преподаватели" onAll={() => {}} />
+          <SectionHdr title="Преподаватели" />
           <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
             {teachers.map((teacher, idx) => {
               const isLocked = !isPremium && idx > 0
@@ -287,7 +287,7 @@ export default function Home() {
 
 // ─── Section Header ───────────────────────────────────────────────────────────
 
-function SectionHdr({ title, onAll }: { title: string; onAll: () => void }) {
+function SectionHdr({ title, onAll }: { title: string; onAll?: () => void }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
       <span style={{ fontSize: 15, fontWeight: 600, color: '#CBCBCB' }}>{title}</span>
