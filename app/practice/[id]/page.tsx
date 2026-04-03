@@ -136,10 +136,15 @@ export default function PracticePage() {
     toggle()
   }
 
-  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect()
-    seekByPercent(((e.clientX - rect.left) / rect.width) * 100)
+  const progressBarRef = useRef<HTMLDivElement>(null)
+  const handleProgressSeek = (clientX: number) => {
+    const bar = progressBarRef.current
+    if (!bar) return
+    const rect = bar.getBoundingClientRect()
+    seekByPercent(Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100)))
   }
+  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => handleProgressSeek(e.clientX)
+  const handleProgressTouch = (e: React.TouchEvent<HTMLDivElement>) => handleProgressSeek(e.touches[0].clientX)
 
   const handleSeekBack = () => seek(Math.max(0, currentTime - 10))
   const handleSeekForward = () => seek(Math.min(duration, currentTime + 10))
@@ -204,8 +209,8 @@ export default function PracticePage() {
 
           {/* Bottom: progress + controls */}
           <div style={{ padding: '0 20px 36px' }}>
-            <div style={{ marginBottom: 6 }}>
-              <div style={{ height: 2, background: 'rgba(255,255,255,0.15)', borderRadius: 2, overflow: 'hidden', cursor: 'pointer' }} onClick={handleProgressClick}>
+            <div style={{ padding: '20px 0', cursor: 'pointer', marginBottom: -14 }} onClick={handleProgressClick} onTouchStart={handleProgressTouch}>
+              <div ref={progressBarRef} style={{ height: 3, background: 'rgba(255,255,255,0.15)', borderRadius: 2, overflow: 'hidden' }}>
                 <div style={{ width: `${progress}%`, height: '100%', background: 'rgba(255,255,255,0.5)', borderRadius: 2 }} />
               </div>
             </div>
