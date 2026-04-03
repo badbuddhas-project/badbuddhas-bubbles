@@ -150,10 +150,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setUser({ ...user, email, verified_email: email })
             }
           }}
-          onSkip={() => {
-            sessionStorage.setItem(EMAIL_GATE_SKIP_KEY, '1')
-            setShowEmailGate(false)
-          }}
         />
       )}
     </AuthContext.Provider>
