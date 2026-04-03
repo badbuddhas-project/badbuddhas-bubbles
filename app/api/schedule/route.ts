@@ -23,10 +23,20 @@ export async function GET() {
     }
 
     const data = await res.json();
-    const events = (data.events || data.data || []).filter(
-      (e: { calendar_id?: string }) => e.calendar_id === 'cal_81f819ac9f68449aab0497578be903fa'
-    );
-    return NextResponse.json({ events });
+    const now = new Date();
+    const cleaned = (data.events || data.data || [])
+      .filter((e: { calendar_id?: string }) => e.calendar_id === 'cal_81f819ac9f68449aab0497578be903fa')
+      .filter((e: { datetime_start?: string }) => {
+        if (!e.datetime_start) return false;
+        const start = new Date(e.datetime_start.replace(' ', 'T') + '+03:00');
+        return start > now;
+      })
+      .sort((a: { datetime_start: string }, b: { datetime_start: string }) => {
+        const dateA = new Date(a.datetime_start.replace(' ', 'T') + '+03:00');
+        const dateB = new Date(b.datetime_start.replace(' ', 'T') + '+03:00');
+        return dateA.getTime() - dateB.getTime();
+      });
+    return NextResponse.json({ events: cleaned });
   } catch (error) {
     console.error('AddEvent fetch error:', error);
     return NextResponse.json({ events: [] });
