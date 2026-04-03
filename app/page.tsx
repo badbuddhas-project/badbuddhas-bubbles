@@ -309,7 +309,7 @@ function HomeCard({ p, onTap, locked }: { p: Practice; onTap: () => void; locked
       onClick={onTap}
       style={{ flexShrink: 0, width: 120, cursor: 'pointer', borderRadius: 16, overflow: 'hidden', position: 'relative', border: `1px solid #1A1A1A` }}
     >
-      <BreathVisual category={p.category} size={120} borderRadius={16} animate={false} showBubbles={false} />
+      <BreathVisual category={p.category} size={120} borderRadius={16} animate={true} showBubbles={false} />
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.82) 100%)', zIndex: 1 }} />
       {locked && (
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3 }}>
