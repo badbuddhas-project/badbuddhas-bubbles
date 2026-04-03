@@ -112,12 +112,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Show EmailGate once per session for TG users without email
   // Skipped on public routes; sessionStorage prevents re-showing after skip/complete
+  // Only shown AFTER onboarding is completed to prevent flash before onboarding
   useEffect(() => {
     const isPublic = PUBLIC_ROUTES.some((r) => pathname?.startsWith(r))
     const alreadyHandled = sessionStorage.getItem(EMAIL_GATE_SKIP_KEY)
     const needsEmail = user && !user.email && !user.verified_email
+    const onboardingDone = localStorage.getItem(ONBOARDING_KEY) === 'true'
 
-    if (isTelegram && needsEmail && !isPublic && !alreadyHandled) {
+    if (isTelegram && needsEmail && !isPublic && !alreadyHandled && onboardingDone) {
       setShowEmailGate(true)
     } else {
       setShowEmailGate(false)
