@@ -247,6 +247,7 @@ export default function Home() {
               return (
                 <div
                   key={teacher.name}
+                  onClick={() => { if (!isLocked) router.push(`/catalog?instructor=${encodeURIComponent(teacher.name)}`) }}
                   style={{ flexShrink: 0, textAlign: 'center', width: 90, opacity: isLocked ? 0.3 : 1, cursor: isLocked ? 'default' : 'pointer' }}
                 >
                   <div style={{ width: 90, height: 90, borderRadius: 18, marginBottom: 8, overflow: 'hidden', position: 'relative', border: `1px solid ${C.border}` }}>

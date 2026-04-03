@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useMemo, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
 import { usePractices } from '@/hooks/usePractices'
 import { useFavorites } from '@/hooks/useFavorites'
@@ -31,7 +31,17 @@ const CAT_DISPLAY: Record<string, string> = {
 }
 
 export default function CatalogPage() {
+  return (
+    <Suspense fallback={null}>
+      <CatalogContent />
+    </Suspense>
+  )
+}
+
+function CatalogContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const initialInstructor = searchParams?.get('instructor') || 'all'
   const { user } = useUser()
   const { practices, isLoading } = usePractices()
   const { isFavorite, toggleFavorite } = useFavorites()
@@ -40,8 +50,8 @@ export default function CatalogPage() {
 
   const [cat, setCat] = useState('all')
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
-  const [filterOpen, setFilterOpen] = useState(false)
-  const [instrFilter, setInstrFilter] = useState('all')
+  const [filterOpen, setFilterOpen] = useState(initialInstructor !== 'all')
+  const [instrFilter, setInstrFilter] = useState(initialInstructor)
   const [durFilter, setDurFilter] = useState('all')
 
   const instructors = useMemo(() => {
