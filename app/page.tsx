@@ -54,7 +54,7 @@ export default function Home() {
     if (autoTimer.current) clearInterval(autoTimer.current)
     autoTimer.current = setInterval(() => {
       setSlide(prev => (prev + 1) % 2)
-    }, 4000)
+    }, 7000)
   }, [])
 
   useEffect(() => {
