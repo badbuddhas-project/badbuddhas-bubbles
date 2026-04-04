@@ -197,8 +197,17 @@ function SubscribePage() {
         </button>
       </div>
 
+      {/* Loading while useEffect resolves auto-activate */}
+      {step === 'landing' && searchParams?.get('success') === 'true' && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 12 }}>
+          <div style={{ width: 24, height: 24, border: '2px solid #333', borderTopColor: '#CBCBCB', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+          <div style={{ color: '#6b7280', fontSize: 14 }}>Проверяем подписку...</div>
+          <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+        </div>
+      )}
+
       {/* Step 1: Landing */}
-      {step === 'landing' && (
+      {step === 'landing' && searchParams?.get('success') !== 'true' && (
         <>
           {/* Hero with gradient glows */}
           <div style={{ padding: '12px 20px 24px', position: 'relative', overflow: 'hidden' }}>
