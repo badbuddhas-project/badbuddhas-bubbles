@@ -131,11 +131,18 @@ function SubscribePage() {
 
     const isSuccess = searchParams.get('success') === 'true'
     const successEmail = searchParams.get('email')
-    if (isSuccess && successEmail) {
+    if (isSuccess) {
       setAutoChecked(true)
-      setEmail(successEmail)
-      setStep('activate')
-      checkSubscription(successEmail)
+      ;(async () => {
+        const emailToUse = successEmail || await getSessionEmail()
+        if (emailToUse) {
+          setEmail(emailToUse)
+          setStep('activate')
+          checkSubscription(emailToUse)
+        } else {
+          setStep('activate')
+        }
+      })()
       return
     }
 
