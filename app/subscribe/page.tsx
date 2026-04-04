@@ -38,8 +38,7 @@ function SubscribePage() {
   const searchParams = useSearchParams()
   const { user } = useUser()
 
-  const initialStep: Step = searchParams?.get('success') === 'true' || searchParams?.get('step') === 'activate' ? 'activate' : 'landing'
-  const [step, setStep] = useState<Step>(initialStep)
+  const [step, setStep] = useState<Step>('landing')
   const [email, setEmail] = useState('')
   const [isChecking, setIsChecking] = useState(false)
   const [error, setError] = useState('')
