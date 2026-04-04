@@ -5,7 +5,7 @@
  * EnergyBlob/BlobPreview → BreathVisual
  */
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
 import { usePractices } from '@/hooks/usePractices'
@@ -49,11 +49,13 @@ export default function Home() {
   const [slide, setSlide] = useState(0)
   const touchStartX = useRef(0)
   const autoTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+  const slideCountRef = useRef(2)
 
   const resetAutoRotate = useCallback(() => {
     if (autoTimer.current) clearInterval(autoTimer.current)
+    if (slideCountRef.current <= 1) return
     autoTimer.current = setInterval(() => {
-      setSlide(prev => (prev + 1) % 2)
+      setSlide(prev => (prev + 1) % slideCountRef.current)
     }, 7000)
   }, [])
 
@@ -81,6 +83,20 @@ export default function Home() {
   }, [isPracticesLoading, practices.length])
 
   const isPremium = user?.is_premium ?? false
+  const [expiresAt, setExpiresAt] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!isPremium || !user) return
+    const tgId = user.telegram_id ? `?telegram_id=${user.telegram_id}` : ''
+    fetch(`/api/subscriptions/me${tgId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.expires_at) setExpiresAt(d.expires_at) })
+      .catch(() => {})
+  }, [isPremium, user])
+
+  const daysLeft = expiresAt ? Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null
+  const showRenewal = isPremium && daysLeft !== null && daysLeft <= 3
+  const showBlackPromo = !isPremium
 
   const freePractices = useMemo(() => practices.filter(p => !p.is_premium).slice(0, 3), [practices])
 
@@ -113,8 +129,33 @@ export default function Home() {
 
   const greeting = `${t('catalog.hi')} ${user?.first_name || (language === 'en' ? 'breather' : 'дышатель')}`
 
-  const SLIDES = [
-    {
+  const expiryDate = expiresAt ? new Date(expiresAt).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''
+
+  const SLIDES: { key: string; content: ReactNode }[] = []
+
+  if (showRenewal) {
+    SLIDES.push({
+      key: 'renewal',
+      content: (
+        <div style={{ position: 'relative', height: '100%', overflow: 'hidden', borderRadius: 22 }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #1a0030, #2d0050)' }} />
+          <div style={{ position: 'absolute', top: -30, right: -30, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(192,52,165,0.5) 0%, transparent 65%)' }} />
+          <div style={{ position: 'absolute', bottom: -20, left: 20, width: 100, height: 100, borderRadius: '50%', background: 'radial-gradient(circle, rgba(84,198,140,0.25) 0%, transparent 65%)' }} />
+          <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '20px 18px' }}>
+            <div style={{ display: 'inline-flex', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', borderRadius: 20, padding: '3px 12px', marginBottom: 10, alignSelf: 'flex-start' }}>
+              <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: 2 }}>BLACK</span>
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 500, color: '#fff', marginBottom: 6 }}>Подписка заканчивается</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, marginBottom: 12 }}>{`Осталось ${daysLeft} дн. · до ${expiryDate}`}</div>
+            <button onClick={() => router.push('/subscribe')} style={{ width: '100%', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', color: '#fff', fontSize: 13, fontWeight: 700, borderRadius: 14, padding: '11px', border: 'none', cursor: 'pointer' }}>
+              Продлить доступ
+            </button>
+          </div>
+        </div>
+      ),
+    })
+  } else if (showBlackPromo) {
+    SLIDES.push({
       key: 'black',
       content: (
         <div style={{ position: 'relative', height: '100%', overflow: 'hidden', borderRadius: 22 }}>
@@ -133,8 +174,11 @@ export default function Home() {
           </div>
         </div>
       ),
-    },
-    {
+    })
+  }
+
+  if (!showRenewal) {
+    SLIDES.push({
       key: 'group',
       content: (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
@@ -150,8 +194,10 @@ export default function Home() {
           </div>
         </div>
       ),
-    },
-  ]
+    })
+  }
+
+  slideCountRef.current = SLIDES.length
 
   return (
     <div style={{ overflowY: 'auto', minHeight: '100vh', background: C.bg, paddingBottom: 80 }}>
@@ -210,7 +256,7 @@ export default function Home() {
             ))}
           </div>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
+        {SLIDES.length > 1 && <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
           {SLIDES.map((_, i) => (
             <button
               key={i}
@@ -218,7 +264,7 @@ export default function Home() {
               style={{ width: i === slide ? 20 : 6, height: 6, borderRadius: 3, background: i === slide ? C.text2 : C.border2, border: 'none', cursor: 'pointer', padding: 0, transition: 'all 0.25s ease' }}
             />
           ))}
-        </div>
+        </div>}
       </div>
 
       {/* Practices section */}
