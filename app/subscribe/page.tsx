@@ -38,9 +38,8 @@ function SubscribePage() {
   const searchParams = useSearchParams()
   const { user } = useUser()
 
-  const [step, setStep] = useState<Step>('landing')
-  const isReturningFromPayment = searchParams?.get('success') === 'true'
-  const isActivating = searchParams?.get('step') === 'activate'
+  const initialStep: Step = searchParams?.get('success') === 'true' || searchParams?.get('step') === 'activate' ? 'activate' : 'landing'
+  const [step, setStep] = useState<Step>(initialStep)
   const [email, setEmail] = useState('')
   const [isChecking, setIsChecking] = useState(false)
   const [error, setError] = useState('')
@@ -192,14 +191,8 @@ function SubscribePage() {
         </button>
       </div>
 
-      {/* Step 1: Landing (or loading spinner while auto-activate resolves) */}
-      {step === 'landing' && (isReturningFromPayment || isActivating) && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 16 }}>
-          <div className="w-8 h-8 border-2 border-zinc-700 border-t-zinc-400 rounded-full animate-spin" />
-          <span style={{ fontSize: 14, color: '#6b7280' }}>Проверяем подписку...</span>
-        </div>
-      )}
-      {step === 'landing' && !isReturningFromPayment && !isActivating && (
+      {/* Step 1: Landing */}
+      {step === 'landing' && (
         <>
           {/* Hero with gradient glows */}
           <div style={{ padding: '12px 20px 24px', position: 'relative', overflow: 'hidden' }}>
