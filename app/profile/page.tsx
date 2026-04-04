@@ -30,7 +30,7 @@ export default function ProfilePage() {
   const { t, language } = useTranslation()
 
   const [isConnectEmailOpen, setIsConnectEmailOpen] = useState(false)
-  const [lastPractice, setLastPractice] = useState<{ name: string; date: string } | null>(null)
+  const [lastPractice, setLastPractice] = useState<{ id: string; name: string; date: string } | null>(null)
   const [subscriptionExpiry, setSubscriptionExpiry] = useState<string | null>(null)
 
   useEffect(() => {
@@ -55,7 +55,7 @@ export default function ProfilePage() {
         .eq('id', data.practice_id)
         .single()
       if (practice) {
-        setLastPractice({ name: practice.title_ru || practice.title, date: data.completed_at })
+        setLastPractice({ id: data.practice_id, name: practice.title_ru || practice.title, date: data.completed_at })
       }
     }
     fetchLastPractice()
@@ -306,7 +306,7 @@ export default function ProfilePage() {
             </span>
           </div>
           <div
-            onClick={() => router.push('/')}
+            onClick={() => router.push(`/practice/${lastPractice.id}?from=profile`)}
             style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
           >
             <span style={{ fontSize: 14, color: C.text }}>{lastPractice.name}</span>
