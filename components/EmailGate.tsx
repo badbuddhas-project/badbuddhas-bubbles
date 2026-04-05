@@ -34,6 +34,8 @@ export default function EmailGate({ onComplete }: EmailGateProps) {
 
       if (data.success) {
         onComplete(trimmed)
+        // Reload to pick up is_premium if a pending subscription was activated
+        setTimeout(() => window.location.reload(), 300)
       } else {
         setError(data.error || 'Не удалось сохранить email')
       }
