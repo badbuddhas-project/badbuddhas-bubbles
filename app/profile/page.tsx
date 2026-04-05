@@ -315,8 +315,8 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Web access (email connect) — kept for existing functionality */}
-      {!(isTelegram && !isPremium) && (
+      {/* TODO: скрыто до реализации веб-доступа */}
+      {false && !(isTelegram && !isPremium) && (
         <div style={{ margin: '0 16px 18px', background: C.card, borderRadius: 16, border: `1px solid ${C.border}`, padding: '14px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ flex: 1 }}>
