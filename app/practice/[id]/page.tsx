@@ -161,6 +161,12 @@ export default function PracticePage() {
     )
   }
 
+  const getShareData = () => {
+    const duration = practice?.duration_seconds ? `${Math.round(practice.duration_seconds / 60)} мин` : ''
+    const shareText = ['Практика breathwork', practice?.title, duration, practice?.description?.slice(0, 80)].filter(Boolean).join(' · ')
+    return { title: practice?.title || 'BadBuddhas Bubbles', text: shareText, url: window.location.href }
+  }
+
   // ─── PLAYER MODE ─────────────────────────────────────────────────────────────
   if (mode === 'player') {
     return (
@@ -239,7 +245,7 @@ export default function PracticePage() {
               </button>
 
               {/* Share */}
-              <button onClick={() => navigator.share?.({ url: window.location.href }).catch(() => {})} style={{ padding: 4, cursor: 'pointer', background: 'none', border: 'none' }}>
+              <button onClick={() => navigator.share?.(getShareData()).catch(() => {})} style={{ padding: 4, cursor: 'pointer', background: 'none', border: 'none' }}>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" />
                 </svg>
@@ -289,7 +295,7 @@ export default function PracticePage() {
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', paddingTop: 4, flexShrink: 0 }}>
             {/* Share */}
-            <button onClick={() => navigator.share?.({ url: window.location.href }).catch(() => {})} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+            <button onClick={() => navigator.share?.(getShareData()).catch(() => {})} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.sub} strokeWidth="1.8"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" /></svg>
             </button>
             {/* Favorite */}
