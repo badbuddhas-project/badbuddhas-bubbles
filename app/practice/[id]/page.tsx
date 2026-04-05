@@ -163,7 +163,7 @@ export default function PracticePage() {
 
   const getShareData = () => {
     const duration = practice?.duration_seconds ? `${Math.round(practice.duration_seconds / 60)} мин` : ''
-    const shareText = ['Практика breathwork', practice?.title, duration, practice?.description?.slice(0, 80)].filter(Boolean).join(' · ')
+    const shareText = ['Практика breathwork', practice?.title, duration].filter(Boolean).join(' · ')
     return { title: practice?.title || 'BadBuddhas Bubbles', text: shareText, url: window.location.href }
   }
 
