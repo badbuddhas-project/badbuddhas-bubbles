@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import type { Practice } from '@/types/database'
 import BreathVisual from './BreathVisual'
 
@@ -21,7 +22,7 @@ interface PracticeCardProps {
   isLocked?: boolean
 }
 
-export function PracticeCard({
+export const PracticeCard = memo(function PracticeCard({
   practice,
   isFavorite,
   onToggleFavorite,
@@ -128,4 +129,4 @@ export function PracticeCard({
       </button>
     </div>
   )
-}
+})
