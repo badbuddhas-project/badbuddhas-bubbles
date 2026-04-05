@@ -58,7 +58,6 @@ function IconCalendar({ color }: { color: string }) {
 const TAB_ROUTES: Record<string, string> = {
   home: '/',
   catalog: '/catalog',
-  theory: '/theory',
   favorites: '/favorites',
   schedule: '/schedule',
 }
@@ -66,7 +65,6 @@ const TAB_ROUTES: Record<string, string> = {
 const ROUTE_TO_TAB: Record<string, string> = {
   '/': 'home',
   '/catalog': 'catalog',
-  '/theory': 'theory',
   '/favorites': 'favorites',
   '/schedule': 'schedule',
 }
@@ -78,23 +76,15 @@ export function TabBar({ isPremium, activeOverride }: TabBarProps) {
 
   const activeTab = activeOverride || (pathname === '/profile' ? null : (pathname && ROUTE_TO_TAB[pathname]) || 'home')
 
-  const freeTabs = [
-    { id: 'home',      label: language === 'ru' ? 'Главная'  : 'Home',      Icon: IconHome     },
-    { id: 'catalog',   label: language === 'ru' ? 'Каталог'  : 'Catalog',   Icon: IconMusic    },
+  const tabs = [
+    { id: 'home',      label: language === 'ru' ? 'Главная'   : 'Home',      Icon: IconHome     },
+    { id: 'catalog',   label: language === 'ru' ? 'Каталог'   : 'Catalog',   Icon: IconMusic    },
     { id: 'schedule',  label: language === 'ru' ? 'Расписание': 'Schedule',  Icon: IconCalendar },
-    { id: 'favorites', label: language === 'ru' ? 'Избранное': 'Favorites', Icon: IconHeart    },
+    { id: 'favorites', label: language === 'ru' ? 'Избранное' : 'Favorites', Icon: IconHeart    },
   ]
 
-  const blackTabs = [
-    { id: 'home',     label: language === 'ru' ? 'Главная'   : 'Home',      Icon: IconHome     },
-    { id: 'catalog',  label: language === 'ru' ? 'Практики'  : 'Practices', Icon: IconMusic    },
-    { id: 'theory',   label: language === 'ru' ? 'Теория'    : 'Theory',    Icon: IconBook     },
-    { id: 'schedule', label: language === 'ru' ? 'Расписание': 'Schedule',  Icon: IconCalendar },
-  ]
-
-  const tabs = isPremium ? blackTabs : freeTabs
-  const activeColor  = isPremium ? '#54C68C' : '#CBCBCB'
-  const activeBg     = isPremium ? 'rgba(84,198,140,0.14)' : 'rgba(203,203,203,0.12)'
+  const activeColor   = '#CBCBCB'
+  const activeBg      = 'rgba(203,203,203,0.12)'
   const inactiveColor = '#6b7280'
 
   return (
