@@ -72,6 +72,11 @@ export default function Home() {
 
   useEffect(() => {
     const tgStartParam = (window as any).Telegram?.WebApp?.initDataUnsafe?.start_param
+    if (tgStartParam?.startsWith('p_')) {
+      const sharedPracticeId = tgStartParam.slice(2)
+      router.push(`/practice/${sharedPracticeId}?from=home`)
+      return
+    }
     if (tgStartParam === 'activate' && !user?.is_premium && !sessionStorage.getItem('activate_handled')) {
       sessionStorage.setItem('activate_handled', '1')
       router.push('/subscribe?step=activate')

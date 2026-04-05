@@ -164,7 +164,10 @@ export default function PracticePage() {
   const getShareData = () => {
     const duration = practice?.duration_seconds ? `${Math.round(practice.duration_seconds / 60)} мин` : ''
     const shareText = ['Практика breathwork', practice?.title, duration].filter(Boolean).join(' · ')
-    return { title: practice?.title || 'BadBuddhas Bubbles', text: shareText, url: window.location.href }
+    const isTest = window.location.hostname.includes('651c7f')
+    const botName = isTest ? 'Integration_BadBuddhas_bot' : 'BadBuddhas_bubbles_bot'
+    const url = `https://t.me/${botName}/app?startapp=p_${practice?.id}`
+    return { title: practice?.title || 'BadBuddhas Bubbles', text: shareText, url }
   }
 
   // ─── PLAYER MODE ─────────────────────────────────────────────────────────────
