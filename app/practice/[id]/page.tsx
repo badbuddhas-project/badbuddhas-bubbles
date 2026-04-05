@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { getSupabaseClient } from '@/lib/supabase'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 import { usePracticeCompletion } from '@/hooks/usePracticeCompletion'
 import { useFavorites } from '@/hooks/useFavorites'
@@ -39,8 +38,6 @@ export default function PracticePage() {
   const fromTab = searchParams?.get('from') || 'home'
   const { t, language } = useTranslation()
 
-  const [practice, setPractice] = useState<Practice | null>(null)
-  const [isLoadingPractice, setIsLoadingPractice] = useState(true)
   const [mode, setMode] = useState<'detail' | 'player'>('detail')
   const [descExpanded, setDescExpanded] = useState(false)
   const listenedSecondsRef = useRef(0)
@@ -49,7 +46,8 @@ export default function PracticePage() {
 
   const { user } = useUser()
   const isPremium = user?.is_premium ?? false
-  const { practices } = usePractices()
+  const { practices, isLoading: isLoadingPractices } = usePractices()
+  const practice = practices.find(p => p.id === practiceId) || null
   const { recordPractice } = usePracticeCompletion()
   const { isFavorite, toggleFavorite } = useFavorites()
 
@@ -83,20 +81,7 @@ export default function PracticePage() {
     onProgress: handleProgress,
   })
 
-  useEffect(() => {
-    const fetchPractice = async () => {
-      const supabase = getSupabaseClient()
-      const { data } = await supabase
-        .from('practices')
-        .select('*')
-        .eq('is_visible', true)
-        .eq('id', practiceId)
-        .single()
-      if (data) setPractice(data)
-      setIsLoadingPractice(false)
-    }
-    fetchPractice()
-  }, [practiceId])
+
 
   const handleBack = () => {
     if (mode === 'player') {
@@ -156,7 +141,7 @@ export default function PracticePage() {
   const morePractices = practices.filter(p => p.id !== practiceId).slice(0, 3)
 
   // Loading
-  if (isLoadingPractice) {
+  if (isLoadingPractices) {
     return (
       <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ color: '#71717a' }}>{t('player.loading')}</div>
