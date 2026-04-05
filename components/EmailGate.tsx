@@ -100,7 +100,7 @@ export default function EmailGate({ onComplete }: EmailGateProps) {
           Ваш email
         </h2>
 
-        <p style={{ fontSize: 14, color: '#6b7280', marginTop: 8, marginBottom: 0 }}>
+        <p style={{ fontSize: 14, color: '#9ca3af', marginTop: 8, marginBottom: 0 }}>
           для доступа к материалам
         </p>
 
@@ -152,7 +152,7 @@ export default function EmailGate({ onComplete }: EmailGateProps) {
             maxWidth: 340,
             textAlign: 'center',
             fontSize: 11,
-            color: '#6b7280',
+            color: '#9ca3af',
             lineHeight: 1.5,
             marginTop: 24,
           }}

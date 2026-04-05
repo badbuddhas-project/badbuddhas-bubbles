@@ -35,14 +35,14 @@ export function TgSplashScreen() {
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ marginBottom: 20 }}><BreathingLogo size={120} /></div>
         <div style={{ fontSize: 16, fontWeight: 600, color: '#fff', letterSpacing: '0.04em' }}>badbuddhas</div>
-        <div style={{ fontSize: 13, color: '#6b7280', marginTop: 5 }}>[bubbles]</div>
+        <div style={{ fontSize: 13, color: '#9ca3af', marginTop: 5 }}>[bubbles]</div>
       </div>
 
       {/* Dot indicators */}
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: 8, marginTop: 40 }}>
-        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#6b7280', opacity: 0.3, animation: 'splash-dot 1.2s ease-in-out infinite' }} />
-        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#6b7280', opacity: 0.55, animation: 'splash-dot 1.2s ease-in-out 0.2s infinite' }} />
-        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#6b7280', opacity: 0.8, animation: 'splash-dot 1.2s ease-in-out 0.4s infinite' }} />
+        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#9ca3af', opacity: 0.3, animation: 'splash-dot 1.2s ease-in-out infinite' }} />
+        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#9ca3af', opacity: 0.55, animation: 'splash-dot 1.2s ease-in-out 0.2s infinite' }} />
+        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#9ca3af', opacity: 0.8, animation: 'splash-dot 1.2s ease-in-out 0.4s infinite' }} />
       </div>
 
       <style>{`

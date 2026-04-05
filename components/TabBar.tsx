@@ -85,7 +85,7 @@ export function TabBar({ isPremium, activeOverride }: TabBarProps) {
 
   const activeColor   = '#CBCBCB'
   const activeBg      = 'rgba(203,203,203,0.12)'
-  const inactiveColor = '#6b7280'
+  const inactiveColor = '#9ca3af'
 
   return (
     <div style={{ position: 'fixed', bottom: 12, left: 12, right: 12, zIndex: 50 }}>

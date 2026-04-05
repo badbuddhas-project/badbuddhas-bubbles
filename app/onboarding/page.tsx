@@ -85,7 +85,7 @@ export default function OnboardingPage() {
             background: 'none',
             border: 'none',
             fontSize: 13,
-            color: '#6b7280',
+            color: '#9ca3af',
             cursor: 'pointer',
           }}
         >
