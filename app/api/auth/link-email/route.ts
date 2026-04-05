@@ -114,6 +114,30 @@ export async function POST(request: Request) {
 
     console.log('[link-email] Update result:', JSON.stringify(updateData))
 
+    // Check for pending subscription (bulk-imported, user_id=NULL)
+    const { data: pendingSub } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('email', normalizedEmail)
+      .is('user_id', null)
+      .eq('status', 'active')
+      .maybeSingle()
+
+    if (pendingSub) {
+      const telegramIdForPending = updateData?.telegram_id ?? null
+      console.log('[link-email] Found pending subscription:', pendingSub.id, 'linking to user:', userId)
+      await supabase
+        .from('subscriptions')
+        .update({ user_id: userId, telegram_id: telegramIdForPending })
+        .eq('id', pendingSub.id)
+
+      await supabase
+        .from('users')
+        .update({ is_premium: true })
+        .eq('id', userId)
+      console.log('[link-email] Pending subscription activated for user:', userId)
+    }
+
     // Create/update subscription record only when activating premium
     if (activate_premium) {
       const telegramId = updateData?.telegram_id ?? null
