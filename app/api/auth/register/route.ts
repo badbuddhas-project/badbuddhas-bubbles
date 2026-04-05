@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import bcrypt from 'bcryptjs'
 import * as jwt from 'jsonwebtoken'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 // Strip sensitive fields before sending user to client
 function sanitizeUser(user: Record<string, unknown>) {
@@ -16,6 +17,10 @@ function sanitizeUser(user: Record<string, unknown>) {
 }
 
 export async function POST(request: Request) {
+  const ip = request.headers.get('x-forwarded-for') || 'unknown'
+  const { allowed } = checkRateLimit(ip + ':register', 5, 3600000)
+  if (!allowed) return NextResponse.json({ error: 'Слишком много запросов. Попробуйте позже.' }, { status: 429 })
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,

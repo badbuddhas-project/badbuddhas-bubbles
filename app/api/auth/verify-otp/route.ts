@@ -7,8 +7,13 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createClient } from '@supabase/supabase-js'
 import * as jwt from 'jsonwebtoken'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: Request) {
+  const ip = request.headers.get('x-forwarded-for') || 'unknown'
+  const { allowed } = checkRateLimit(ip + ':verify-otp', 10, 900000)
+  if (!allowed) return NextResponse.json({ error: 'Слишком много запросов. Попробуйте позже.' }, { status: 429 })
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
