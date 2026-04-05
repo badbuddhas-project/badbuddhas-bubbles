@@ -167,7 +167,7 @@ export default function PracticePage() {
     const isTest = window.location.hostname.includes('651c7f')
     const botName = isTest ? 'Integration_BadBuddhas_bot' : 'BadBuddhas_bubbles_bot'
     const url = `https://t.me/${botName}/app?startapp=p_${practice?.id}`
-    return { title: practice?.title || 'BadBuddhas Bubbles', text: shareText, url }
+    return { text: shareText + '\n' + url }
   }
 
   // ─── PLAYER MODE ─────────────────────────────────────────────────────────────
