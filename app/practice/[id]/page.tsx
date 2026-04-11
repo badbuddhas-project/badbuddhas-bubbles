@@ -261,9 +261,7 @@ export default function PracticePage() {
   }
 
   // ─── DETAIL MODE ─────────────────────────────────────────────────────────────
-  const description = language === 'ru'
-    ? 'Мягкая расслабляющая практика для снятия напряжения. Несколько фаз дыхания помогут найти внутренний покой и восстановить баланс.'
-    : 'A gentle relaxing practice for releasing tension. Several breathing phases will help you find inner peace and restore balance.'
+  const description = practice?.description || ''
 
   return (
     <main style={{ minHeight: '100vh', background: C.bg, overflowY: 'auto', paddingBottom: 80 }}>

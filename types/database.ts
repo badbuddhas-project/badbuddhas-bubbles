@@ -59,7 +59,7 @@ export interface Database {
           instructor_name: string
           instructor_avatar_url: string | null
           audio_url: string
-          preview_image_url: string | null
+          description: string | null
           is_premium: boolean
           is_visible: boolean
           sort_order: number
@@ -75,7 +75,7 @@ export interface Database {
           instructor_name: string
           instructor_avatar_url?: string | null
           audio_url: string
-          preview_image_url?: string | null
+          description?: string | null
           is_premium?: boolean
           is_visible?: boolean
           sort_order?: number
@@ -91,7 +91,7 @@ export interface Database {
           instructor_name?: string
           instructor_avatar_url?: string | null
           audio_url?: string
-          preview_image_url?: string | null
+          description?: string | null
           is_premium?: boolean
           is_visible?: boolean
           sort_order?: number
