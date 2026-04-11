@@ -80,18 +80,21 @@ export default function SchedulePage() {
 
       {/* Content */}
       <div style={{ padding: '0 16px' }}>
-        {loading ? (
+        {(() => {
+          const now = new Date()
+          const futureEvents = events.filter(e => new Date(e.datetime_start) > now)
+          return loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 60 }}>
             <div className="w-6 h-6 border-2 border-zinc-700 border-t-zinc-400 rounded-full animate-spin" />
           </div>
-        ) : events.length === 0 ? (
+        ) : futureEvents.length === 0 ? (
           <div style={{ textAlign: 'center', paddingTop: 60 }}>
             <div style={{ fontSize: 14, color: C.sub }}>
               {language === 'ru' ? 'Нет запланированных сессий' : 'No scheduled sessions'}
             </div>
           </div>
         ) : (
-          events.map((ev, i) => (
+          futureEvents.map((ev, i) => (
             <div
               key={ev.id || i}
               style={{
@@ -140,7 +143,8 @@ export default function SchedulePage() {
               </div>
             </div>
           ))
-        )}
+        )
+        })()}
       </div>
 
       <TabBar isPremium={isPremium} />
