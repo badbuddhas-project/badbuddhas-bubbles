@@ -166,7 +166,8 @@ export default function PracticePage() {
     const shareText = ['Практика breathwork', practice?.title, duration].filter(Boolean).join(' · ')
     const isTest = window.location.hostname.includes('651c7f')
     const botName = isTest ? 'Integration_BadBuddhas_bot' : 'BadBuddhas_bubbles_bot'
-    const url = `https://t.me/${botName}/app?startapp=p_${practice?.id}`
+    const shortName = isTest ? 'app' : 'breathe'
+    const url = `https://t.me/${botName}/${shortName}?startapp=p_${practice?.id}`
     return { text: shareText + '\n' + url }
   }
 
