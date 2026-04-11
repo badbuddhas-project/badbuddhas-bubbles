@@ -6,18 +6,22 @@ import { getSupabaseClient } from '@/lib/supabase'
 import { useUser } from '@/hooks/useUser'
 import { useUserStats } from '@/hooks/useUserStats'
 import { ConnectEmailModal } from '@/components/ConnectEmailModal'
+import { BrandMark } from '@/components/BrandMark'
+import { TabBar } from '@/components/TabBar'
 import { useTranslation } from '@/lib/i18n'
 import { ymEvent, getPlatform } from '@/lib/analytics'
 import { closeTelegramApp } from '@/lib/telegram'
 
-const QUOTE_KEYS = [1, 2, 3, 4, 5] as const
-
-const BLACK = '#000000'
-const DARK_CARD = '#0A0A0A'
-const CARD_BORDER = '#1A1A1A'
-const GREY = '#CBCBCB'
-const WHITE = '#FFFFFF'
-const TURF = '#313333'
+const C = {
+  bg: '#000',
+  card: '#0A0A0A',
+  border: '#1A1A1A',
+  white: '#fff',
+  text: '#CBCBCB',
+  sub: 'rgba(203,203,203,0.45)',
+  green: '#54C68C',
+  pink: '#C034A5',
+}
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -26,17 +30,13 @@ export default function ProfilePage() {
   const { t, language } = useTranslation()
 
   const [isConnectEmailOpen, setIsConnectEmailOpen] = useState(false)
-  const [lastPractice, setLastPractice] = useState<{ name: string; date: string } | null>(null)
+  const [lastPractice, setLastPractice] = useState<{ id: string; name: string; date: string } | null>(null)
+  const [subscriptionExpiry, setSubscriptionExpiry] = useState<string | null>(null)
 
-  // Random quote index, stable per mount
-  const [quoteIdx] = useState(() => QUOTE_KEYS[Math.floor(Math.random() * QUOTE_KEYS.length)])
-
-  // Analytics: profile viewed
   useEffect(() => {
     ymEvent('profile_viewed', { platform: getPlatform() })
   }, [])
 
-  // Fetch last practice
   useEffect(() => {
     if (!user) return
     const fetchLastPractice = async () => {
@@ -55,35 +55,54 @@ export default function ProfilePage() {
         .eq('id', data.practice_id)
         .single()
       if (practice) {
-        setLastPractice({
-          name: practice.title_ru || practice.title,
-          date: data.completed_at,
-        })
+        setLastPractice({ id: data.practice_id, name: practice.title_ru || practice.title, date: data.completed_at })
       }
     }
     fetchLastPractice()
   }, [user])
 
+  useEffect(() => {
+    if (!user?.is_premium) return
+    const fetchSub = async () => {
+      try {
+        const tgId = user.telegram_id ? `?telegram_id=${user.telegram_id}` : ''
+        const res = await fetch(`/api/subscriptions/me${tgId}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data?.expires_at) setSubscriptionExpiry(data.expires_at)
+        }
+      } catch (err) {
+        console.error('[Profile] fetchSub error:', err)
+      }
+    }
+    fetchSub()
+  }, [user])
+
   const formatRelativeDate = (dateStr: string) => {
     const date = new Date(dateStr)
     const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
     if (diffDays === 0) return t('profile.today')
     if (diffDays === 1) return t('profile.yesterday')
     return date.toLocaleDateString(language === 'ru' ? 'ru-RU' : 'en-US', { month: 'short', day: 'numeric' })
   }
 
-  const handleLogout = async () => {
-    await signOut()
+  const formatJoinDate = (dateStr: string) => {
+    const date = new Date(dateStr)
+    const now = new Date()
+    const months = (now.getFullYear() - date.getFullYear()) * 12 + (now.getMonth() - date.getMonth())
+    if (months < 1) return language === 'ru' ? 'только что' : 'just joined'
+    if (months === 1) return language === 'ru' ? '1 месяц назад' : '1 month ago'
+    if (months < 12) return language === 'ru' ? `${months} месяцев назад` : `${months} months ago`
+    const years = Math.floor(months / 12)
+    return language === 'ru' ? `${years} год назад` : `${years} year ago`
   }
 
+  const handleLogout = async () => { await signOut() }
+
   const handleClose = () => {
-    if (isTelegram) {
-      closeTelegramApp()
-    } else {
-      handleLogout()
-    }
+    if (isTelegram) closeTelegramApp()
+    else handleLogout()
   }
 
   const handleDisconnectEmail = async () => {
@@ -100,208 +119,270 @@ export default function ProfilePage() {
   const isPremium = user?.is_premium ?? false
   const displayName = user?.first_name || user?.username || user?.email?.split('@')[0] || 'User'
 
-  const menuItems = [
-    { label: t('profile.settings'), sub: t('profile.account'), onClick: () => router.push('/profile/settings') },
-    { label: t('profile.faq'), sub: '', onClick: () => router.push('/profile/faq') },
-    { label: t('profile.communityChat'), sub: '', onClick: () => window.open('https://t.me/+bb3fiUmoKGVjYmUy', '_blank') },
-    { label: t('profile.contactUs'), sub: '', onClick: () => window.open('https://badbuddhas.world/ask?utm_source=telegram&utm_medium=miniapp&utm_campaign=bubbles_contact', '_blank') },
+  const daysUntilExpiry = subscriptionExpiry
+    ? Math.ceil((new Date(subscriptionExpiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : null
+  const showRenewalWarning = isPremium && daysUntilExpiry !== null && daysUntilExpiry < 7
+
+  const formatExpiryLine = (dateStr: string) => {
+    const date = new Date(dateStr)
+    const monthsLeft = Math.max(0, Math.round((date.getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30)))
+    const formatted = date.toLocaleDateString(language === 'ru' ? 'ru-RU' : 'en-US', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    return language === 'ru' ? `до ${formatted} · ${monthsLeft} месяцев` : `until ${formatted} · ${monthsLeft} months`
+  }
+
+  const freeMenuItems = [
+    { label: t('profile.settings'), sub: t('profile.account'), onClick: () => router.push('/profile/settings'), red: false },
+    { label: t('profile.faq'), sub: '', onClick: () => router.push('/profile/faq'), red: false },
+    { label: t('profile.communityChat'), sub: '', onClick: () => window.open('https://t.me/+bb3fiUmoKGVjYmUy', '_blank'), red: false },
+    { label: t('profile.contactUs'), sub: '', onClick: () => window.open('https://badbuddhas.world/ask?utm_source=telegram&utm_medium=miniapp&utm_campaign=bubbles_contact', '_blank'), red: false },
   ]
+  const blackMenuItems = [
+    { label: language === 'ru' ? 'Настройки' : 'Settings', sub: t('profile.account'), onClick: () => router.push('/profile/settings'), red: false },
+    { label: language === 'ru' ? 'Уведомления' : 'Notifications', sub: '', onClick: () => router.push('/profile/settings'), red: false },
+    { label: language === 'ru' ? 'Поддержка' : 'Support', sub: '', onClick: () => window.open('https://badbuddhas.world/ask?utm_source=telegram&utm_medium=miniapp&utm_campaign=bubbles_contact', '_blank'), red: false },
+    { label: language === 'ru' ? 'Выйти' : 'Sign out', sub: '', onClick: handleLogout, red: true },
+  ]
+  const menuItems = isPremium ? blackMenuItems : freeMenuItems
 
   if (isUserLoading) {
     return (
-      <main style={{ minHeight: '100vh', background: BLACK, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <main style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ color: '#71717a' }}>{t('common.loading')}</div>
       </main>
     )
   }
 
   return (
-    <main style={{ minHeight: '100vh', background: BLACK, padding: '44px 16px 80px', overflowY: 'auto' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
-            onClick={() => router.push('/')}
-            style={{
-              width: 32, height: 32, borderRadius: '50%', background: DARK_CARD,
-              border: `1px solid ${CARD_BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREY} strokeWidth="1.5">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
+    <main style={{ minHeight: '100vh', background: C.bg, overflowY: 'auto', paddingBottom: 80 }}>
+
+      {/* Header: back left, logo right */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '44px 16px 12px' }}>
+        <button
+          onClick={() => router.push('/')}
+          style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#CBCBCB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <BrandMark size={16} />
+        </div>
+      </div>
+
+      {/* Avatar row: avatar left + meta right */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 20, padding: '8px 20px 24px' }}>
+        {/* Avatar with progress ring */}
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <svg width="88" height="88" viewBox="0 0 88 88" style={{ position: 'absolute', top: -4, left: -4, zIndex: 2 }}>
+            <circle cx="44" cy="44" r="40" fill="none" stroke={C.border} strokeWidth="3.5" />
+            <circle
+              cx="44" cy="44" r="40" fill="none"
+              stroke={isPremium ? C.pink : C.green} strokeWidth="3.5"
+              strokeDasharray={isPremium ? '230 251' : '180 251'} strokeLinecap="round"
+              transform="rotate(-90 44 44)"
+            />
+          </svg>
+          <div style={{
+            width: 80, height: 80, borderRadius: '50%',
+            background: isPremium ? `linear-gradient(135deg,${C.pink},${C.green})` : 'linear-gradient(135deg,#8b5cf6,#3b82f6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'relative', zIndex: 1,
+          }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/logo-white-square.png" alt="" width={30} height={30} style={{ display: 'block', opacity: 0.9 }} />
           </div>
-          <span style={{ fontSize: 16, fontWeight: 500, color: WHITE }}>{t('profile.title')}</span>
+          {isPremium && (
+            <div style={{ position: 'absolute', bottom: -2, left: '50%', transform: 'translateX(-50%)', zIndex: 3, background: C.pink, borderRadius: 6, padding: '2px 7px' }}>
+              <span style={{ fontSize: 9, fontWeight: 700, color: '#fff', letterSpacing: 1.5 }}>BLACK</span>
+            </div>
+          )}
         </div>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/images/logo-white.svg" alt="badbuddhas" height={16} style={{ display: 'block', height: '16px', width: 'auto' }} />
-      </div>
 
-      {/* Avatar */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 6 }}>
-        <div style={{
-          width: 72, height: 72, borderRadius: '50%', marginBottom: 10,
-          ...(isPremium
-            ? { backgroundImage: 'url(/images/black_blob_5.png)', backgroundSize: '220%', backgroundPosition: 'center', overflow: 'hidden' as const }
-            : { background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%)' }),
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          border: `2px solid ${CARD_BORDER}`,
-        }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/images/logo-white-square.png" alt="" width={28} height={28} style={{ display: 'block', opacity: 0.9 }} />
-        </div>
-      </div>
-
-      {/* Name */}
-      <div style={{ textAlign: 'center', marginBottom: 2 }}>
-        <span style={{ fontSize: 18, fontWeight: 500, color: WHITE }}>{displayName}</span>
-      </div>
-
-      {/* Account type */}
-      <div style={{ textAlign: 'center', marginBottom: 14 }}>
-        <span style={{ fontSize: 13, color: GREY }}>{isPremium ? t('profile.premiumAccount').toLowerCase() : t('profile.freeAccount').toLowerCase()}</span>
-      </div>
-
-      {/* Motivational quote */}
-      <div style={{ textAlign: 'center', marginBottom: 18, padding: '0 12px' }}>
-        <span style={{ fontSize: 12, color: GREY }}>
-          <span style={{ opacity: 0.5 }}>[</span>{t(`quotes.q${quoteIdx}text` as any)}<span style={{ opacity: 0.5 }}>]</span>
-        </span>
-        <div style={{ fontSize: 10, color: GREY, opacity: 0.4, marginTop: 6 }}>{t(`quotes.q${quoteIdx}author` as any)}</div>
-      </div>
-
-      {/* Stats block */}
-      <div style={{
-        display: 'flex', background: DARK_CARD, borderRadius: 14,
-        padding: '16px 8px', border: `1px solid ${CARD_BORDER}`, marginBottom: 8,
-      }}>
-        <div style={{ flex: 1, textAlign: 'center' }}>
-          <div style={{ fontSize: 28, fontWeight: 600, color: WHITE }}>
-            {isStatsLoading ? '-' : (stats?.current_streak ?? 0)}
+        {/* Meta */}
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 11, color: C.sub, marginBottom: 4 }}>
+            {language === 'ru' ? 'Участник' : 'Member'}
           </div>
-          <div style={{ fontSize: 11, color: GREY, marginTop: 2 }}>{t('profile.streak').toLowerCase()}</div>
-        </div>
-        <div style={{ width: 1, background: CARD_BORDER }} />
-        <div style={{ flex: 1, textAlign: 'center' }}>
-          <div style={{ fontSize: 28, fontWeight: 600, color: WHITE }}>
-            {isStatsLoading ? '-' : (stats?.total_practices ?? 0)}
+          <div style={{ fontSize: 16, fontWeight: 700, color: C.white, marginBottom: 6 }}>
+            {user?.created_at ? formatJoinDate(user.created_at) : '—'}
           </div>
-          <div style={{ fontSize: 11, color: GREY, marginTop: 2 }}>{t('profile.practices').toLowerCase()}</div>
-        </div>
-        <div style={{ width: 1, background: CARD_BORDER }} />
-        <div style={{ flex: 1, textAlign: 'center' }}>
-          <div style={{ fontSize: 28, fontWeight: 600, color: WHITE }}>
-            {isStatsLoading ? '-' : (stats?.total_minutes ?? 0)}
-          </div>
-          <div style={{ fontSize: 11, color: GREY, marginTop: 2 }}>{t('profile.minutes').toLowerCase()}</div>
+          {isPremium ? (
+            <>
+              <div style={{ fontSize: 12, fontWeight: 600, color: C.pink, marginBottom: 2 }}>bubbles [black]</div>
+              {subscriptionExpiry && (
+                <div style={{ fontSize: 11, color: C.sub }}>{formatExpiryLine(subscriptionExpiry)}</div>
+              )}
+            </>
+          ) : (
+            <span style={{ fontSize: 12, fontWeight: 600, color: C.green }}>bubbles</span>
+          )}
         </div>
       </div>
 
-      {/* Last practice */}
-      <div
-        onClick={() => router.push('/')}
-        style={{
-          background: DARK_CARD, borderRadius: 14, border: `1px solid ${CARD_BORDER}`,
-          padding: '12px 16px', marginBottom: 18,
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          cursor: 'pointer',
-        }}
-      >
-        <div>
-          <div style={{ fontSize: 11, color: GREY, opacity: 0.6, marginBottom: 3 }}>{t('profile.lastPractice').toLowerCase()}</div>
-          <div style={{ fontSize: 13, color: WHITE }}>
-            {lastPractice ? lastPractice.name : '—'}
-          </div>
-        </div>
-        <div style={{ fontSize: 11, color: GREY, opacity: 0.5 }}>
-          {lastPractice ? formatRelativeDate(lastPractice.date) : ''}
-        </div>
+      {/* Big name */}
+      <div style={{ fontSize: 34, fontWeight: 800, color: C.white, padding: '0 20px 20px', marginTop: -10 }}>
+        {displayName}
       </div>
 
-      {/* Connect Email */}
-      {/* TODO: Temporarily hidden for free TG users. Re-enable when web access is needed for free tier. */}
-      {!(isTelegram && !isPremium) && (
-      <div style={{
-        background: DARK_CARD, borderRadius: 14, border: `1px solid ${CARD_BORDER}`,
-        padding: '14px 16px', marginBottom: 12,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 11, color: GREY, opacity: 0.5, marginBottom: 4, textTransform: 'uppercase' as const, letterSpacing: '0.03em' }}>{t('profile.webAccess')}</div>
-            {user?.email ? (
-              <div style={{ fontSize: 13, color: GREY, opacity: 0.6 }}>
-                {user.email_confirmed_at ? '✅ ' : '✉️ '}{user.email}
-                {!user.email_confirmed_at && (
-                  <span style={{ display: 'block', fontSize: 11, opacity: 0.5, marginTop: 2 }}>{t('profile.emailNotConfirmed')}</span>
-                )}
+      {/* Stats card */}
+      <div style={{ margin: '0 16px 18px', background: C.card, borderRadius: 16, border: `1px solid ${C.border}`, display: 'flex' }}>
+        {[
+          { label: t('profile.streak'), value: isStatsLoading ? '—' : String(stats?.current_streak ?? 0) },
+          { label: t('profile.practices'), value: isStatsLoading ? '—' : String(stats?.total_practices ?? 0) },
+          { label: t('profile.minutes'), value: isStatsLoading ? '—' : String(stats?.total_minutes ?? 0) },
+        ].map((s, i) => (
+          <div key={s.label} style={{ flex: 1, textAlign: 'center', padding: '16px 0', borderRight: i < 2 ? `1px solid ${C.border}` : 'none' }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: C.text, marginBottom: 2 }}>{s.value}</div>
+            <div style={{ fontSize: 11, color: C.sub }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Black CTA — free users only */}
+      {!isPremium && (
+        <div
+          onClick={() => router.push('/subscribe')}
+          style={{ margin: '0 16px 18px', borderRadius: 20, overflow: 'hidden', position: 'relative', cursor: 'pointer' }}
+        >
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,#1a0030,#2d0050,#1a1a00)' }} />
+          <div style={{ position: 'absolute', top: -30, right: -30, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle,rgba(192,52,165,0.5) 0%,transparent 65%)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', bottom: -20, left: 20, width: 100, height: 100, borderRadius: '50%', background: 'radial-gradient(circle,rgba(84,198,140,0.25) 0%,transparent 65%)', pointerEvents: 'none' }} />
+          <div style={{ position: 'relative', zIndex: 1, padding: '20px 18px' }}>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ display: 'inline-flex', background: `linear-gradient(135deg,${C.pink},#7b1fa2)`, borderRadius: 20, padding: '3px 12px', marginBottom: 10 }}>
+                <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: 2 }}>BLACK</span>
               </div>
-            ) : (
-              <div style={{ fontSize: 13, color: GREY, opacity: 0.6 }}>{t('profile.emailNotLinked')}</div>
-            )}
+              <div style={{ fontSize: 18, fontWeight: 500, color: C.white, lineHeight: 1.2, marginBottom: 6 }}>
+                {language === 'ru' ? 'Ещё 30+ практик' : '30+ more practices'}
+              </div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>
+                {language === 'ru' ? 'Живые сессии, теория и эксклюзивный контент для подписчиков' : 'Live sessions, theory and exclusive content for subscribers'}
+              </div>
+            </div>
+            <button
+              onClick={e => { e.stopPropagation(); router.push('/subscribe') }}
+              style={{ width: '100%', fontSize: 14, fontWeight: 700, background: `linear-gradient(135deg,${C.pink},#7b1fa2)`, color: '#fff', border: 'none', borderRadius: 14, padding: '13px', cursor: 'pointer', boxShadow: '0 6px 24px rgba(192,52,165,0.5)' }}
+            >
+              {language === 'ru' ? 'Открыть [black]' : 'Open [black]'}
+            </button>
           </div>
-          {!user?.email ? (
-            <button
-              onClick={() => setIsConnectEmailOpen(true)}
-              style={{
-                fontSize: 11, fontWeight: 500, color: WHITE, background: TURF,
-                border: 'none', borderRadius: 16, padding: '6px 12px', cursor: 'pointer',
-              }}
-            >
-              Connect
-            </button>
-          ) : user.email_confirmed_at ? (
-            <button
-              onClick={handleDisconnectEmail}
-              style={{
-                fontSize: 11, fontWeight: 500, color: GREY, opacity: 0.5, background: 'none',
-                border: `1px solid ${CARD_BORDER}`, borderRadius: 16, padding: '6px 12px', cursor: 'pointer',
-              }}
-            >
-              {t('profile.disconnectEmail')}
-            </button>
-          ) : null}
         </div>
-      </div>
       )}
 
+      {/* Renewal warning — premium users, < 7 days until expiry */}
+      {showRenewalWarning && subscriptionExpiry && (
+        <div style={{ margin: '0 16px 18px', borderRadius: 16, padding: '16px', background: 'rgba(192,52,165,0.10)', border: '1px solid rgba(192,52,165,0.35)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.pink, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>
+                {language === 'ru' ? 'Подписка истекает' : 'Subscription expiring'}
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: C.text }}>
+                {language === 'ru'
+                  ? `Осталось ${daysUntilExpiry} ${daysUntilExpiry === 1 ? 'день' : 'дня'} · до ${new Date(subscriptionExpiry).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })}`
+                  : `${daysUntilExpiry} day${daysUntilExpiry === 1 ? '' : 's'} left · until ${new Date(subscriptionExpiry).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                }
+              </div>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="2" opacity="0.7" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 2h14M5 22h14M6 2v6l4 4-4 4v6M18 2v6l-4 4 4 4v6"/>
+            </svg>
+          </div>
+          <button
+            onClick={() => router.push('/subscribe')}
+            style={{ width: '100%', fontSize: 13, fontWeight: 700, color: '#fff', background: `linear-gradient(135deg,${C.pink},#7b1fa2)`, border: 'none', borderRadius: 12, padding: '11px', cursor: 'pointer' }}
+          >
+            {language === 'ru' ? 'Продлить доступ' : 'Renew access'}
+          </button>
+        </div>
+      )}
+
+      {/* Last practice */}
+      {lastPractice && (
+        <div style={{ padding: '0 16px', marginBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <span style={{ fontSize: 15, fontWeight: 600, color: C.text }}>
+              {language === 'ru' ? 'Последняя практика' : 'Last practice'}
+            </span>
+          </div>
+          <div
+            onClick={() => router.push(`/practice/${lastPractice.id}?from=profile`)}
+            style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+          >
+            <span style={{ fontSize: 14, color: C.text }}>{lastPractice.name}</span>
+            <span style={{ fontSize: 12, color: C.sub }}>{formatRelativeDate(lastPractice.date)}</span>
+          </div>
+        </div>
+      )}
+
+      {/* TODO: скрыто до реализации веб-доступа
+      {!(isTelegram && !isPremium) && (
+        <div style={{ margin: '0 16px 18px', background: C.card, borderRadius: 16, border: `1px solid ${C.border}`, padding: '14px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 11, color: C.sub, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.03em' }}>{t('profile.webAccess')}</div>
+              {user?.email ? (
+                <div style={{ fontSize: 13, color: C.text, opacity: 0.7 }}>
+                  {user.email_confirmed_at ? '✅ ' : '✉️ '}{user.email}
+                  {!user.email_confirmed_at && (
+                    <span style={{ display: 'block', fontSize: 11, opacity: 0.5, marginTop: 2 }}>{t('profile.emailNotConfirmed')}</span>
+                  )}
+                </div>
+              ) : (
+                <div style={{ fontSize: 13, color: C.sub }}>{t('profile.emailNotLinked')}</div>
+              )}
+            </div>
+            {!user?.email ? (
+              <button
+                onClick={() => setIsConnectEmailOpen(true)}
+                style={{ fontSize: 11, fontWeight: 500, color: C.white, background: '#313333', border: 'none', borderRadius: 16, padding: '6px 12px', cursor: 'pointer' }}
+              >
+                Connect
+              </button>
+            ) : user.email_confirmed_at ? (
+              <button
+                onClick={handleDisconnectEmail}
+                style={{ fontSize: 11, color: C.text, opacity: 0.5, background: 'none', border: `1px solid ${C.border}`, borderRadius: 16, padding: '6px 12px', cursor: 'pointer' }}
+              >
+                {t('profile.disconnectEmail')}
+              </button>
+            ) : null}
+          </div>
+        </div>
+      )}
+      */}
+
       {/* Menu */}
-      <div style={{
-        background: DARK_CARD, borderRadius: 14, border: `1px solid ${CARD_BORDER}`,
-        overflow: 'hidden', marginBottom: 12,
-      }}>
+      <div style={{ margin: '0 16px 20px', background: C.card, borderRadius: 16, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
         {menuItems.map((item, i) => (
           <div
-            key={i}
+            key={item.label}
             onClick={item.onClick}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '13px 16px', cursor: 'pointer',
-              borderBottom: i < menuItems.length - 1 ? `1px solid ${CARD_BORDER}` : 'none',
-            }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: i < menuItems.length - 1 ? `1px solid ${C.border}` : 'none', cursor: 'pointer' }}
           >
-            <span style={{ fontSize: 14, color: WHITE }}>{item.label}</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {item.sub && <span style={{ fontSize: 12, color: GREY, opacity: 0.6 }}>{item.sub}</span>}
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREY} strokeWidth="1.5" opacity="0.4">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </div>
+            <span style={{ fontSize: 15, color: item.red ? '#e04040' : C.white }}>{item.label}</span>
+            {!item.red && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {item.sub && <span style={{ fontSize: 13, color: C.sub }}>{item.sub}</span>}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.sub} strokeWidth="1.5">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
+            )}
           </div>
         ))}
       </div>
 
       {/* Close / Logout */}
-      <div style={{ textAlign: 'center', marginTop: 4 }}>
+      <div style={{ textAlign: 'center', paddingBottom: 32 }}>
         <span
           onClick={handleClose}
-          style={{ fontSize: 13, color: GREY, opacity: 0.5, cursor: 'pointer' }}
+          style={{ fontSize: 14, color: C.sub, opacity: 0.55, cursor: 'pointer' }}
         >
           {isTelegram ? t('profile.closeApp').toLowerCase() : t('profile.logout').toLowerCase()}
         </span>
       </div>
 
-      {/* ConnectEmailModal — kept for future use */}
       {isTelegram && user?.telegram_id && (
         <ConnectEmailModal
           isOpen={isConnectEmailOpen}
@@ -310,6 +391,8 @@ export default function ProfilePage() {
           onSuccess={() => { void refreshUser() }}
         />
       )}
+
+      <TabBar isPremium={isPremium} />
     </main>
   )
 }

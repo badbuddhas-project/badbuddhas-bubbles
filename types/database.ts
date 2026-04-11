@@ -13,6 +13,7 @@ export interface Database {
           is_premium: boolean
           created_at: string
           email: string | null
+          verified_email: string | null
           email_confirmed_at: string | null
           auth_provider: string
           supabase_user_id: string | null
@@ -26,6 +27,7 @@ export interface Database {
           is_premium?: boolean
           created_at?: string
           email?: string | null
+          verified_email?: string | null
           email_confirmed_at?: string | null
           auth_provider?: string
           supabase_user_id?: string | null
@@ -39,6 +41,7 @@ export interface Database {
           is_premium?: boolean
           created_at?: string
           email?: string | null
+          verified_email?: string | null
           email_confirmed_at?: string | null
           auth_provider?: string
           supabase_user_id?: string | null
@@ -56,7 +59,7 @@ export interface Database {
           instructor_name: string
           instructor_avatar_url: string | null
           audio_url: string
-          preview_image_url: string | null
+          description: string | null
           is_premium: boolean
           is_visible: boolean
           sort_order: number
@@ -72,7 +75,7 @@ export interface Database {
           instructor_name: string
           instructor_avatar_url?: string | null
           audio_url: string
-          preview_image_url?: string | null
+          description?: string | null
           is_premium?: boolean
           is_visible?: boolean
           sort_order?: number
@@ -88,7 +91,7 @@ export interface Database {
           instructor_name?: string
           instructor_avatar_url?: string | null
           audio_url?: string
-          preview_image_url?: string | null
+          description?: string | null
           is_premium?: boolean
           is_visible?: boolean
           sort_order?: number

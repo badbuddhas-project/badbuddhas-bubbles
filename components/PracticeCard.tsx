@@ -1,6 +1,17 @@
 'use client'
 
+import { memo } from 'react'
 import type { Practice } from '@/types/database'
+import BreathVisual from './BreathVisual'
+
+const CAT_DISPLAY: Record<string, string> = {
+  relax: 'SLOW',
+  balance: 'GROUND',
+  energize: 'RISE',
+  slow: 'SLOW',
+  ground: 'GROUND',
+  rise: 'RISE',
+}
 
 interface PracticeCardProps {
   practice: Practice
@@ -8,14 +19,16 @@ interface PracticeCardProps {
   onToggleFavorite: (practiceId: string) => void
   onClick: (practice: Practice) => void
   catColors?: Record<string, string>
+  isLocked?: boolean
 }
 
-export function PracticeCard({
+export const PracticeCard = memo(function PracticeCard({
   practice,
   isFavorite,
   onToggleFavorite,
   onClick,
   catColors = {},
+  isLocked = false,
 }: PracticeCardProps) {
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -32,22 +45,12 @@ export function PracticeCard({
 
   return (
     <div
-      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', cursor: 'pointer' }}
+      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', cursor: 'pointer', opacity: isLocked ? 0.55 : 1 }}
       onClick={() => onClick(practice)}
     >
-      {/* Preview with Play button */}
+      {/* Preview with Play/Lock button */}
       <div style={{ position: 'relative', flexShrink: 0 }}>
-        <div
-          style={{
-            width: 80,
-            height: 80,
-            borderRadius: 10,
-            overflow: 'hidden',
-            ...(practice.preview_image_url
-              ? { backgroundImage: `url(${practice.preview_image_url}?v=1)`, backgroundSize: '180%', backgroundPosition: 'center' }
-              : { background: '#0A0A0A' }),
-          }}
-        />
+        <BreathVisual category={practice.category} size={80} borderRadius={10} animate={false} />
         <button
           onClick={handlePlayClick}
           style={{
@@ -69,7 +72,14 @@ export function PracticeCard({
             padding: 0,
           }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><polygon points="8,5 20,12 8,19"/></svg>
+          {isLocked ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C034A5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><polygon points="8,5 20,12 8,19"/></svg>
+          )}
         </button>
       </div>
 
@@ -77,19 +87,22 @@ export function PracticeCard({
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
           <span style={{ fontSize: 10, fontWeight: 600, color: catColor, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-            {practice.category}
+            {CAT_DISPLAY[practice.category] ?? practice.category}
           </span>
           <span style={{ fontSize: 10, color: '#CBCBCB', opacity: 0.5 }}>
             {mins} {'\u043C\u0438\u043D'}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
-          {practice.is_premium && (
+          {practice.is_premium && !isLocked && (
             <img src="/images/icon-black.png" width={16} height={16} alt="" style={{ display: 'block', flexShrink: 0 }} />
           )}
           <span style={{ fontSize: 15, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {practice.title_ru || practice.title}
           </span>
+          {isLocked && (
+            <span style={{ fontSize: 8, fontWeight: 700, color: '#C034A5', background: 'rgba(192,52,165,0.12)', borderRadius: 4, padding: '2px 5px', flexShrink: 0, letterSpacing: '0.03em' }}>BLACK</span>
+          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
           {practice.instructor_avatar_url ? (
@@ -116,4 +129,4 @@ export function PracticeCard({
       </button>
     </div>
   )
-}
+})
