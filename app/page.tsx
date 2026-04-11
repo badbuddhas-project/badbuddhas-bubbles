@@ -188,11 +188,11 @@ export default function Home() {
       content: (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: C.green, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 7 }}>ГРУППОВАЯ СЕССИЯ</div>
-            <div style={{ fontSize: 28, fontWeight: 500, color: C.white, marginBottom: 1 }}>28.05</div>
-            <div style={{ fontSize: 15, fontWeight: 500, color: C.text, marginBottom: 3 }}>MEGA breathwork</div>
-            <div style={{ fontSize: 12, color: C.text2, marginBottom: 13 }}>с Дашей Чен</div>
-            <button onClick={() => router.push('/subscribe')} style={{ fontSize: 12, fontWeight: 600, color: C.bg, background: C.green, border: 'none', borderRadius: 20, padding: '7px 16px', cursor: 'pointer' }}>Подробнее →</button>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.green, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 7 }}>17-19 апреля</div>
+            <div style={{ fontSize: 28, fontWeight: 500, color: C.white, marginBottom: 1 }}>открытые практики</div>
+            <div style={{ fontSize: 15, fontWeight: 500, color: C.text, marginBottom: 3 }}>Новолуние</div>
+            <div style={{ fontSize: 12, color: C.text2, marginBottom: 13 }}>с инструкторами BadBuddhas</div>
+            <button onClick={() => window.open('https://badbuddhas.world/newmoon?utm_source=tg&utm_medium=miniapp&utm_campaign=banner', '_blank')} style={{ fontSize: 12, fontWeight: 600, color: C.bg, background: C.green, border: 'none', borderRadius: 20, padding: '7px 16px', cursor: 'pointer' }}>Подробнее →</button>
           </div>
           <div style={{ flexShrink: 0, borderRadius: 22, overflow: 'hidden' }}>
             <BreathVisual category="balance" size={112} borderRadius={22} animate={true} showBubbles={false} />
