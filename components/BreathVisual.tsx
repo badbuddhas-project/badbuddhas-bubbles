@@ -73,7 +73,6 @@ function drawSlow(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: numb
   const rot = t * 0.08
   const scaledR = cr * breathe
 
-  // Clip to canvas bounds
   ctx.save()
   ctx.beginPath()
   ctx.rect(0, 0, S, S)
@@ -84,14 +83,12 @@ function drawSlow(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: numb
   ctx.translate(cx, cy)
   ctx.rotate(rot)
 
-  // Central circle glow
   ctx.beginPath()
   ctx.arc(0, 0, scaledR, 0, Math.PI * 2)
   ctx.strokeStyle = rgb(c, 0.12)
   ctx.lineWidth = S * 0.02
   ctx.stroke()
 
-  // Petal glow
   const px = scaledR
   ctx.beginPath()
   ctx.arc(px, 0, scaledR, 0, Math.PI * 2)
@@ -143,7 +140,6 @@ function drawRise(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: numb
   const scaledR = cr * breathe
   const r2 = cr * 1.5
 
-  // Clip to canvas bounds
   ctx.save()
   ctx.beginPath()
   ctx.rect(0, 0, S, S)
@@ -239,7 +235,6 @@ function drawGround(ctx: CanvasRenderingContext2D, S: number, c: ColorRGB, t: nu
   const wobbleAmt = 0.05
   const layers = 3
 
-  // Clip to canvas bounds
   ctx.save()
   ctx.beginPath()
   ctx.rect(0, 0, S, S)
@@ -305,6 +300,8 @@ export default function BreathVisual({
 }: BreathVisualProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const rafRef = useRef<number>(0)
+  const accTimeRef = useRef(0)
+  const lastTsRef = useRef<number | null>(null)
 
   const visualType: VisualType = CATEGORY_MAP[category] ?? 'slow'
   const color = COLORS[visualType]
@@ -322,11 +319,9 @@ export default function BreathVisual({
 
     ctx.scale(dpr, dpr)
 
-    function render(t: number) {
-      if (!ctx) return
+    function renderFrame(ctx: CanvasRenderingContext2D, t: number) {
       const S = size
 
-      // Clear
       ctx.clearRect(0, 0, S, S)
 
       // Background
@@ -340,22 +335,30 @@ export default function BreathVisual({
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, S, S)
 
-      // Draw visual
-      const ts = t / 1000
-      if (visualType === 'slow') drawSlow(ctx, S, color, ts, showBubbles)
-      else if (visualType === 'rise') drawRise(ctx, S, color, ts)
-      else drawGround(ctx, S, color, ts, showBubbles)
+      // Draw visual using accumulated time (seconds)
+      if (visualType === 'slow') drawSlow(ctx, S, color, t, showBubbles)
+      else if (visualType === 'rise') drawRise(ctx, S, color, t)
+      else drawGround(ctx, S, color, t, showBubbles)
     }
 
     if (animate) {
+      // Reset lastTs so first frame after pause→play doesn't jump
+      lastTsRef.current = null
+
       const loop = (timestamp: number) => {
-        render(timestamp)
+        if (lastTsRef.current !== null) {
+          const dt = (timestamp - lastTsRef.current) / 1000
+          accTimeRef.current += dt
+        }
+        lastTsRef.current = timestamp
+        renderFrame(ctx, accTimeRef.current)
         rafRef.current = requestAnimationFrame(loop)
       }
       rafRef.current = requestAnimationFrame(loop)
       return () => cancelAnimationFrame(rafRef.current)
     } else {
-      render(0)
+      // Static: draw one frame at current accumulated time (no reset)
+      renderFrame(ctx, accTimeRef.current)
     }
   }, [category, size, animate, showBubbles, visualType, color])
 
