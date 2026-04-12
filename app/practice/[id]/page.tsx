@@ -81,7 +81,7 @@ export default function PracticePage() {
     onProgress: handleProgress,
   })
 
-
+  const inlineActive = isPlaying || currentTime > 0
 
   const handleBack = () => {
     if (mode === 'player') {
@@ -104,7 +104,6 @@ export default function PracticePage() {
         platform: getPlatform(),
       })
     }
-    setMode('player')
     if (!isPlaying) toggle()
   }
 
@@ -171,7 +170,7 @@ export default function PracticePage() {
     return { text: shareText + '\n' + url }
   }
 
-  // ─── PLAYER MODE ─────────────────────────────────────────────────────────────
+  // ─── PLAYER MODE (kept for backwards compat) ─────────────────────────────────
   if (mode === 'player') {
     return (
       <main style={{ position: 'relative', height: '100vh', overflow: 'hidden', background: C.bg }}>
@@ -277,9 +276,92 @@ export default function PracticePage() {
       {/* Hero — full-width BreathVisual */}
       <div style={{ width: '100%', position: 'relative' }}>
         <div style={{ width: '100%', overflow: 'hidden', lineHeight: 0 }}>
-          <BreathVisual category={practice.category} size={390} borderRadius={0} animate={true} showBubbles={false} />
+          <BreathVisual category={practice.category} size={390} borderRadius={0} animate={isPlaying} showBubbles={false} />
         </div>
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 100, background: `linear-gradient(to bottom, transparent 0%, ${C.bg} 100%)` }} />
+      </div>
+
+      {/* ─── Inline player controls (always in DOM, animated via CSS) ─── */}
+      <div
+        style={{
+          maxHeight: inlineActive ? 120 : 0,
+          opacity: inlineActive ? 1 : 0,
+          overflow: 'hidden',
+          transition: 'max-height 0.45s cubic-bezier(0.4,0,0.2,1), opacity 0.4s ease',
+          padding: inlineActive ? '0 20px 8px' : '0 20px',
+        }}
+      >
+        {/* Progress bar */}
+        <div
+          style={{ padding: '10px 0', cursor: 'pointer' }}
+          onClick={handleProgressClick}
+          onTouchStart={handleProgressTouch}
+        >
+          <div
+            ref={progressBarRef}
+            style={{ height: 3, background: 'rgba(255,255,255,0.15)', borderRadius: 2, position: 'relative' }}
+          >
+            <div style={{ width: `${progress}%`, height: '100%', background: catColor, borderRadius: 2 }} />
+            {/* Thumb */}
+            <div style={{
+              position: 'absolute',
+              top: '50%',
+              left: `${progress}%`,
+              transform: 'translate(-50%, -50%)',
+              width: 11,
+              height: 11,
+              borderRadius: '50%',
+              background: catColor,
+              boxShadow: `0 0 4px ${catColor}`,
+            }} />
+          </div>
+        </div>
+
+        {/* Time + controls row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', minWidth: 38 }}>
+            {formatDurationFull(Math.floor(currentTime))}
+          </span>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+            {/* -10s */}
+            <button onClick={handleSeekBack} style={{ padding: 4, cursor: 'pointer', position: 'relative', background: 'none', border: 'none' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="1.5">
+                <path d="M1 4v6h6" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+              </svg>
+              <span style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontSize: 7, fontWeight: 700, color: 'rgba(255,255,255,0.45)' }}>10</span>
+            </button>
+
+            {/* Play/Pause — outlined style */}
+            <button onClick={handleTogglePlay} disabled={isAudioLoading} style={{
+              width: 40, height: 40, borderRadius: '50%',
+              border: '1.5px solid rgba(255,255,255,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', background: 'none',
+              opacity: isAudioLoading ? 0.5 : 1,
+            }}>
+              {isAudioLoading ? (
+                <div className="w-4 h-4 border-2 border-zinc-600 border-t-zinc-300 rounded-full animate-spin" />
+              ) : isPlaying ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="rgba(255,255,255,0.8)"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="rgba(255,255,255,0.8)"><path d="M8 5.14v14l11-7-11-7z" /></svg>
+              )}
+            </button>
+
+            {/* +10s */}
+            <button onClick={handleSeekForward} style={{ padding: 4, cursor: 'pointer', position: 'relative', background: 'none', border: 'none' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="1.5">
+                <path d="M23 4v6h-6" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+              </svg>
+              <span style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontSize: 7, fontWeight: 700, color: 'rgba(255,255,255,0.45)' }}>10</span>
+            </button>
+          </div>
+
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', minWidth: 38, textAlign: 'right' }}>
+            {formatDurationFull(Math.floor(duration))}
+          </span>
+        </div>
       </div>
 
       {/* Info section */}
@@ -306,9 +388,19 @@ export default function PracticePage() {
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
               </svg>
             </button>
-            {/* Play button */}
-            <button onClick={handlePlay} style={{ width: 46, height: 46, borderRadius: '50%', background: C.text, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill={C.bg}><path d="M8 5.14v14l11-7-11-7z" /></svg>
+            {/* Play button — always visible */}
+            <button onClick={handlePlay} style={{
+              width: 46, height: 46, borderRadius: '50%',
+              background: isPlaying ? catColor : 'rgba(255,255,255,0.85)',
+              border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'background 0.3s ease',
+            }}>
+              {isPlaying ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill={C.bg}><path d="M8 5.14v14l11-7-11-7z" /></svg>
+              )}
             </button>
           </div>
         </div>
@@ -344,8 +436,8 @@ export default function PracticePage() {
                   onClick={() => router.push(rpLocked ? '/subscribe' : `/practice/${rp.id}?from=${fromTab}`)}
                   style={{ display: 'flex', gap: 12, padding: '11px 0', borderBottom: `1px solid ${C.border}`, alignItems: 'center', cursor: 'pointer' }}
                 >
-                  <div style={{ flexShrink: 0, width: 60, height: 60, borderRadius: 12, overflow: 'hidden', position: 'relative' }}>
-                    <BreathVisual category={rp.category} size={60} borderRadius={12} animate={false} showBubbles={false} />
+                  <div style={{ flexShrink: 0, width: 64, height: 64, borderRadius: 12, overflow: 'hidden', position: 'relative' }}>
+                    <BreathVisual category={rp.category} size={64} borderRadius={12} animate={false} showBubbles={false} />
                     {rpLocked && (
                       <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C034A5" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
