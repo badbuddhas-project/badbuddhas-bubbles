@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { BreathingLogo } from './BreathingLogo'
 
 interface EmailGateProps {
-  onComplete: (email: string) => void
+  onComplete: (email: string, activated: boolean) => void
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -33,9 +33,7 @@ export default function EmailGate({ onComplete }: EmailGateProps) {
       const data = await res.json()
 
       if (data.success) {
-        onComplete(trimmed)
-        // Reload to pick up is_premium if a pending subscription was activated
-        setTimeout(() => window.location.reload(), 300)
+        onComplete(trimmed, data.activated || false)
       } else {
         setError(data.error || 'Не удалось сохранить email')
       }

@@ -147,12 +147,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {isLoading && isTelegram ? <TgSplashScreen /> : children}
       {showEmailGate && (
         <EmailGate
-          onComplete={(email) => {
+          onComplete={async (email, activated) => {
             sessionStorage.setItem(EMAIL_GATE_SKIP_KEY, '1')
             setShowEmailGate(false)
             if (user) {
               setUser({ ...user, email, verified_email: email })
             }
+            // Refetch user to pick up is_premium if pending subscription was activated
+            await fetchUser()
           }}
         />
       )}
