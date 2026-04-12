@@ -104,7 +104,7 @@ export default function PracticePage() {
         platform: getPlatform(),
       })
     }
-    if (!isPlaying) toggle()
+    toggle()
   }
 
   const handleTogglePlay = () => {
