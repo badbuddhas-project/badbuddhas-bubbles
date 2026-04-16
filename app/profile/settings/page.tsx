@@ -23,6 +23,13 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
 
+  // Email editing state
+  const [isEditingEmail, setIsEditingEmail] = useState(false)
+  const [newEmail, setNewEmail] = useState('')
+  const [emailError, setEmailError] = useState('')
+  const [isSavingEmail, setIsSavingEmail] = useState(false)
+  const [emailToast, setEmailToast] = useState('')
+
   useEffect(() => {
     if (user) {
       setFirstName(user.first_name || '')
@@ -65,6 +72,56 @@ export default function SettingsPage() {
       console.error('Failed to save:', err)
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleStartEditEmail = () => {
+    setNewEmail(user?.email || '')
+    setEmailError('')
+    setIsEditingEmail(true)
+  }
+
+  const handleCancelEditEmail = () => {
+    setIsEditingEmail(false)
+    setEmailError('')
+  }
+
+  const handleSaveEmail = async () => {
+    const trimmed = newEmail.trim().toLowerCase()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setEmailError(t('settings.invalidEmail'))
+      return
+    }
+    if (trimmed === user?.email) {
+      setIsEditingEmail(false)
+      return
+    }
+
+    setIsSavingEmail(true)
+    setEmailError('')
+    try {
+      const tgUser = (window as any).Telegram?.WebApp?.initDataUnsafe?.user
+      const res = await fetch('/api/auth/link-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: trimmed, telegram_id: tgUser?.id || null }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setEmailError(data.error || t('common.error'))
+        return
+      }
+      if (data.activated || data.is_premium) {
+        setEmailToast(t('settings.subscriptionActivated'))
+        setTimeout(() => window.location.reload(), 1500)
+        return
+      }
+      await refreshUser()
+      setIsEditingEmail(false)
+    } catch {
+      setEmailError(t('common.error'))
+    } finally {
+      setIsSavingEmail(false)
     }
   }
 
@@ -129,7 +186,63 @@ export default function SettingsPage() {
           />
         </div>
 
+        {/* Email */}
+        <div>
+          <label className="block text-sm text-zinc-500 mb-2">
+            {t('settings.email')}
+          </label>
+          {isEditingEmail ? (
+            <div>
+              <input
+                type="email"
+                value={newEmail}
+                onChange={(e) => { setNewEmail(e.target.value); setEmailError('') }}
+                placeholder={t('settings.emailPlaceholder')}
+                style={{ width: '100%', padding: '12px 16px', background: DARK_CARD, border: `1px solid ${CARD_BORDER}`, borderRadius: 12, color: WHITE, fontSize: 14, outline: 'none' }}
+              />
+              {emailError && (
+                <div style={{ color: '#ef4444', fontSize: 12, marginTop: 6 }}>{emailError}</div>
+              )}
+              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                <button
+                  onClick={handleSaveEmail}
+                  disabled={isSavingEmail}
+                  style={{ flex: 1, padding: '10px 0', background: GREY, color: '#000', borderRadius: 12, border: 'none', fontSize: 14, fontWeight: 500, cursor: 'pointer', opacity: isSavingEmail ? 0.6 : 1 }}
+                >
+                  {isSavingEmail ? t('settings.saving') : t('common.save')}
+                </button>
+                <button
+                  onClick={handleCancelEditEmail}
+                  disabled={isSavingEmail}
+                  style={{ flex: 1, padding: '10px 0', background: 'transparent', color: '#6b7280', borderRadius: 12, border: 'none', fontSize: 14, cursor: 'pointer' }}
+                >
+                  {t('common.cancel')}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 14, color: user?.email ? WHITE : '#6b7280' }}>
+                {user?.email || '—'}
+              </span>
+              <button
+                onClick={handleStartEditEmail}
+                style={{ background: 'none', border: 'none', color: GREY, fontSize: 12, cursor: 'pointer', padding: '4px 8px' }}
+              >
+                {t('settings.change')}
+              </button>
+            </div>
+          )}
+        </div>
+
       </section>
+
+      {/* Toast */}
+      {emailToast && (
+        <div style={{ position: 'fixed', bottom: 80, left: '50%', transform: 'translateX(-50%)', background: '#22c55e', color: '#000', padding: '10px 20px', borderRadius: 12, fontSize: 14, fontWeight: 500, zIndex: 100 }}>
+          {emailToast}
+        </div>
+      )}
 
       {/* Language */}
       <section className="p-4">

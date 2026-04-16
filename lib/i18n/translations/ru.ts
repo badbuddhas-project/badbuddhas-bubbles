@@ -121,6 +121,10 @@ export const ru: Translations = {
     resetPasswordUnavailable:
       'Сброс пароля недоступен в Telegram Mini App',
     language: 'Язык',
+    change: 'Изменить',
+    emailPlaceholder: 'Введите email',
+    subscriptionActivated: 'Подписка активирована!',
+    invalidEmail: 'Неверный формат email',
   },
 
   connectEmailModal: {

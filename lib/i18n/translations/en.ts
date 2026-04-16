@@ -121,6 +121,10 @@ export const en: Translations = {
     resetPasswordUnavailable:
       'Password reset is not available in Telegram Mini App',
     language: 'Language',
+    change: 'Change',
+    emailPlaceholder: 'Enter email',
+    subscriptionActivated: 'Subscription activated!',
+    invalidEmail: 'Invalid email format',
   },
 
   connectEmailModal: {
