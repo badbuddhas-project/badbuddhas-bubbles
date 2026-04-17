@@ -76,6 +76,14 @@ export async function POST(request: Request) {
           .eq('status', 'active')
           .maybeSingle()
 
+        // Active non-expired subscription exists but is_premium=false → restore
+        const hasValidSub = sub && sub.expires_at && new Date(sub.expires_at) > new Date()
+        if (hasValidSub && !user.is_premium) {
+          await supabase.from('users').update({ is_premium: true }).eq('id', user.id)
+          user.is_premium = true
+          console.log('[telegram-sync] Subscription found, restored is_premium=true for', user.verified_email)
+        }
+
         const needsRecheck =
           (sub && sub.expires_at && new Date(sub.expires_at) < new Date()) ||
           (!sub && user.is_premium)
