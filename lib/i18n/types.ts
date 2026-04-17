@@ -112,6 +112,10 @@ export interface Translations {
     deleteAccountMessage: string
     resetPasswordUnavailable: string
     language: string
+    change: string
+    emailPlaceholder: string
+    subscriptionActivated: string
+    invalidEmail: string
   }
 
   connectEmailModal: {
