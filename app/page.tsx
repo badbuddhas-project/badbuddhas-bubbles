@@ -166,25 +166,26 @@ export default function Home() {
     })
   }
 
-  if (!showRenewal) {
-    SLIDES.push({
-      key: 'group',
-      content: (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: C.green, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 7 }}>1-3 мая</div>
-            <div style={{ fontSize: 28, fontWeight: 500, color: C.white, marginBottom: 1 }}>Вальпургиева ночь</div>
-            <div style={{ fontSize: 15, fontWeight: 500, color: C.text, marginBottom: 3 }}>открытые практики</div>
-            <div style={{ fontSize: 12, color: C.text2, marginBottom: 13 }}>с инструкторами BadBuddhas</div>
-            <button onClick={() => window.open('https://badbuddhas.world/walpurgis_night?utm_source=tg&utm_medium=chat&utm_campaign=0307', '_blank')} style={{ fontSize: 12, fontWeight: 600, color: C.bg, background: C.green, border: 'none', borderRadius: 20, padding: '7px 16px', cursor: 'pointer' }}>Подробнее →</button>
-          </div>
-          <div style={{ flexShrink: 0, borderRadius: 22, overflow: 'hidden' }}>
-            <BreathVisual category="balance" size={112} borderRadius={22} animate={true} showBubbles={false} />
-          </div>
-        </div>
-      ),
-    })
-  }
+  // TODO: раскомментировать для следующего события
+  // if (!showRenewal) {
+  //   SLIDES.push({
+  //     key: 'group',
+  //     content: (
+  //       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
+  //         <div style={{ flex: 1 }}>
+  //           <div style={{ fontSize: 10, fontWeight: 700, color: C.green, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 7 }}>1-3 мая</div>
+  //           <div style={{ fontSize: 28, fontWeight: 500, color: C.white, marginBottom: 1 }}>Вальпургиева ночь</div>
+  //           <div style={{ fontSize: 15, fontWeight: 500, color: C.text, marginBottom: 3 }}>открытые практики</div>
+  //           <div style={{ fontSize: 12, color: C.text2, marginBottom: 13 }}>с инструкторами BadBuddhas</div>
+  //           <button onClick={() => window.open('https://badbuddhas.world/walpurgis_night?utm_source=tg&utm_medium=chat&utm_campaign=0307', '_blank')} style={{ fontSize: 12, fontWeight: 600, color: C.bg, background: C.green, border: 'none', borderRadius: 20, padding: '7px 16px', cursor: 'pointer' }}>Подробнее →</button>
+  //         </div>
+  //         <div style={{ flexShrink: 0, borderRadius: 22, overflow: 'hidden' }}>
+  //           <BreathVisual category="balance" size={112} borderRadius={22} animate={true} showBubbles={false} />
+  //         </div>
+  //       </div>
+  //     ),
+  //   })
+  // }
 
   if (showBlackPromo) {
     SLIDES.push({
@@ -232,6 +233,7 @@ export default function Home() {
       </div>
 
       {/* Hero Carousel */}
+      {SLIDES.length > 0 && (
       <div style={{ padding: '0 16px', marginBottom: 26 }}>
         <div
           onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX }}
@@ -278,6 +280,7 @@ export default function Home() {
           ))}
         </div>}
       </div>
+      )}
 
       {/* Practices section */}
       <div style={{ padding: '0 16px', marginBottom: 20 }}>
