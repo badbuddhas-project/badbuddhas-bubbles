@@ -46,6 +46,11 @@ export default function Home() {
   const { practices, isLoading: isPracticesLoading } = usePractices()
   const { isCompleted: isOnboardingCompleted, isLoading: isOnboardingLoading } = useOnboarding()
 
+  useEffect(() => {
+    const startParam = (window as any).Telegram?.WebApp?.initDataUnsafe?.start_param
+    ymEvent('app_opened', { platform: getPlatform(), source: startParam || 'organic' })
+  }, [])
+
   const [slide, setSlide] = useState(0)
   const touchStartX = useRef(0)
   const autoTimer = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -159,7 +164,29 @@ export default function Home() {
         </div>
       ),
     })
-  } else if (showBlackPromo) {
+  }
+
+  if (!showRenewal) {
+    // SLIDES.push({
+      // key: 'group',
+      //content: (
+        //<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
+          // <div style={{ flex: 1 }}>
+            // <div style={{ fontSize: 10, fontWeight: 700, color: C.green, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 7 }}>1-3 мая</div>
+            // <div style={{ fontSize: 28, fontWeight: 500, color: C.white, marginBottom: 1 }}>Вальпургиева ночь</div>
+            // <div style={{ fontSize: 15, fontWeight: 500, color: C.text, marginBottom: 3 }}>открытые практики</div>
+            // <div style={{ fontSize: 12, color: C.text2, marginBottom: 13 }}>с инструкторами BadBuddhas</div>
+            // <button onClick={() => window.open('https://badbuddhas.world/walpurgis_night?utm_source=tg&utm_medium=chat&utm_campaign=0307', '_blank')} style={{ fontSize: 12, fontWeight: 600, color: C.bg, background: C.green, border: 'none', borderRadius: 20, padding: '7px 16px', cursor: 'pointer' }}>Подробнее →</button>
+          // </div>
+          // <div style={{ flexShrink: 0, borderRadius: 22, overflow: 'hidden' }}>
+            // <BreathVisual category="balance" size={112} borderRadius={22} animate={true} showBubbles={false} />
+          // </div>
+        // </div>
+      // ),
+    // })
+  }
+
+  if (showBlackPromo) {
     SLIDES.push({
       key: 'black',
       content: (
@@ -176,26 +203,6 @@ export default function Home() {
             <button onClick={() => router.push('/subscribe')} style={{ width: '100%', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', color: '#fff', fontSize: 13, fontWeight: 700, borderRadius: 14, padding: '11px', border: 'none', cursor: 'pointer' }}>
               Открыть [black]
             </button>
-          </div>
-        </div>
-      ),
-    })
-  }
-
-  if (!showRenewal) {
-    SLIDES.push({
-      key: 'group',
-      content: (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: C.green, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 7 }}>17-19 апреля</div>
-            <div style={{ fontSize: 28, fontWeight: 500, color: C.white, marginBottom: 1 }}>Новолуние</div>
-            <div style={{ fontSize: 15, fontWeight: 500, color: C.text, marginBottom: 3 }}>открытые практики</div>
-            <div style={{ fontSize: 12, color: C.text2, marginBottom: 13 }}>с инструкторами BadBuddhas</div>
-            <button onClick={() => window.open('https://badbuddhas.world/newmoon?utm_source=tg&utm_medium=miniapp&utm_campaign=banner', '_blank')} style={{ fontSize: 12, fontWeight: 600, color: C.bg, background: C.green, border: 'none', borderRadius: 20, padding: '7px 16px', cursor: 'pointer' }}>Подробнее →</button>
-          </div>
-          <div style={{ flexShrink: 0, borderRadius: 22, overflow: 'hidden' }}>
-            <BreathVisual category="balance" size={112} borderRadius={22} animate={true} showBubbles={false} />
           </div>
         </div>
       ),
