@@ -166,26 +166,25 @@ export default function Home() {
     })
   }
 
-  // TODO: раскомментировать для следующего события
-  // if (!showRenewal) {
-  //   SLIDES.push({
-  //     key: 'group',
-  //     content: (
-  //       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
-  //         <div style={{ flex: 1 }}>
-  //           <div style={{ fontSize: 10, fontWeight: 700, color: C.green, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 7 }}>18 мая | 19:00 - 20:30 мск</div>
-  //           <div style={{ fontSize: 28, fontWeight: 500, color: C.white, marginBottom: 1 }}>Как себя перепридумать</div>
-  //           <div style={{ fontSize: 15, fontWeight: 500, color: C.text, marginBottom: 3 }}>и при чем здесь дыхание</div>
-  //           <div style={{ fontSize: 12, color: C.text2, marginBottom: 13 }}>вебинар с Дашей Чен</div>
-  //           <button onClick={() => window.open('https://badbuddhas.world/webinar_may?utm_source=tg&utm_medium=chat&utm_campaign=0307', '_blank')} style={{ fontSize: 12, fontWeight: 600, color: C.bg, background: C.green, border: 'none', borderRadius: 20, padding: '7px 16px', cursor: 'pointer' }}>Подробнее →</button>
-  //         </div>
-  //         <div style={{ flexShrink: 0, borderRadius: 22, overflow: 'hidden' }}>
-  //           <BreathVisual category="balance" size={112} borderRadius={22} animate={true} showBubbles={false} />
-  //         </div>
-  //       </div>
-  //     ),
-  //   })
-  // }
+  if (!showRenewal) {
+    SLIDES.push({
+      key: 'group',
+      content: (
+       // <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
+          //<div style={{ flex: 1 }}>
+            //<div style={{ fontSize: 10, fontWeight: 700, color: C.green, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 7 }}>18 мая | 19:00 - 20:30 мск</div>
+           // <div style={{ fontSize: 28, fontWeight: 500, color: C.white, marginBottom: 1 }}>Как себя перепридумать</div>
+           // <div style={{ fontSize: 15, fontWeight: 500, color: C.text, marginBottom: 3 }}>и при чем здесь дыхание</div>
+           // <div style={{ fontSize: 12, color: C.text2, marginBottom: 13 }}>вебинар с Дашей Чен</div>
+           // <button onClick={() => window.open('https://badbuddhas.world/webinar_may?utm_source=tg&utm_medium=chat&utm_campaign=0307', '_blank')} style={{ fontSize: 12, fontWeight: 600, color: C.bg, background: C.green, border: 'none', borderRadius: 20, padding: '7px 16px', cursor: 'pointer' }}>Подробнее →</button>
+          //</div>
+          //<div style={{ flexShrink: 0, borderRadius: 22, overflow: 'hidden' }}>
+          //  <BreathVisual category="balance" size={112} borderRadius={22} animate={true} showBubbles={false} />
+         // </div>
+        //</div>
+      //),
+    })
+  }
 
   if (showBlackPromo) {
     SLIDES.push({
