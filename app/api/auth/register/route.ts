@@ -72,6 +72,7 @@ export async function POST(request: Request) {
         email,
         password_hash,
         is_premium: false,
+        trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
         auth_provider: 'email',
         supabase_user_id: authData.user?.id ?? null,
       })

@@ -43,7 +43,10 @@ export async function POST(request: Request) {
           telegram_id,
           username:   username   ?? null,
           first_name: first_name ?? null,
-          ...(isNewUser ? { is_premium: false } : {}),
+          ...(isNewUser ? {
+            is_premium: false,
+            trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+          } : {}),
         },
         { onConflict: 'telegram_id' }
       )

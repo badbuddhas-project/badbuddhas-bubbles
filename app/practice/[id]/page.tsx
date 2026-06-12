@@ -44,8 +44,7 @@ export default function PracticePage() {
   const hasCompletedRef = useRef(false)
   const hasStartedRef = useRef(false)
 
-  const { user } = useUser()
-  const isPremium = user?.is_premium ?? false
+  const { hasAccess } = useUser()
   const { practices, isLoading: isLoadingPractices } = usePractices()
   const practice = practices.find(p => p.id === practiceId) || null
   const { recordPractice } = usePracticeCompletion()
@@ -429,7 +428,7 @@ export default function PracticePage() {
             {morePractices.map(rp => {
               const rpMins = Math.floor(rp.duration_seconds / 60)
               const rpCatColor = CAT_COLORS[rp.category] || C.slow
-              const rpLocked = !isPremium && rp.is_premium
+              const rpLocked = !hasAccess && rp.is_premium
               return (
                 <div
                   key={rp.id}
@@ -461,7 +460,7 @@ export default function PracticePage() {
           </div>
         )}
       </div>
-      <TabBar isPremium={isPremium} activeOverride={fromTab} />
+      <TabBar isPremium={hasAccess} activeOverride={fromTab} />
     </main>
   )
 }

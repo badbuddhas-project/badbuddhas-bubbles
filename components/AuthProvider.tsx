@@ -14,6 +14,7 @@ import { ONBOARDING_KEY } from '@/lib/constants'
 import { ymEvent, getPlatform } from '@/lib/analytics'
 import { TgSplashScreen } from '@/components/TgSplashScreen'
 import EmailGate from '@/components/EmailGate'
+import { TrialExpiryBanner } from '@/components/TrialExpiryBanner'
 
 export interface AuthContextType {
   user: User | null
@@ -144,7 +145,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ user, isLoading, isTelegram, logout, refetchUser }}>
-      {isLoading && isTelegram ? <TgSplashScreen /> : children}
+      {isLoading && isTelegram ? <TgSplashScreen /> : (
+        <>
+          <TrialExpiryBanner />
+          {children}
+        </>
+      )}
       {showEmailGate && (
         <EmailGate
           onComplete={async (email, activated) => {

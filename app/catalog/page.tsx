@@ -42,11 +42,10 @@ function CatalogContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const initialInstructor = searchParams?.get('instructor') || 'all'
-  const { user } = useUser()
+  const { user, hasAccess } = useUser()
   const { practices, isLoading } = usePractices()
   const { isFavorite, toggleFavorite } = useFavorites()
   const { language } = useTranslation()
-  const isPremium = user?.is_premium ?? false
 
   const [cat, setCat] = useState('all')
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
@@ -86,7 +85,7 @@ function CatalogContent() {
   const activeFiltersCount = [instrFilter, durFilter].filter(f => f !== 'all').length
 
   const handlePractice = (p: Practice) => {
-    if (!isPremium && p.is_premium) router.push('/subscribe')
+    if (!hasAccess && p.is_premium) router.push('/subscribe')
     else router.push(`/practice/${p.id}?from=catalog`)
   }
 
@@ -210,18 +209,18 @@ function CatalogContent() {
       ) : viewMode === 'list' ? (
         <div style={{ padding: '4px 16px' }}>
           {filtered.map(p => (
-            <PracticeRow key={p.id} p={p} onTap={() => handlePractice(p)} isPremium={isPremium} favorite={isFavorite(p.id)} onToggleFav={() => toggleFavorite(p.id)} />
+            <PracticeRow key={p.id} p={p} onTap={() => handlePractice(p)} isPremium={hasAccess} favorite={isFavorite(p.id)} onToggleFav={() => toggleFavorite(p.id)} />
           ))}
         </div>
       ) : (
         <div style={{ padding: '8px 16px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {filtered.map(p => (
-            <GridCard key={p.id} p={p} onTap={() => handlePractice(p)} isPremium={isPremium} favorite={isFavorite(p.id)} onToggleFav={() => toggleFavorite(p.id)} />
+            <GridCard key={p.id} p={p} onTap={() => handlePractice(p)} isPremium={hasAccess} favorite={isFavorite(p.id)} onToggleFav={() => toggleFavorite(p.id)} />
           ))}
         </div>
       )}
 
-      <TabBar isPremium={isPremium} />
+      <TabBar isPremium={hasAccess} />
     </main>
   )
 }
