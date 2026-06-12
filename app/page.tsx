@@ -110,7 +110,12 @@ export default function Home() {
   const showTrialExpiry = !isPremium && trialDaysLeft > 0 && trialDaysLeft <= 3
   const showBlackPromo = !hasAccess
 
-  const freePractices = useMemo(() => practices.filter(p => !p.is_premium).slice(0, 3), [practices])
+  const freePractices = useMemo(
+    () => hasAccess
+      ? practices.slice(0, 3)
+      : practices.filter(p => !p.is_premium).slice(0, 3),
+    [practices, hasAccess]
+  )
 
 
   const teachers = useMemo(() => {
@@ -331,7 +336,7 @@ export default function Home() {
           <SectionHdr title="Преподаватели" />
           <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
             {teachers.map((teacher, idx) => {
-              const isLocked = !isPremium && idx > 0
+              const isLocked = !hasAccess && idx > 0
               return (
                 <div
                   key={teacher.name}
@@ -368,7 +373,7 @@ export default function Home() {
         </div>
       )}
 
-      <TabBar isPremium={isPremium} />
+      <TabBar isPremium={hasAccess} />
     </div>
   )
 }
