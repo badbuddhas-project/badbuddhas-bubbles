@@ -6,6 +6,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import bcrypt from 'bcryptjs'
+
+const TRIAL_LAUNCH_DATE = new Date('2026-06-19T00:00:00Z')
 import * as jwt from 'jsonwebtoken'
 import { checkRateLimit } from '@/lib/rate-limit'
 
@@ -72,7 +74,9 @@ export async function POST(request: Request) {
         email,
         password_hash,
         is_premium: false,
-        trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        ...(new Date() >= TRIAL_LAUNCH_DATE
+          ? { trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString() }
+          : {}),
         auth_provider: 'email',
         supabase_user_id: authData.user?.id ?? null,
       })
