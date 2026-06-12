@@ -166,7 +166,8 @@ export default function Home() {
     })
   }
 
-  if (!showRenewal) {
+  const showWebinarBanner = false // webinar May — hide after event
+  if (!showRenewal && showWebinarBanner) {
     SLIDES.push({
       key: 'group',
       content: (
