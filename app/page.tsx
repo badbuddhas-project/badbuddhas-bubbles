@@ -42,7 +42,7 @@ const CAT_DISPLAY: Record<string, string> = {
 export default function Home() {
   const router = useRouter()
   const { t, language } = useTranslation()
-  const { user, isLoading: isUserLoading } = useUser()
+  const { user, isLoading: isUserLoading, hasAccess, trialDaysLeft } = useUser()
   const { practices, isLoading: isPracticesLoading } = usePractices()
   const { isCompleted: isOnboardingCompleted, isLoading: isOnboardingLoading } = useOnboarding()
 
@@ -97,6 +97,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!isPremium || !user) return
+
     const tgId = user.telegram_id ? `?telegram_id=${user.telegram_id}` : ''
     fetch(`/api/subscriptions/me${tgId}`)
       .then(r => r.ok ? r.json() : null)
@@ -106,7 +107,8 @@ export default function Home() {
 
   const daysLeft = expiresAt ? Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null
   const showRenewal = isPremium && daysLeft !== null && daysLeft <= 3
-  const showBlackPromo = !isPremium
+  const showTrialExpiry = !isPremium && trialDaysLeft > 0 && trialDaysLeft <= 3
+  const showBlackPromo = !hasAccess
 
   const freePractices = useMemo(() => practices.filter(p => !p.is_premium).slice(0, 3), [practices])
 
@@ -124,7 +126,7 @@ export default function Home() {
   }, [practices])
 
   const handlePractice = (p: Practice) => {
-    if (!isPremium && p.is_premium) router.push('/subscribe')
+    if (!hasAccess && p.is_premium) router.push('/subscribe')
     else router.push(`/practice/${p.id}?from=home`)
   }
 
@@ -182,6 +184,31 @@ export default function Home() {
           <div style={{ flexShrink: 0, borderRadius: 22, overflow: 'hidden' }}>
           <BreathVisual category="balance" size={112} borderRadius={22} animate={true} showBubbles={false} />
          </div>
+        </div>
+      ),
+    })
+  }
+
+  if (showTrialExpiry) {
+    SLIDES.push({
+      key: 'trial-expiry',
+      content: (
+        <div style={{ position: 'relative', height: '100%', overflow: 'hidden', borderRadius: 22 }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #1a0030, #2d0050)' }} />
+          <div style={{ position: 'absolute', top: -30, right: -30, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(192,52,165,0.5) 0%, transparent 65%)' }} />
+          <div style={{ position: 'absolute', bottom: -20, left: 20, width: 100, height: 100, borderRadius: '50%', background: 'radial-gradient(circle, rgba(84,198,140,0.25) 0%, transparent 65%)' }} />
+          <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '20px 18px' }}>
+            <div style={{ display: 'inline-flex', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', borderRadius: 20, padding: '3px 12px', marginBottom: 10, alignSelf: 'flex-start' }}>
+              <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: 2 }}>BLACK</span>
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 500, color: '#fff', marginBottom: 6 }}>Пробный период заканчивается</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, marginBottom: 12 }}>
+              {trialDaysLeft === 1 ? 'Остался 1 день' : `Осталось ${trialDaysLeft} дня`}
+            </div>
+            <button onClick={() => router.push('/subscribe')} style={{ width: '100%', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', color: '#fff', fontSize: 13, fontWeight: 700, borderRadius: 14, padding: '11px', border: 'none', cursor: 'pointer' }}>
+              Подписаться за 500 ₽
+            </button>
+          </div>
         </div>
       ),
     })
