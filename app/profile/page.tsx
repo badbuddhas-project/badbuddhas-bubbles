@@ -131,19 +131,12 @@ export default function ProfilePage() {
     return language === 'ru' ? `до ${formatted} · ${monthsLeft} месяцев` : `until ${formatted} · ${monthsLeft} months`
   }
 
-  const freeMenuItems = [
+  const menuItems = [
     { label: t('profile.settings'), sub: t('profile.account'), onClick: () => router.push('/profile/settings'), red: false },
     { label: t('profile.faq'), sub: '', onClick: () => router.push('/profile/faq'), red: false },
     { label: t('profile.communityChat'), sub: '', onClick: () => window.open('https://t.me/+bb3fiUmoKGVjYmUy', '_blank'), red: false },
     { label: t('profile.contactUs'), sub: '', onClick: () => window.open('https://badbuddhas.world/ask?utm_source=telegram&utm_medium=miniapp&utm_campaign=bubbles_contact', '_blank'), red: false },
   ]
-  const blackMenuItems = [
-    { label: language === 'ru' ? 'Настройки' : 'Settings', sub: t('profile.account'), onClick: () => router.push('/profile/settings'), red: false },
-    { label: language === 'ru' ? 'Уведомления' : 'Notifications', sub: '', onClick: () => router.push('/profile/settings'), red: false },
-    { label: language === 'ru' ? 'Поддержка' : 'Support', sub: '', onClick: () => window.open('https://badbuddhas.world/ask?utm_source=telegram&utm_medium=miniapp&utm_campaign=bubbles_contact', '_blank'), red: false },
-    { label: language === 'ru' ? 'Выйти' : 'Sign out', sub: '', onClick: handleLogout, red: true },
-  ]
-  const menuItems = isPremium ? blackMenuItems : freeMenuItems
 
   if (isUserLoading) {
     return (
