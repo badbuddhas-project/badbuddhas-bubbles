@@ -218,8 +218,8 @@ async function syncUserToGetCourse(email: string, firstName: string, lastName: s
     const paramsObj = {
       user: {
         email,
-        first_name: firstName || '',
-        last_name: lastName || '',
+        first_name: firstName || '-',
+        last_name: lastName || '-',
         group_name: ['Приложение Черный баблс | бесплатно'],
       },
       system: {
