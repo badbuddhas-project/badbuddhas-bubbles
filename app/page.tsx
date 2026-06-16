@@ -241,7 +241,7 @@ export default function Home() {
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '44px 16px 12px' }}>
-        <BrandMark size={26} />
+        <BrandMark size={22} />
         <button
           onClick={() => router.push('/profile')}
           style={{ width: 44, height: 44, borderRadius: '50%', background: C.card, border: `1.5px solid ${C.border2}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
@@ -251,7 +251,7 @@ export default function Home() {
       </div>
 
       {/* Greeting */}
-      <div style={{ padding: '0 16px 16px' }}>
+      <div style={{ padding: '0 16px 16px', textAlign: 'center' }}>
         <div style={{ fontSize: 16, fontWeight: 600, color: C.text }}>{greeting}</div>
         <div style={{ fontSize: 13, fontWeight: 400, color: '#9ca3af', marginTop: 2 }}>[{t('catalog.letsBreath')}]</div>
       </div>
