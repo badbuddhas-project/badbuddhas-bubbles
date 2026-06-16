@@ -413,7 +413,7 @@ export default function Home() {
               onClick={dismissTrialWelcome}
               style={{ width: '100%', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', color: '#fff', fontSize: 15, fontWeight: 700, borderRadius: 16, padding: '14px', border: 'none', cursor: 'pointer' }}
             >
-              Начать практику
+              Дышать
             </button>
           </div>
         </div>
