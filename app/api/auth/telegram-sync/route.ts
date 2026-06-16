@@ -6,7 +6,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const TRIAL_LAUNCH_DATE = new Date('2026-06-11T00:00:00Z') // TEST: temp date, revert to 2026-06-19
+const TRIAL_LAUNCH_DATE = new Date('2026-06-19T00:00:00Z')
 
 function sanitizeUser(user: Record<string, unknown>) {
   const { password_hash, reset_token, reset_token_expires_at, ...safe } = user
