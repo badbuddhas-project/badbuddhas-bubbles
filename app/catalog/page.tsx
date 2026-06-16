@@ -94,7 +94,7 @@ function CatalogContent() {
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '44px 16px 10px', borderBottom: `1px solid ${C.border}` }}>
-        <BrandMark size={18} />
+        <BrandMark size={26} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {/* View toggle */}
           <div style={{ display: 'flex', background: C.card, borderRadius: 10, padding: 3, border: `1px solid ${C.border}` }}>

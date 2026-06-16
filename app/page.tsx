@@ -241,7 +241,7 @@ export default function Home() {
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '44px 16px 12px' }}>
-        <BrandMark size={18} />
+        <BrandMark size={26} />
         <button
           onClick={() => router.push('/profile')}
           style={{ width: 44, height: 44, borderRadius: '50%', background: C.card, border: `1.5px solid ${C.border2}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
