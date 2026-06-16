@@ -95,6 +95,22 @@ export default function Home() {
   const isPremium = user?.is_premium ?? false
   const [expiresAt, setExpiresAt] = useState<string | null>(null)
 
+  const TRIAL_WELCOME_KEY = 'trial_welcome_shown'
+  const [showTrialWelcome, setShowTrialWelcome] = useState(false)
+
+  useEffect(() => {
+    if (!isUserLoading && hasAccess && !isPremium && trialDaysLeft > 3) {
+      if (!localStorage.getItem(TRIAL_WELCOME_KEY)) {
+        setShowTrialWelcome(true)
+      }
+    }
+  }, [isUserLoading, hasAccess, isPremium, trialDaysLeft])
+
+  const dismissTrialWelcome = () => {
+    localStorage.setItem(TRIAL_WELCOME_KEY, '1')
+    setShowTrialWelcome(false)
+  }
+
   useEffect(() => {
     if (!isPremium || !user) return
 
@@ -374,6 +390,34 @@ export default function Home() {
       )}
 
       <TabBar isPremium={hasAccess} />
+
+      {/* Trial welcome bottom sheet — shown once on first open */}
+      {showTrialWelcome && (
+        <div
+          onClick={dismissTrialWelcome}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ width: '100%', background: '#0A0A0A', borderRadius: '24px 24px 0 0', border: '1px solid #1A1A1A', borderBottom: 'none', padding: '28px 20px 40px' }}
+          >
+            <div style={{ width: 36, height: 4, background: '#333', borderRadius: 2, margin: '0 auto 24px' }} />
+            <div style={{ display: 'inline-flex', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', borderRadius: 20, padding: '3px 12px', marginBottom: 14 }}>
+              <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: 2 }}>ПРОБНЫЙ ДОСТУП</span>
+            </div>
+            <div style={{ fontSize: 22, fontWeight: 600, color: '#fff', marginBottom: 8 }}>14 дней бесплатно</div>
+            <div style={{ fontSize: 14, color: 'rgba(203,203,203,0.6)', lineHeight: 1.6, marginBottom: 24 }}>
+              Все практики открыты. Дышите осознанно — и посмотрите, как это изменит вашу жизнь.
+            </div>
+            <button
+              onClick={dismissTrialWelcome}
+              style={{ width: '100%', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', color: '#fff', fontSize: 15, fontWeight: 700, borderRadius: 16, padding: '14px', border: 'none', cursor: 'pointer' }}
+            >
+              Начать практику
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
