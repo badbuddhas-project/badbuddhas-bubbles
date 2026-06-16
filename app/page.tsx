@@ -407,7 +407,7 @@ export default function Home() {
             </div>
             <div style={{ fontSize: 22, fontWeight: 600, color: '#fff', marginBottom: 8 }}>14 дней бесплатно</div>
             <div style={{ fontSize: 14, color: 'rgba(203,203,203,0.6)', lineHeight: 1.6, marginBottom: 24 }}>
-              Все практики открыты. Дышите осознанно — и посмотрите, как это изменит вашу жизнь.
+              Все практики открыты. Дыши осознанно — и посмотри, как это изменит твою жизнь.
             </div>
             <button
               onClick={dismissTrialWelcome}
