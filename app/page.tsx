@@ -42,7 +42,7 @@ const CAT_DISPLAY: Record<string, string> = {
 export default function Home() {
   const router = useRouter()
   const { t, language } = useTranslation()
-  const { user, isLoading: isUserLoading } = useUser()
+  const { user, isLoading: isUserLoading, hasAccess, trialDaysLeft } = useUser()
   const { practices, isLoading: isPracticesLoading } = usePractices()
   const { isCompleted: isOnboardingCompleted, isLoading: isOnboardingLoading } = useOnboarding()
 
@@ -95,8 +95,25 @@ export default function Home() {
   const isPremium = user?.is_premium ?? false
   const [expiresAt, setExpiresAt] = useState<string | null>(null)
 
+  const TRIAL_WELCOME_KEY = 'trial_welcome_shown'
+  const [showTrialWelcome, setShowTrialWelcome] = useState(false)
+
+  useEffect(() => {
+    if (!isUserLoading && hasAccess && !isPremium && trialDaysLeft > 3) {
+      if (!localStorage.getItem(TRIAL_WELCOME_KEY)) {
+        setShowTrialWelcome(true)
+      }
+    }
+  }, [isUserLoading, hasAccess, isPremium, trialDaysLeft])
+
+  const dismissTrialWelcome = () => {
+    localStorage.setItem(TRIAL_WELCOME_KEY, '1')
+    setShowTrialWelcome(false)
+  }
+
   useEffect(() => {
     if (!isPremium || !user) return
+
     const tgId = user.telegram_id ? `?telegram_id=${user.telegram_id}` : ''
     fetch(`/api/subscriptions/me${tgId}`)
       .then(r => r.ok ? r.json() : null)
@@ -106,9 +123,14 @@ export default function Home() {
 
   const daysLeft = expiresAt ? Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null
   const showRenewal = isPremium && daysLeft !== null && daysLeft <= 3
-  const showBlackPromo = !isPremium
+  const showTrialExpiry = !isPremium && trialDaysLeft > 0 && trialDaysLeft <= 3
 
-  const freePractices = useMemo(() => practices.filter(p => !p.is_premium).slice(0, 3), [practices])
+  const freePractices = useMemo(
+    () => hasAccess
+      ? practices.slice(0, 3)
+      : practices.filter(p => !p.is_premium).slice(0, 3),
+    [practices, hasAccess]
+  )
 
 
   const teachers = useMemo(() => {
@@ -124,7 +146,7 @@ export default function Home() {
   }, [practices])
 
   const handlePractice = (p: Practice) => {
-    if (!isPremium && p.is_premium) router.push('/subscribe')
+    if (!hasAccess && p.is_premium) router.push('/subscribe')
     else router.push(`/practice/${p.id}?from=home`)
   }
 
@@ -166,30 +188,30 @@ export default function Home() {
     })
   }
 
-  // TODO: раскомментировать для следующего события
-  // if (!showRenewal) {
-  //   SLIDES.push({
-  //     key: 'group',
-  //     content: (
-  //       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
-  //         <div style={{ flex: 1 }}>
-  //           <div style={{ fontSize: 10, fontWeight: 700, color: C.green, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 7 }}>1-3 мая</div>
-  //           <div style={{ fontSize: 28, fontWeight: 500, color: C.white, marginBottom: 1 }}>Вальпургиева ночь</div>
-  //           <div style={{ fontSize: 15, fontWeight: 500, color: C.text, marginBottom: 3 }}>открытые практики</div>
-  //           <div style={{ fontSize: 12, color: C.text2, marginBottom: 13 }}>с инструкторами BadBuddhas</div>
-  //           <button onClick={() => window.open('https://badbuddhas.world/walpurgis_night?utm_source=tg&utm_medium=chat&utm_campaign=0307', '_blank')} style={{ fontSize: 12, fontWeight: 600, color: C.bg, background: C.green, border: 'none', borderRadius: 20, padding: '7px 16px', cursor: 'pointer' }}>Подробнее →</button>
-  //         </div>
-  //         <div style={{ flexShrink: 0, borderRadius: 22, overflow: 'hidden' }}>
-  //           <BreathVisual category="balance" size={112} borderRadius={22} animate={true} showBubbles={false} />
-  //         </div>
-  //       </div>
-  //     ),
-  //   })
-  // }
-
-  if (showBlackPromo) {
+  const showWebinarBanner = false // webinar May — hide after event
+  if (!showRenewal && showWebinarBanner) {
     SLIDES.push({
-      key: 'black',
+      key: 'group',
+      content: (
+       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.green, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 7 }}>18 мая | 19:00 - 20:30 мск</div>
+           <div style={{ fontSize: 28, fontWeight: 500, color: C.white, marginBottom: 1 }}>Как себя перепридумать</div>
+           <div style={{ fontSize: 15, fontWeight: 500, color: C.text, marginBottom: 3 }}>и при чем здесь дыхание</div>
+           <div style={{ fontSize: 12, color: C.text2, marginBottom: 13 }}>вебинар с Дашей Чен</div>
+           <button onClick={() => window.open('https://badbuddhas.world/webinar_may?utm_source=tg&utm_medium=chat&utm_campaign=0307', '_blank')} style={{ fontSize: 12, fontWeight: 600, color: C.bg, background: C.green, border: 'none', borderRadius: 20, padding: '7px 16px', cursor: 'pointer' }}>Подробнее →</button>
+          </div>
+          <div style={{ flexShrink: 0, borderRadius: 22, overflow: 'hidden' }}>
+          <BreathVisual category="balance" size={112} borderRadius={22} animate={true} showBubbles={false} />
+         </div>
+        </div>
+      ),
+    })
+  }
+
+  if (showTrialExpiry) {
+    SLIDES.push({
+      key: 'trial-expiry',
       content: (
         <div style={{ position: 'relative', height: '100%', overflow: 'hidden', borderRadius: 22 }}>
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #1a0030, #2d0050)' }} />
@@ -199,10 +221,35 @@ export default function Home() {
             <div style={{ display: 'inline-flex', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', borderRadius: 20, padding: '3px 12px', marginBottom: 10, alignSelf: 'flex-start' }}>
               <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: 2 }}>BLACK</span>
             </div>
-            <div style={{ fontSize: 18, fontWeight: 500, color: '#fff', marginBottom: 6 }}>Ещё 30+ практик</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, marginBottom: 12 }}>Живые сессии, теория и эксклюзивный контент</div>
+            <div style={{ fontSize: 18, fontWeight: 500, color: '#fff', marginBottom: 6 }}>Пробный период заканчивается</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, marginBottom: 12 }}>
+              {trialDaysLeft === 1 ? 'Остался 1 день' : `Осталось ${trialDaysLeft} дня`}
+            </div>
             <button onClick={() => router.push('/subscribe')} style={{ width: '100%', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', color: '#fff', fontSize: 13, fontWeight: 700, borderRadius: 14, padding: '11px', border: 'none', cursor: 'pointer' }}>
-              Открыть [black]
+              Подписаться за 500 ₽
+            </button>
+          </div>
+        </div>
+      ),
+    })
+  }
+
+  if (!isPremium) {
+    SLIDES.push({
+      key: 'subscribe',
+      content: (
+        <div style={{ position: 'relative', height: '100%', overflow: 'hidden', borderRadius: 22 }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #1a0030, #2d0050)' }} />
+          <div style={{ position: 'absolute', top: -30, right: -30, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(192,52,165,0.5) 0%, transparent 65%)' }} />
+          <div style={{ position: 'absolute', bottom: -20, left: 20, width: 100, height: 100, borderRadius: '50%', background: 'radial-gradient(circle, rgba(84,198,140,0.25) 0%, transparent 65%)' }} />
+          <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '20px 18px' }}>
+            <div style={{ display: 'inline-flex', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', borderRadius: 20, padding: '3px 12px', marginBottom: 10, alignSelf: 'flex-start' }}>
+              <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: 2 }}>BLACK</span>
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 500, color: '#fff', marginBottom: 6 }}>15 практик Даши</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, marginBottom: 12 }}>500 ₽ в месяц · отмена в любой момент</div>
+            <button onClick={() => router.push('/subscribe')} style={{ width: '100%', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', color: '#fff', fontSize: 13, fontWeight: 700, borderRadius: 14, padding: '11px', border: 'none', cursor: 'pointer' }}>
+              Подписаться
             </button>
           </div>
         </div>
@@ -217,7 +264,7 @@ export default function Home() {
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '44px 16px 12px' }}>
-        <BrandMark size={18} />
+        <BrandMark size={22} />
         <button
           onClick={() => router.push('/profile')}
           style={{ width: 44, height: 44, borderRadius: '50%', background: C.card, border: `1.5px solid ${C.border2}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
@@ -227,7 +274,7 @@ export default function Home() {
       </div>
 
       {/* Greeting */}
-      <div style={{ padding: '0 16px 16px' }}>
+      <div style={{ padding: '0 16px 16px', textAlign: 'center' }}>
         <div style={{ fontSize: 16, fontWeight: 600, color: C.text }}>{greeting}</div>
         <div style={{ fontSize: 13, fontWeight: 400, color: '#9ca3af', marginTop: 2 }}>[{t('catalog.letsBreath')}]</div>
       </div>
@@ -304,7 +351,7 @@ export default function Home() {
           <SectionHdr title="Преподаватели" />
           <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
             {teachers.map((teacher, idx) => {
-              const isLocked = !isPremium && idx > 0
+              const isLocked = !hasAccess && idx > 0
               return (
                 <div
                   key={teacher.name}
@@ -341,7 +388,35 @@ export default function Home() {
         </div>
       )}
 
-      <TabBar isPremium={isPremium} />
+      <TabBar isPremium={hasAccess} />
+
+      {/* Trial welcome bottom sheet — shown once on first open */}
+      {showTrialWelcome && (
+        <div
+          onClick={dismissTrialWelcome}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ width: '100%', background: '#0A0A0A', borderRadius: '24px 24px 0 0', border: '1px solid #1A1A1A', borderBottom: 'none', padding: '28px 20px 40px' }}
+          >
+            <div style={{ width: 36, height: 4, background: '#333', borderRadius: 2, margin: '0 auto 24px' }} />
+            <div style={{ display: 'inline-flex', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', borderRadius: 20, padding: '3px 12px', marginBottom: 14 }}>
+              <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: 2 }}>ПРОБНЫЙ ДОСТУП</span>
+            </div>
+            <div style={{ fontSize: 22, fontWeight: 600, color: '#fff', marginBottom: 8 }}>14 дней бесплатно</div>
+            <div style={{ fontSize: 14, color: 'rgba(203,203,203,0.6)', lineHeight: 1.6, marginBottom: 24 }}>
+              Все практики открыты. Дыши осознанно — и посмотри, как это изменит твою жизнь.
+            </div>
+            <button
+              onClick={dismissTrialWelcome}
+              style={{ width: '100%', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', color: '#fff', fontSize: 15, fontWeight: 700, borderRadius: 16, padding: '14px', border: 'none', cursor: 'pointer' }}
+            >
+              Дышать
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
