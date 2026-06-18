@@ -234,6 +234,29 @@ export default function Home() {
     })
   }
 
+  if (!isPremium) {
+    SLIDES.push({
+      key: 'subscribe',
+      content: (
+        <div style={{ position: 'relative', height: '100%', overflow: 'hidden', borderRadius: 22 }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #1a0030, #2d0050)' }} />
+          <div style={{ position: 'absolute', top: -30, right: -30, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(192,52,165,0.5) 0%, transparent 65%)' }} />
+          <div style={{ position: 'absolute', bottom: -20, left: 20, width: 100, height: 100, borderRadius: '50%', background: 'radial-gradient(circle, rgba(84,198,140,0.25) 0%, transparent 65%)' }} />
+          <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '20px 18px' }}>
+            <div style={{ display: 'inline-flex', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', borderRadius: 20, padding: '3px 12px', marginBottom: 10, alignSelf: 'flex-start' }}>
+              <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: 2 }}>BLACK</span>
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 500, color: '#fff', marginBottom: 6 }}>15 практик Даши</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, marginBottom: 12 }}>500 ₽ в месяц · отмена в любой момент</div>
+            <button onClick={() => router.push('/subscribe')} style={{ width: '100%', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', color: '#fff', fontSize: 13, fontWeight: 700, borderRadius: 14, padding: '11px', border: 'none', cursor: 'pointer' }}>
+              Подписаться
+            </button>
+          </div>
+        </div>
+      ),
+    })
+  }
+
   slideCountRef.current = SLIDES.length
 
   return (
