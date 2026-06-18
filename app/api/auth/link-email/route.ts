@@ -183,7 +183,7 @@ export async function POST(request: Request) {
     // Получить данные юзера для ГК
     const { data: gcUserData } = await supabase
       .from('users')
-      .select('first_name, last_name')
+      .select('first_name, last_name, trial_ends_at')
       .eq('id', userId)
       .single()
 
@@ -220,7 +220,7 @@ async function syncUserToGetCourse(email: string, firstName: string, lastName: s
         email,
         first_name: firstName || '-',
         last_name: lastName || '-',
-        group_name: ['Приложение Черный баблс | бесплатно'],
+        group_name: ['Черный баблс | trial | 14 дней в приложении'],
       },
       system: {
         refresh_if_exists: 1,

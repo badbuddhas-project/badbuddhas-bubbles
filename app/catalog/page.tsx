@@ -58,7 +58,7 @@ function CatalogContent() {
     return ['all', ...names]
   }, [practices])
 
-  const durations = ['all', 'до 10 мин', '10–20 мин', '20+ мин']
+  const durations = ['all', 'до 10 мин', '10–20 мин']
 
   const cats = [
     { id: 'all', label: language === 'ru' ? 'Все' : 'All', color: C.text },
@@ -158,22 +158,7 @@ function CatalogContent() {
 
         {filterOpen && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {/* Instructor */}
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: C.sub, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>
-                {language === 'ru' ? 'Ведущий' : 'Instructor'}
-              </div>
-              <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none' }}>
-                {instructors.map(ins => (
-                  <FilterChip
-                    key={ins}
-                    label={ins === 'all' ? (language === 'ru' ? 'Все' : 'All') : ins.split(' ')[0]}
-                    active={instrFilter === ins}
-                    onClick={() => setInstrFilter(ins)}
-                  />
-                ))}
-              </div>
-            </div>
+            {/* Instructor — hidden while single instructor */}
             {/* Duration */}
             <div>
               <div style={{ fontSize: 10, fontWeight: 700, color: C.sub, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>

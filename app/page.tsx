@@ -345,8 +345,8 @@ export default function Home() {
         )}
       </div>
 
-      {/* Teachers section */}
-      {teachers.length > 0 && (
+      {/* Teachers section — hidden while only one teacher */}
+      {false && teachers.length > 0 && (
         <div style={{ padding: '0 16px', marginBottom: 20 }}>
           <SectionHdr title="Преподаватели" />
           <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
