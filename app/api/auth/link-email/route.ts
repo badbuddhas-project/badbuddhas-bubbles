@@ -183,16 +183,24 @@ export async function POST(request: Request) {
     // Получить данные юзера для ГК
     const { data: gcUserData } = await supabase
       .from('users')
-      .select('first_name, last_name')
+      .select('first_name, last_name, trial_ends_at')
       .eq('id', userId)
       .single()
 
+    const hasActiveTrial = gcUserData?.trial_ends_at
+      ? new Date(gcUserData.trial_ends_at) > new Date()
+      : false
+    const gcGroup = hasActiveTrial
+      ? 'Черный баблс | trial | 14 дней в приложении'
+      : 'Приложение Черный баблс | бесплатно'
+
     // Синхронизировать в ГК (await — иначе Vercel убивает процесс при return)
-    console.log('[link-email] Calling GC sync for:', normalizedEmail)
+    console.log('[link-email] Calling GC sync for:', normalizedEmail, 'group:', gcGroup)
     const gcResult = await syncUserToGetCourse(
       normalizedEmail,
       gcUserData?.first_name || '',
-      gcUserData?.last_name || ''
+      gcUserData?.last_name || '',
+      gcGroup
     )
     console.log('[link-email] GC sync result:', JSON.stringify(gcResult))
 
@@ -204,7 +212,7 @@ export async function POST(request: Request) {
   }
 }
 
-async function syncUserToGetCourse(email: string, firstName: string, lastName: string) {
+async function syncUserToGetCourse(email: string, firstName: string, lastName: string, groupName = 'Приложение Черный баблс | бесплатно') {
   try {
     console.log('[GC sync] Starting for email:', email)
     const apiKey = process.env.GETCOURSE_WRITE_API_KEY
@@ -220,7 +228,7 @@ async function syncUserToGetCourse(email: string, firstName: string, lastName: s
         email,
         first_name: firstName || '-',
         last_name: lastName || '-',
-        group_name: ['Приложение Черный баблс | бесплатно'],
+        group_name: [groupName],
       },
       system: {
         refresh_if_exists: 1,
