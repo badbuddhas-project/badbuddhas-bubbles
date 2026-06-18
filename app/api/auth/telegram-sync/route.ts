@@ -31,14 +31,14 @@ export async function POST(request: Request) {
     // Check if user already exists (for isNewUser flag and trial state)
     const { data: existing } = await supabase
       .from('users')
-      .select('id, trial_ends_at')
+      .select('id, trial_ends_at, is_premium')
       .eq('telegram_id', telegram_id)
       .maybeSingle()
 
     const isNewUser = !existing
 
-    // Set trial on first login at or after launch date, if not already set
-    const shouldStartTrial = new Date() >= TRIAL_LAUNCH_DATE && !existing?.trial_ends_at
+    // Set trial on first login at or after launch date, if not already set and not premium
+    const shouldStartTrial = new Date() >= TRIAL_LAUNCH_DATE && !existing?.trial_ends_at && !existing?.is_premium
     const trialPayload = shouldStartTrial
       ? { trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString() }
       : {}
