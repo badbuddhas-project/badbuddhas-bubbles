@@ -244,10 +244,21 @@ export default function Home() {
           <div style={{ position: 'absolute', bottom: -20, left: 20, width: 100, height: 100, borderRadius: '50%', background: 'radial-gradient(circle, rgba(84,198,140,0.25) 0%, transparent 65%)' }} />
           <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '20px 18px' }}>
             <div style={{ display: 'inline-flex', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', borderRadius: 20, padding: '3px 12px', marginBottom: 10, alignSelf: 'flex-start' }}>
-              <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: 2 }}>BLACK</span>
+              <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: 2 }}>{trialDaysLeft > 0 ? 'ПРОБНЫЙ ДОСТУП' : 'BLACK'}</span>
             </div>
-            <div style={{ fontSize: 18, fontWeight: 500, color: '#fff', marginBottom: 6 }}>15 практик Даши</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, marginBottom: 12 }}>500 ₽ в месяц · отмена в любой момент</div>
+            {trialDaysLeft > 0 ? (
+              <>
+                <div style={{ fontSize: 18, fontWeight: 500, color: '#fff', marginBottom: 6 }}>
+                  {trialDaysLeft === 1 ? 'Остался 1 день' : `Осталось ${trialDaysLeft} ${trialDaysLeft < 5 ? 'дня' : 'дней'}`}
+                </div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, marginBottom: 12 }}>После окончания — 500 ₽ в месяц</div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 18, fontWeight: 500, color: '#fff', marginBottom: 6 }}>15 практик Даши</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, marginBottom: 12 }}>500 ₽ в месяц · отмена в любой момент</div>
+              </>
+            )}
             <button onClick={() => router.push('/subscribe')} style={{ width: '100%', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', color: '#fff', fontSize: 13, fontWeight: 700, borderRadius: 14, padding: '11px', border: 'none', cursor: 'pointer' }}>
               Подписаться
             </button>
