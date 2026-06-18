@@ -16,11 +16,10 @@ const C = {
 }
 
 const FEATURES = [
-  '15 практик Даши',
-  '3 состояния: rise / ground / slow',
-  'Доступ на 30 дней',
-  'Запуск в Telegram',
-  'Без лишних экранов и шума',
+  '30+ эксклюзивных практик дыхания',
+  'Живые сессии с ведущими',
+  'Теория: научная база и техники',
+  'Расписание и чат сообщества',
 ]
 
 
@@ -231,7 +230,7 @@ function SubscribePage() {
 
           {/* Price */}
           <div style={{ textAlign: 'center', marginBottom: 20, padding: '0 16px' }}>
-            <span style={{ fontSize: 24, fontWeight: 800, color: '#fff' }}>500 ₽</span>
+            <span style={{ fontSize: 24, fontWeight: 800, color: '#fff' }}>1 990 ₽</span>
             <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginLeft: 8 }}>/ месяц</span>
           </div>
 

@@ -18,9 +18,9 @@ function resolvePostOnboardingRoute(): string {
 }
 
 const steps = [
-  { category: 'slow', title: 'Дыши осознанно', desc: 'Практики дыхания для снятия стресса, восстановления энергии и внутреннего баланса' },
-  { category: 'ground', title: 'Найди свой темп', desc: 'От 3 до 14 минут — выбирай практику под своё настроение и расписание' },
-  { category: 'rise', title: 'Практикуй каждый день' },
+  { category: 'slow', title: 'Дышите осознанно', desc: 'Практики дыхания для снятия стресса, восстановления энергии и внутреннего баланса' },
+  { category: 'ground', title: 'Найдите свой темп', desc: 'От 5 до 30 минут — выбирайте практику под своё настроение и расписание' },
+  { category: 'rise', title: 'Практикуйте каждый день' },
 ]
 
 export default function OnboardingPage() {

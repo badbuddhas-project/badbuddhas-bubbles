@@ -131,12 +131,19 @@ export default function ProfilePage() {
     return language === 'ru' ? `до ${formatted} · ${monthsLeft} месяцев` : `until ${formatted} · ${monthsLeft} months`
   }
 
-  const menuItems = [
+  const freeMenuItems = [
     { label: t('profile.settings'), sub: t('profile.account'), onClick: () => router.push('/profile/settings'), red: false },
     { label: t('profile.faq'), sub: '', onClick: () => router.push('/profile/faq'), red: false },
     { label: t('profile.communityChat'), sub: '', onClick: () => window.open('https://t.me/+bb3fiUmoKGVjYmUy', '_blank'), red: false },
     { label: t('profile.contactUs'), sub: '', onClick: () => window.open('https://badbuddhas.world/ask?utm_source=telegram&utm_medium=miniapp&utm_campaign=bubbles_contact', '_blank'), red: false },
   ]
+  const blackMenuItems = [
+    { label: language === 'ru' ? 'Настройки' : 'Settings', sub: t('profile.account'), onClick: () => router.push('/profile/settings'), red: false },
+    { label: language === 'ru' ? 'Уведомления' : 'Notifications', sub: '', onClick: () => router.push('/profile/settings'), red: false },
+    { label: language === 'ru' ? 'Поддержка' : 'Support', sub: '', onClick: () => window.open('https://badbuddhas.world/ask?utm_source=telegram&utm_medium=miniapp&utm_campaign=bubbles_contact', '_blank'), red: false },
+    { label: language === 'ru' ? 'Выйти' : 'Sign out', sub: '', onClick: handleLogout, red: true },
+  ]
+  const menuItems = isPremium ? blackMenuItems : freeMenuItems
 
   if (isUserLoading) {
     return (
@@ -158,7 +165,7 @@ export default function ProfilePage() {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#CBCBCB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <BrandMark size={26} />
+          <BrandMark size={16} />
         </div>
       </div>
 
@@ -232,6 +239,35 @@ export default function ProfilePage() {
       </div>
 
       {/* Black CTA — free users only */}
+      {!isPremium && (
+        <div
+          onClick={() => router.push('/subscribe')}
+          style={{ margin: '0 16px 18px', borderRadius: 20, overflow: 'hidden', position: 'relative', cursor: 'pointer' }}
+        >
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,#1a0030,#2d0050,#1a1a00)' }} />
+          <div style={{ position: 'absolute', top: -30, right: -30, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle,rgba(192,52,165,0.5) 0%,transparent 65%)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', bottom: -20, left: 20, width: 100, height: 100, borderRadius: '50%', background: 'radial-gradient(circle,rgba(84,198,140,0.25) 0%,transparent 65%)', pointerEvents: 'none' }} />
+          <div style={{ position: 'relative', zIndex: 1, padding: '20px 18px' }}>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ display: 'inline-flex', background: `linear-gradient(135deg,${C.pink},#7b1fa2)`, borderRadius: 20, padding: '3px 12px', marginBottom: 10 }}>
+                <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: 2 }}>BLACK</span>
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 500, color: C.white, lineHeight: 1.2, marginBottom: 6 }}>
+                {language === 'ru' ? 'Ещё 30+ практик' : '30+ more practices'}
+              </div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>
+                {language === 'ru' ? 'Живые сессии, теория и эксклюзивный контент для подписчиков' : 'Live sessions, theory and exclusive content for subscribers'}
+              </div>
+            </div>
+            <button
+              onClick={e => { e.stopPropagation(); router.push('/subscribe') }}
+              style={{ width: '100%', fontSize: 14, fontWeight: 700, background: `linear-gradient(135deg,${C.pink},#7b1fa2)`, color: '#fff', border: 'none', borderRadius: 14, padding: '13px', cursor: 'pointer', boxShadow: '0 6px 24px rgba(192,52,165,0.5)' }}
+            >
+              {language === 'ru' ? 'Открыть [black]' : 'Open [black]'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Renewal warning — premium users, < 7 days until expiry */}
       {showRenewalWarning && subscriptionExpiry && (

@@ -11,7 +11,6 @@ export interface Database {
           first_name: string | null
           last_name: string | null
           is_premium: boolean
-          trial_ends_at: string | null
           created_at: string
           email: string | null
           verified_email: string | null
@@ -26,7 +25,6 @@ export interface Database {
           first_name?: string | null
           last_name?: string | null
           is_premium?: boolean
-          trial_ends_at?: string | null
           created_at?: string
           email?: string | null
           verified_email?: string | null
@@ -41,7 +39,6 @@ export interface Database {
           first_name?: string | null
           last_name?: string | null
           is_premium?: boolean
-          trial_ends_at?: string | null
           created_at?: string
           email?: string | null
           verified_email?: string | null
