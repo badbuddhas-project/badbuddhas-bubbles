@@ -6,6 +6,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+const TRIAL_LAUNCH_DATE = new Date('2026-06-19T00:00:00Z')
+
 function sanitizeUser(user: Record<string, unknown>) {
   const { password_hash, reset_token, reset_token_expires_at, ...safe } = user
   void password_hash; void reset_token; void reset_token_expires_at
@@ -26,14 +28,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing telegram_id' }, { status: 400 })
     }
 
-    // Check if user already exists (for isNewUser flag)
+    // Check if user already exists (for isNewUser flag and trial state)
     const { data: existing } = await supabase
       .from('users')
-      .select('id')
+      .select('id, trial_ends_at')
       .eq('telegram_id', telegram_id)
       .maybeSingle()
 
     const isNewUser = !existing
+
+    // Set trial on first login at or after launch date, if not already set
+    const shouldStartTrial = new Date() >= TRIAL_LAUNCH_DATE && !existing?.trial_ends_at
+    const trialPayload = shouldStartTrial
+      ? { trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString() }
+      : {}
 
     // Upsert: insert or update on conflict — avoids duplicate key errors
     const { data: user, error } = await supabase
@@ -44,6 +52,7 @@ export async function POST(request: Request) {
           username:   username   ?? null,
           first_name: first_name ?? null,
           ...(isNewUser ? { is_premium: false } : {}),
+          ...trialPayload,
         },
         { onConflict: 'telegram_id' }
       )
