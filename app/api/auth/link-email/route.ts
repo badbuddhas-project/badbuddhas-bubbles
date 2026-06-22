@@ -126,15 +126,17 @@ export async function POST(request: Request) {
     if (pendingSub) {
       const telegramIdForPending = updateData?.telegram_id ?? null
       console.log('[link-email] Found pending subscription:', pendingSub.id, 'linking to user:', userId)
-      await supabase
+      const { error: linkErr } = await supabase
         .from('subscriptions')
         .update({ user_id: userId, telegram_id: telegramIdForPending })
         .eq('id', pendingSub.id)
+      if (linkErr) console.error('[link-email] Failed to link pending subscription:', linkErr.message)
 
-      await supabase
+      const { error: premErr } = await supabase
         .from('users')
         .update({ is_premium: true })
         .eq('id', userId)
+      if (premErr) console.error('[link-email] Failed to set is_premium:', premErr.message)
       console.log('[link-email] Pending subscription activated for user:', userId)
     }
 

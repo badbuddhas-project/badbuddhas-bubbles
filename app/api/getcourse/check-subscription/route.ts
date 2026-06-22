@@ -144,13 +144,14 @@ export async function POST(request: Request) {
 
       if (realUser) {
         // Update the real user's premium status and email
-        await supabase
+        const { error: userErr } = await supabase
           .from('users')
           .update({ is_premium: true, email: normalizedEmail, verified_email: normalizedEmail })
           .eq('id', realUser.id)
+        if (userErr) console.error('[check-subscription] Failed to update user premium:', userErr.message)
 
-        // Upsert subscription for this user
-        await supabase
+        // Upsert subscription for this user (user_id has a unique index)
+        const { error: subErr } = await supabase
           .from('subscriptions')
           .upsert(
             {
@@ -165,6 +166,7 @@ export async function POST(request: Request) {
             },
             { onConflict: 'user_id' }
           )
+        if (subErr) console.error('[check-subscription] Failed to upsert subscription:', subErr.message)
 
         // Clean up any email-only duplicate user (no telegram_id)
         if (realUser.telegram_id) {
@@ -178,35 +180,55 @@ export async function POST(request: Request) {
 
         console.log('[check-subscription] Updated real user:', realUser.id, 'is_premium=true')
       } else {
-        // No user found at all — cache subscription by email only
-        await supabase
+        // No user found yet (e.g. paid on the website before registering in the
+        // Telegram app) — store a PENDING subscription keyed by email only, so
+        // /api/auth/link-email can activate it once the user links this email.
+        //
+        // NOTE: cannot use upsert({ onConflict: 'email' }) here — the unique index
+        // on email is PARTIAL (WHERE user_id IS NULL), and ON CONFLICT cannot infer
+        // a partial index, so it silently errors and nothing gets written.
+        // Do an explicit select → insert/update instead.
+        const pendingPayload = {
+          email: normalizedEmail,
+          status: 'active',
+          gc_deal_id: dealId || null,
+          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          updated_at: new Date().toISOString(),
+        }
+
+        const { data: existingPending } = await supabase
           .from('subscriptions')
-          .upsert(
-            {
-              email: normalizedEmail,
-              status: 'active',
-              gc_deal_id: dealId || null,
-              expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: 'email' }
-          )
-        console.log('[check-subscription] No user found, cached subscription by email only')
+          .select('id')
+          .eq('email', normalizedEmail)
+          .is('user_id', null)
+          .maybeSingle()
+
+        const { error: pendingErr } = existingPending
+          ? await supabase.from('subscriptions').update(pendingPayload).eq('id', existingPending.id)
+          : await supabase.from('subscriptions').insert(pendingPayload)
+
+        if (pendingErr) {
+          console.error('[check-subscription] Failed to cache pending subscription:', pendingErr.message)
+        } else {
+          console.log('[check-subscription] No user found, cached pending subscription by email only')
+        }
       }
     }
 
     // If cache was expired and GetCourse did NOT confirm — mark as expired
     if (!hasPaidDeals && cached) {
-      await supabase
+      const { error: expSubErr } = await supabase
         .from('subscriptions')
         .update({ status: 'expired', updated_at: new Date().toISOString() })
         .eq('email', normalizedEmail)
+      if (expSubErr) console.error('[check-subscription] Failed to expire subscription:', expSubErr.message)
 
       if (realUser) {
-        await supabase
+        const { error: expUserErr } = await supabase
           .from('users')
           .update({ is_premium: false })
           .eq('id', realUser.id)
+        if (expUserErr) console.error('[check-subscription] Failed to clear user premium:', expUserErr.message)
       }
 
       console.log('[check-subscription] Subscription expired for:', normalizedEmail)

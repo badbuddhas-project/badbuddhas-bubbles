@@ -11,7 +11,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { isTelegramWebApp, getTelegramUser, expandTelegramApp, closeTelegramApp } from '@/lib/telegram'
 import type { User } from '@/types/database'
 import { ONBOARDING_KEY } from '@/lib/constants'
-import { ymEvent, getPlatform } from '@/lib/analytics'
+import { ymEvent, ymIdentify, getPlatform } from '@/lib/analytics'
 import { TgSplashScreen } from '@/components/TgSplashScreen'
 import EmailGate from '@/components/EmailGate'
 
@@ -66,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const data = await res.json()
             console.log('[AuthProvider] TG sync OK, user:', data.user?.id, 'email:', data.user?.email, 'verified:', data.user?.verified_email)
             setUser(data.user)
+            if (data.user?.id) ymIdentify(data.user.id, { is_premium: !!data.user.is_premium, platform: getPlatform(), method: 'telegram' })
             const startParam = (window as any).Telegram?.WebApp?.initDataUnsafe?.start_param
             ymEvent('app_opened', { platform: getPlatform(), method: 'telegram', source: startParam || 'organic' })
 
@@ -93,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (res.ok) {
         const data = await res.json()
         setUser(data.user)
+        if (data.user?.id) ymIdentify(data.user.id, { is_premium: !!data.user.is_premium, platform: getPlatform(), method: 'email' })
         const startParam = (window as any).Telegram?.WebApp?.initDataUnsafe?.start_param
         ymEvent('app_opened', { platform: getPlatform(), method: 'email', source: startParam || 'organic' })
       } else if (pathname && !PUBLIC_ROUTES.some((r) => pathname.startsWith(r))) {

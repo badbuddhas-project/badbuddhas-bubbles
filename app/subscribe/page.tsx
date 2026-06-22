@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
+import { ymEvent, getPlatform } from '@/lib/analytics'
 
 const C = {
   bg: '#000',
@@ -45,12 +46,23 @@ function SubscribePage() {
   const [error, setError] = useState('')
   const [autoChecked, setAutoChecked] = useState(false)
 
+  // Entry to the subscription flow
+  useEffect(() => {
+    const source = searchParams?.get('success') === 'true'
+      ? 'payment_return'
+      : (searchParams?.get('step') || (window as any).Telegram?.WebApp?.initDataUnsafe?.start_param || 'direct')
+    ymEvent('subscribe_page_viewed', { source, platform: getPlatform() })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const goToPayment = () => {
+    ymEvent('subscribe_payment_opened', { platform: getPlatform() })
     setStep('payment')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const goToActivate = () => {
+    ymEvent('subscribe_activate_opened', { platform: getPlatform() })
     setStep('activate')
     setError('')
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -113,11 +125,14 @@ function SubscribePage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: checkEmail.trim(), telegram_id: tgUser?.id || null, activate_premium: true }),
         })
+        ymEvent('subscription_activated', { platform: getPlatform() })
         setStep('success')
       } else {
+        ymEvent('subscription_check_failed', { reason: 'not_found', platform: getPlatform() })
         setError('Подписка не найдена. Проверьте email или подождите несколько минут после оплаты')
       }
     } catch {
+      ymEvent('subscription_check_failed', { reason: 'error', platform: getPlatform() })
       setError('Ошибка проверки. Попробуйте ещё раз')
     } finally {
       setIsChecking(false)
