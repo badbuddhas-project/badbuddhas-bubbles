@@ -163,6 +163,11 @@ export default function Home() {
 
   const expiryDate = expiresAt ? new Date(expiresAt).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''
 
+  const goSubscribe = (banner: 'renewal' | 'trial_expiry' | 'subscribe') => {
+    ymEvent('subscribe_banner_click', { banner, platform: getPlatform() })
+    router.push('/subscribe')
+  }
+
   const SLIDES: { key: string; content: ReactNode }[] = []
 
   if (showRenewal) {
@@ -179,7 +184,7 @@ export default function Home() {
             </div>
             <div style={{ fontSize: 18, fontWeight: 500, color: '#fff', marginBottom: 6 }}>Подписка заканчивается</div>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, marginBottom: 12 }}>{`Осталось ${daysLeft} дн. · до ${expiryDate}`}</div>
-            <button onClick={() => router.push('/subscribe')} style={{ width: '100%', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', color: '#fff', fontSize: 13, fontWeight: 700, borderRadius: 14, padding: '11px', border: 'none', cursor: 'pointer' }}>
+            <button onClick={() => goSubscribe('renewal')} style={{ width: '100%', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', color: '#fff', fontSize: 13, fontWeight: 700, borderRadius: 14, padding: '11px', border: 'none', cursor: 'pointer' }}>
               Продлить доступ
             </button>
           </div>
@@ -225,7 +230,7 @@ export default function Home() {
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, marginBottom: 12 }}>
               {trialDaysLeft === 1 ? 'Остался 1 день' : `Осталось ${trialDaysLeft} дня`}
             </div>
-            <button onClick={() => router.push('/subscribe')} style={{ width: '100%', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', color: '#fff', fontSize: 13, fontWeight: 700, borderRadius: 14, padding: '11px', border: 'none', cursor: 'pointer' }}>
+            <button onClick={() => goSubscribe('trial_expiry')} style={{ width: '100%', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', color: '#fff', fontSize: 13, fontWeight: 700, borderRadius: 14, padding: '11px', border: 'none', cursor: 'pointer' }}>
               Подписаться за 500 ₽
             </button>
           </div>
@@ -259,7 +264,7 @@ export default function Home() {
                 <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, marginBottom: 12 }}>500 ₽ в месяц · отмена в любой момент</div>
               </>
             )}
-            <button onClick={() => router.push('/subscribe')} style={{ width: '100%', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', color: '#fff', fontSize: 13, fontWeight: 700, borderRadius: 14, padding: '11px', border: 'none', cursor: 'pointer' }}>
+            <button onClick={() => goSubscribe('subscribe')} style={{ width: '100%', background: 'linear-gradient(135deg, #C034A5, #7b1fa2)', color: '#fff', fontSize: 13, fontWeight: 700, borderRadius: 14, padding: '11px', border: 'none', cursor: 'pointer' }}>
               Подписаться
             </button>
           </div>
