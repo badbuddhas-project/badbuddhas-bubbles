@@ -50,7 +50,7 @@ export const PracticeCard = memo(function PracticeCard({
     >
       {/* Preview with Play/Lock button */}
       <div style={{ position: 'relative', flexShrink: 0 }}>
-        <BreathVisual category={practice.category} size={80} borderRadius={10} animate={false} />
+        <BreathVisual category={practice.category} size={80} borderRadius={10} showBubbles={false} />
         <button
           onClick={handlePlayClick}
           style={{
