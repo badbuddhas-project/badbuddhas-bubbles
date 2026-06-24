@@ -275,7 +275,7 @@ export default function PracticePage() {
       {/* Hero — full-width BreathVisual */}
       <div style={{ width: '100%', position: 'relative' }}>
         <div style={{ width: '100%', overflow: 'hidden', lineHeight: 0 }}>
-          <BreathVisual category={practice.category} size={390} borderRadius={0} animate={isPlaying} showBubbles={false} />
+          <BreathVisual category={practice.category} size={390} borderRadius={0} animate={true} showBubbles={false} />
         </div>
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 100, background: `linear-gradient(to bottom, transparent 0%, ${C.bg} 100%)` }} />
       </div>
