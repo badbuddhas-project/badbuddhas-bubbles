@@ -34,6 +34,25 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <head>
+        {/* Varioqub anti-flicker */}
+        <style>{`.varioqub-antiflicker{opacity:0!important}`}</style>
+        <Script id="varioqub-antiflicker" strategy="beforeInteractive">{`
+(function(a,n,t,i,f,li,c,k,e,r){
+  a[t]=a[t]||function(){(a[t].a=a[t].a||[]).push(arguments)};
+  n.classList.add(i);c=function(){n.classList.remove(i)};
+  li.callback=c;a[t].antiFlicker=li;setTimeout(c,f);
+})(window,document.documentElement,'ymab','varioqub-antiflicker',4000,{'metrika.107703259':true});
+        `}</Script>
+        {/* Varioqub experiments */}
+        <Script id="varioqub-init" strategy="beforeInteractive">{`
+(function(e,x,pe,r,i,me,nt){
+  e[i]=e[i]||function(){(e[i].a=e[i].a||[]).push(arguments)},
+  me=x.createElement(pe),me.async=1,me.src=r,nt=x.getElementsByTagName(pe)[0],
+  me.addEventListener('error',function(){function cb(t){t=t[t.length-1],'function'==typeof t&&t({flags:{}})};Array.isArray(e[i].a)&&e[i].a.forEach(cb);e[i]=function(){cb(arguments)}}),
+  nt.parentNode.insertBefore(me,nt)
+})(window,document,'script','https://abt.s3.yandex.net/expjs/latest/exp.js','ymab');
+ymab('metrika.107703259','init');
+        `}</Script>
         {/* Yandex.Metrika counter */}
         <Script id="yandex-metrika" strategy="afterInteractive">
           {`
