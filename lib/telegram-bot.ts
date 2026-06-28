@@ -31,6 +31,7 @@ export async function sendTelegramMessage(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(10_000),
     })
   } catch (err) {
     return { ok: false, delivered: false, bot_blocked: false, error: String(err) }
@@ -56,9 +57,14 @@ export async function sendTelegramMessage(
 }
 
 export async function answerCallbackQuery(queryId: string, url?: string): Promise<void> {
-  await fetch(`${API}/answerCallbackQuery`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ callback_query_id: queryId, ...(url ? { url } : {}) }),
-  })
+  try {
+    await fetch(`${API}/answerCallbackQuery`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ callback_query_id: queryId, ...(url ? { url } : {}) }),
+      signal: AbortSignal.timeout(10_000),
+    })
+  } catch (err) {
+    console.warn('[telegram-bot] answerCallbackQuery failed:', err)
+  }
 }

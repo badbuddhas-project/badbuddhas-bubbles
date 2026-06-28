@@ -1,12 +1,21 @@
 import { NextResponse } from 'next/server'
+import { timingSafeEqual } from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import { answerCallbackQuery } from '@/lib/telegram-bot'
 
 const BOT_URL = `https://t.me/${process.env.NEXT_PUBLIC_BOT_USERNAME}`
 
+function safeEqual(a: string | null, b: string | undefined): boolean {
+  if (!a || !b) return false
+  const bufA = Buffer.from(a)
+  const bufB = Buffer.from(b)
+  if (bufA.length !== bufB.length) return false
+  return timingSafeEqual(bufA, bufB)
+}
+
 export async function POST(request: Request) {
   const secret = request.headers.get('x-telegram-bot-api-secret-token')
-  if (secret !== process.env.TELEGRAM_WEBHOOK_SECRET) {
+  if (!safeEqual(secret, process.env.TELEGRAM_WEBHOOK_SECRET)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

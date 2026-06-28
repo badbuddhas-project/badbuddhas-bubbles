@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { timingSafeEqual } from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import { sendTelegramMessage } from '@/lib/telegram-bot'
 import { TRIAL_EXPIRED } from '@/lib/notifications'
@@ -9,9 +10,17 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+function safeEqual(a: string | undefined, b: string | undefined): boolean {
+  if (!a || !b) return false
+  const bufA = Buffer.from(a)
+  const bufB = Buffer.from(b)
+  if (bufA.length !== bufB.length) return false
+  return timingSafeEqual(bufA, bufB)
+}
+
 export async function GET(request: Request) {
   const secret = request.headers.get('authorization')?.replace('Bearer ', '')
-  if (secret !== process.env.CRON_SECRET) {
+  if (!safeEqual(secret, process.env.CRON_SECRET)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
