@@ -91,6 +91,14 @@ export async function POST(request: Request) {
           },
           { onConflict: 'user_id' }
         )
+
+      // Attribute conversion to notification if user was sent a trial_expired message
+      await supabase
+        .from('notification_log')
+        .update({ converted_at: new Date().toISOString() })
+        .eq('user_id', user.id)
+        .eq('trigger', 'trial_expired')
+        .is('converted_at', null)
     } else {
       // status === 'expired'
       await supabase
