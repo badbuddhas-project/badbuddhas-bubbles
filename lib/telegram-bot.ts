@@ -11,7 +11,7 @@ export interface SendResult {
 export async function sendTelegramMessage(
   chatId: number,
   text: string,
-  button?: { text: string; callbackData: string }
+  button?: { text: string; url: string }
 ): Promise<SendResult> {
   const body: Record<string, unknown> = {
     chat_id: chatId,
@@ -21,7 +21,7 @@ export async function sendTelegramMessage(
 
   if (button) {
     body.reply_markup = {
-      inline_keyboard: [[{ text: button.text, callback_data: button.callbackData }]],
+      inline_keyboard: [[{ text: button.text, url: button.url }]],
     }
   }
 
