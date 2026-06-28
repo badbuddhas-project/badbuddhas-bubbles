@@ -82,6 +82,11 @@ export default function Home() {
       router.push(`/practice/${sharedPracticeId}?from=home`)
       return
     }
+    if (tgStartParam === 'subscribe' && !sessionStorage.getItem('subscribe_handled')) {
+      sessionStorage.setItem('subscribe_handled', '1')
+      router.push('/subscribe')
+      return
+    }
     if (tgStartParam === 'activate' && !user?.is_premium && !sessionStorage.getItem('activate_handled')) {
       sessionStorage.setItem('activate_handled', '1')
       router.push('/subscribe?step=activate')
