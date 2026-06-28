@@ -4,8 +4,6 @@ import { createClient } from '@supabase/supabase-js'
 import { sendTelegramMessage } from '@/lib/telegram-bot'
 import { TRIAL_EXPIRED } from '@/lib/notifications'
 
-const HOLDOUT_RATE = 0.1 // 10% do not receive the message — used to measure incremental effect
-
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
@@ -49,7 +47,7 @@ export async function GET(request: Request) {
   }
 
   if (!users?.length) {
-    return NextResponse.json({ sent: 0, holdout: 0, skipped: 0 })
+    return NextResponse.json({ sent: 0, skipped: 0 })
   }
 
   // Exclude users already in notification_log for this trigger
@@ -63,16 +61,13 @@ export async function GET(request: Request) {
   const eligible = users.filter((u) => !loggedIds.has(u.id))
 
   if (!eligible.length) {
-    return NextResponse.json({ sent: 0, holdout: 0, skipped: users.length })
+    return NextResponse.json({ sent: 0, skipped: users.length })
   }
 
   let sent = 0
-  let holdout = 0
   const skipped = users.length - eligible.length
 
   for (const user of eligible) {
-    const group_ = Math.random() < HOLDOUT_RATE ? 'holdout' : 'treatment'
-
     // Reserve the slot — UNIQUE(user_id, trigger) prevents double processing
     const { error: insertError } = await supabase
       .from('notification_log')
@@ -80,7 +75,7 @@ export async function GET(request: Request) {
         user_id: user.id,
         telegram_id: user.telegram_id,
         trigger: TRIAL_EXPIRED.trigger,
-        group_,
+        group_: 'treatment',
       })
 
     if (insertError) {
@@ -88,11 +83,6 @@ export async function GET(request: Request) {
       if (insertError.code !== '23505') {
         console.error('[cron/trial-expired] insert error for user', user.id, insertError)
       }
-      continue
-    }
-
-    if (group_ === 'holdout') {
-      holdout++
       continue
     }
 
@@ -122,6 +112,6 @@ export async function GET(request: Request) {
     await sleep(35) // stay under Telegram's 30 msg/sec rate limit
   }
 
-  console.log(`[cron/trial-expired] sent=${sent} holdout=${holdout} skipped=${skipped}`)
-  return NextResponse.json({ sent, holdout, skipped })
+  console.log(`[cron/trial-expired] sent=${sent} skipped=${skipped}`)
+  return NextResponse.json({ sent, skipped })
 }
