@@ -7,7 +7,8 @@ Telegram Mini App + веб для breathwork практик. Форк от BadBu
 Next.js 14, TypeScript, Tailwind CSS, Supabase, Vercel, Telegram Bot API
 
 ## Supabase
-Общая база с Breathwork: vnmjdzaszvatqeywbylw.supabase.co
+Project ref (runtime/прод): wrkldpemfiqkgsstkaas.supabase.co — выделенный проект «badbuddhasproject». Не создавать новый.
+(Историческая заметка: раньше использовалась общая база с Breathwork vnmjdzaszvatqeywbylw — больше не используется.)
 Таблицы: users, practices, user_practices, favorites
 Storage: audio/, images/
 

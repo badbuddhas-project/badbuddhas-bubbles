@@ -7,7 +7,7 @@ Telegram Mini App + веб для breathwork практик. Форк от BadBu
 
 - **Bot:** новый Telegram бот (токен в .env — TELEGRAM_BOT_TOKEN)
 - **Vercel:** новый проект (отдельный от Breathwork)
-- **Supabase:** ОБЩАЯ база с Breathwork (vnmjdzaszvatqeywbylw.supabase.co) — НЕ создавать новую!
+- **Supabase:** выделенный проект `wrkldpemfiqkgsstkaas.supabase.co` (runtime/прод) — НЕ создавать новый! (Старый ref `vnmjdzaszvatqeywbylw` больше не используется.)
 
 ---
 
