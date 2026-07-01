@@ -215,7 +215,10 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      recalc_user_streak: {
+        Args: { p_user_id: string }
+        Returns: number
+      }
     }
     Enums: {
       practice_category: PracticeCategory
