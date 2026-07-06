@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { BreathingLogo } from './BreathingLogo'
+import { ymEvent, getPlatform } from '@/lib/analytics'
 
 interface EmailGateProps {
   onComplete: (email: string, activated: boolean) => void
@@ -13,6 +14,10 @@ export default function EmailGate({ onComplete }: EmailGateProps) {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    ymEvent('email_gate_shown', { platform: getPlatform() })
+  }, [])
 
   const handleSubmit = async () => {
     const trimmed = email.trim().toLowerCase()
@@ -33,6 +38,7 @@ export default function EmailGate({ onComplete }: EmailGateProps) {
       const data = await res.json()
 
       if (data.success) {
+        ymEvent('email_submitted', { platform: getPlatform(), activated: !!data.activated })
         onComplete(trimmed, data.activated || false)
       } else {
         setError(data.error || 'Не удалось сохранить email')
