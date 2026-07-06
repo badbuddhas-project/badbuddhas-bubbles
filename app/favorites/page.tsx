@@ -1,11 +1,12 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
 import { usePractices } from '@/hooks/usePractices'
 import { useFavorites } from '@/hooks/useFavorites'
 import { useTranslation } from '@/lib/i18n'
+import { ymEvent, getPlatform } from '@/lib/analytics'
 import BreathVisual from '@/components/BreathVisual'
 import { BrandMark } from '@/components/BrandMark'
 import { TabBar } from '@/components/TabBar'
@@ -33,6 +34,8 @@ export default function FavoritesPage() {
   const { favoriteIds, toggleFavorite } = useFavorites()
   const { language } = useTranslation()
   const isPremium = user?.is_premium ?? false
+
+  useEffect(() => { ymEvent('favorites_viewed', { platform: getPlatform() }) }, [])
 
   const favPractices = useMemo(
     () => practices.filter(p => favoriteIds.has(p.id)),
