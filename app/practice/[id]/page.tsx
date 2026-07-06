@@ -432,7 +432,10 @@ export default function PracticePage() {
               return (
                 <div
                   key={rp.id}
-                  onClick={() => router.push(rpLocked ? '/subscribe' : `/practice/${rp.id}?from=${fromTab}`)}
+                  onClick={() => {
+                    if (rpLocked) ymEvent('premium_wall_shown', { practice_id: rp.id, source: 'related', platform: getPlatform() })
+                    router.push(rpLocked ? '/subscribe' : `/practice/${rp.id}?from=${fromTab}`)
+                  }}
                   style={{ display: 'flex', gap: 12, padding: '11px 0', borderBottom: `1px solid ${C.border}`, alignItems: 'center', cursor: 'pointer' }}
                 >
                   <div style={{ flexShrink: 0, width: 64, height: 64, borderRadius: 12, overflow: 'hidden', position: 'relative' }}>

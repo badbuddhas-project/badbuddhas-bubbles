@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useMemo, Suspense } from 'react'
+import { useState, useMemo, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
 import { usePractices } from '@/hooks/usePractices'
 import { useFavorites } from '@/hooks/useFavorites'
 import { useTranslation } from '@/lib/i18n'
+import { ymEvent, getPlatform } from '@/lib/analytics'
 import BreathVisual from '@/components/BreathVisual'
 import { BrandMark } from '@/components/BrandMark'
 import { TabBar } from '@/components/TabBar'
@@ -49,6 +50,8 @@ function CatalogContent() {
 
   const [cat, setCat] = useState('all')
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
+
+  useEffect(() => { ymEvent('catalog_viewed', { platform: getPlatform() }) }, [])
   const [filterOpen, setFilterOpen] = useState(initialInstructor !== 'all')
   const [instrFilter, setInstrFilter] = useState(initialInstructor)
   const [durFilter, setDurFilter] = useState('all')
@@ -85,7 +88,10 @@ function CatalogContent() {
   const activeFiltersCount = [instrFilter, durFilter].filter(f => f !== 'all').length
 
   const handlePractice = (p: Practice) => {
-    if (!hasAccess && p.is_premium) router.push('/subscribe')
+    if (!hasAccess && p.is_premium) {
+      ymEvent('premium_wall_shown', { practice_id: p.id, source: 'catalog', platform: getPlatform() })
+      router.push('/subscribe')
+    }
     else router.push(`/practice/${p.id}?from=catalog`)
   }
 

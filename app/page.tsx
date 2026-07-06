@@ -151,7 +151,10 @@ export default function Home() {
   }, [practices])
 
   const handlePractice = (p: Practice) => {
-    if (!hasAccess && p.is_premium) router.push('/subscribe')
+    if (!hasAccess && p.is_premium) {
+      ymEvent('premium_wall_shown', { practice_id: p.id, source: 'home', platform: getPlatform() })
+      router.push('/subscribe')
+    }
     else router.push(`/practice/${p.id}?from=home`)
   }
 
