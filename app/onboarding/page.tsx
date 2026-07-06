@@ -32,6 +32,8 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (localStorage.getItem(ONBOARDING_KEY) === 'true') {
       router.replace(resolvePostOnboardingRoute())
+    } else {
+      ymEvent('onboarding_started')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

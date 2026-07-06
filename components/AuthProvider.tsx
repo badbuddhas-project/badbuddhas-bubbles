@@ -69,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (data.user?.id) ymIdentify(data.user.id, { is_premium: !!data.user.is_premium, platform: getPlatform(), method: 'telegram' })
             const startParam = (window as any).Telegram?.WebApp?.initDataUnsafe?.start_param
             ymEvent('app_opened', { platform: getPlatform(), method: 'telegram', source: startParam || 'organic' })
+            if (data.isNewUser) ymEvent('user_authorized', { platform: getPlatform(), method: 'telegram' })
 
             if (data.isNewUser && !localStorage.getItem(ONBOARDING_KEY)) {
               router.push('/onboarding')
