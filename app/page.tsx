@@ -120,10 +120,22 @@ export default function Home() {
     if (!isPremium || !user) return
 
     const tgId = user.telegram_id ? `?telegram_id=${user.telegram_id}` : ''
-    fetch(`/api/subscriptions/me${tgId}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.expires_at) setExpiresAt(d.expires_at) })
-      .catch(() => {})
+    const fetchExpiry = () => {
+      fetch(`/api/subscriptions/me${tgId}`, { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d?.expires_at) setExpiresAt(d.expires_at) })
+        .catch(() => {})
+    }
+
+    fetchExpiry()
+
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchExpiry() }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', fetchExpiry)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', fetchExpiry)
+    }
   }, [isPremium, user])
 
   const daysLeft = expiresAt ? Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null
