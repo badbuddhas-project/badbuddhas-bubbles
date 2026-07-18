@@ -32,14 +32,18 @@
 | id | uuid (PK) | |
 | title / title_ru | string | название (EN/RU) |
 | duration_seconds | int | длительность |
-| category | enum: relax / balance / energize | категория |
+| category | enum: **slow / ground / rise** | категория (канонические значения в БД) |
 | language | string (default 'ru') | язык практики |
 | instructor_name | string | инструктор |
 | instructor_avatar_url | string | аватар инструктора (URL медиасервиса) |
 | audio_url | string | аудио (URL медиасервиса Chatium) |
 | preview_image_url | string | обложка |
 | is_premium | bool (default false) | платная ли практика |
+| is_visible | bool (default true) | показывать ли в каталоге (в проде много скрытых практик) |
+| description | string | описание практики (показывается на экране практики) |
 | sort_order | int | порядок в каталоге |
+
+> **Важно (из фактического дампа):** в БД `category` хранится как **`slow` / `ground` / `rise`** — это канонические значения. UI-ярлыки relax / balance / energize это те же категории (relax=slow, balance=ground, energize=rise). При переносе используйте значения из дампа `practices.json`. Также учтите `is_visible` — в проде видимых практик меньше, чем всего (многие `is_visible=false`).
 
 ### user_practices — история прослушиваний
 | Поле | Тип | Назначение |

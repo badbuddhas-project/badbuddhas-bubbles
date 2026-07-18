@@ -39,10 +39,14 @@
 | `onboarding-community.png`, `onboarding-cycle.png` | Иллюстрации онбординга |
 | `plohie_buddy_rus.png` | Иллюстрация (онбординг/маркетинг) |
 
+## Актуальный каталог уже выгружен
+
+Полный дамп таблицы `practices` (36 записей с реальными URL аудио/обложек, категориями `slow`/`ground`/`rise`, флагами `is_premium`/`is_visible`, описаниями) и сами аудиофайлы уже выгружены в папку **`supabase-export/`** (в `.gitignore`, передаётся отдельно): `practices.json`, аудио в `dasha_chen_audio/` и `other_practices_audio/<инструктор>/`, таблицы сопоставления `full_track_map.csv` / `full_track_map.md`. Это авторитетный источник — актуальнее, чем мастера в `badbuddhas-content/`.
+
 ## Что сделать при переезде
 
-1. Экспортировать актуальную таблицу `practices` из Supabase.
-2. Скачать текущие аудио/картинки из Supabase Storage (по URL из `practices`) — это то, что реально в проде; `badbuddhas-content/` может отставать.
+1. Взять актуальный каталог из `supabase-export/practices.json` (уже выгружен).
+2. Взять аудио из `supabase-export/` (уже скачано); сверять «файл → название» по `full_track_map.csv` — имена файлов техничные и не совпадают с названиями в приложении.
 3. Загрузить всё в медиасервис Chatium.
 4. Прописать новые URL в Heap `practices`.
 5. Проверить каждую практику: играет, seek работает, обложка на месте.
