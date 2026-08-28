@@ -275,5 +275,8 @@ export async function GET(request: Request) {
 
   const summary = { mode: dryRun ? 'dry-run' : 'live', phase, exportId, exportFrom: fromDate, result }
   console.log('[reconcile] summary', JSON.stringify({ ...summary, result: result ? { ...result, intended: undefined } : null }))
+  if (dryRun && result?.intended?.length) {
+    console.log('[reconcile] intended', JSON.stringify(result.intended))
+  }
   return NextResponse.json(summary)
 }
