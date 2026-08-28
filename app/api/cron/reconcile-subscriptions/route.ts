@@ -12,15 +12,14 @@
  * just lapsed) against GetCourse and extends access when GC confirms a recent payment
  * for the app product.
  *
- * WHY TWO-PHASE
+ * WHY TWO-PHASE (STATELESS)
  * GetCourse exports are asynchronous and take minutes to generate — far longer than a
- * serverless function may run. So we never poll inline. Instead each run:
- *   PHASE A: if a previous run left a pending export id that is now READY, fetch and
- *            reconcile it, then clear it. If it is still generating, wait (return) and
- *            try again next run. If it is gone/expired, drop it.
- *   PHASE B: start a fresh bulk paid-deals export and store its id for the next run.
- * State lives in public.reconcile_state (single row, id=1). With a daily cron the
- * effective latency is ~24h; two manual runs a few minutes apart reconcile immediately.
+ * serverless function may run. GetCourse dedups exports: identical params return the
+ * SAME export_id for the rest of the day. So each run just requests the (day-granular)
+ * export and tries to fetch it: the day's first run creates it (status pending); a
+ * later run the same day gets the same id, now generated, and reconciles it. No stored
+ * state needed. Two cron runs ~20min apart per day (see vercel.json) give same-day
+ * reconciliation; two manual runs a few minutes apart do the same.
  *
  * SAFETY MODEL
  * - EXTEND-ONLY. Never sets is_premium=false, never shortens expires_at. Revocation
@@ -255,40 +254,26 @@ export async function GET(request: Request) {
 
   const now = Date.now()
 
-  const { data: state, error: stateErr } = await supabase
-    .from('reconcile_state')
-    .select('pending_export_id, started_at')
-    .eq('id', 1)
-    .maybeSingle()
-  console.log(`[reconcile] state read=${JSON.stringify(state)} err=${stateErr?.message ?? ''} code=${stateErr?.code ?? ''}`)
-
-  let phase = 'idle'
-  let result: Awaited<ReturnType<typeof processExport>> | null = null
-
-  // PHASE A — consume a previously started export if it is ready.
-  if (state?.pending_export_id) {
-    const r = await fetchExport(state.pending_export_id, apiKey)
-    if (r.status === 'ready') {
-      result = await processExport(r.items, r.fields, supabase, dryRun, now)
-      await supabase.from('reconcile_state').update({ pending_export_id: null, updated_at: new Date().toISOString() }).eq('id', 1)
-      phase = 'processed'
-    } else if (r.status === 'pending') {
-      // still generating — leave it, retry next run, do not start a duplicate
-      return NextResponse.json({ mode: dryRun ? 'dry-run' : 'live', phase: 'waiting', pendingExportId: state.pending_export_id, startedAt: state.started_at })
-    } else {
-      phase = 'dropped-stale'
-    }
+  // STATELESS two-phase via GetCourse's export dedup: identical export params return
+  // the SAME export_id for the rest of the day, so we need no stored state. The day's
+  // first cron run creates the export (status=pending); a later run the same day gets
+  // the same id, now generated, and processes it. `fromDate` is day-granular so all
+  // runs on a given day share one export.
+  const fromDate = new Date(now - EXPORT_WINDOW_DAYS * 864e5).toISOString().slice(0, 10)
+  const exportId = await startExport(`${BASE_URL}/deals?key=${apiKey}&status=payed&created_at[from]=${fromDate}`)
+  if (!exportId) {
+    return NextResponse.json({ mode: dryRun ? 'dry-run' : 'live', phase: 'start-failed', exportFrom: fromDate }, { status: 502 })
   }
 
-  // PHASE B — start a fresh export for the next run.
-  const fromDate = new Date(now - EXPORT_WINDOW_DAYS * 864e5).toISOString().slice(0, 10)
-  const freshId = await startExport(`${BASE_URL}/deals?key=${apiKey}&status=payed&created_at[from]=${fromDate}`)
-  await supabase
-    .from('reconcile_state')
-    .update({ pending_export_id: freshId, started_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-    .eq('id', 1)
+  const r = await fetchExport(exportId, apiKey)
+  let phase: string = r.status // 'pending' | 'gone' | (below) 'processed'
+  let result: Awaited<ReturnType<typeof processExport>> | null = null
+  if (r.status === 'ready') {
+    result = await processExport(r.items, r.fields, supabase, dryRun, now)
+    phase = 'processed'
+  }
 
-  const summary = { mode: dryRun ? 'dry-run' : 'live', phase, startedExportId: freshId, exportFrom: fromDate, result }
+  const summary = { mode: dryRun ? 'dry-run' : 'live', phase, exportId, exportFrom: fromDate, result }
   console.log('[reconcile] summary', JSON.stringify({ ...summary, result: result ? { ...result, intended: undefined } : null }))
   return NextResponse.json(summary)
 }
