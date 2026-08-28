@@ -76,9 +76,11 @@ async function startExport(url: string): Promise<string | null> {
 async function pollExport(
   exportId: string,
   apiKey: string,
+  tries = 18,
+  intervalMs = 1500,
 ): Promise<{ items: unknown[][]; fields: string[] } | null> {
-  for (let i = 0; i < 18; i++) {
-    await new Promise((r) => setTimeout(r, 1500))
+  for (let i = 0; i < tries; i++) {
+    await new Promise((r) => setTimeout(r, intervalMs))
     try {
       const res = await fetch(`${BASE_URL}/exports/${exportId}?key=${apiKey}`)
       const data = await res.json()
@@ -147,6 +149,32 @@ export async function GET(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } },
   )
+
+  // TEMP diagnostic probe: inspect the GC deals-export layout for a single known
+  // payer, with a generous poll and no candidate-loop time pressure. Runs in dry-run
+  // only. `?probe=<email>` overrides the default; `?probe_only=1` returns after probing.
+  // Remove once the bulk version is in place.
+  if (dryRun) {
+    const probeEmail = (url.searchParams.get('probe') || 'inna_rod@mail.ru').toLowerCase().trim()
+    const uid = await startExport(`${BASE_URL}/users?key=${apiKey}&email=${encodeURIComponent(probeEmail)}`)
+    const uexp = uid ? await pollExport(uid, apiKey, 8, 1500) : null
+    const gcUid = uexp?.items?.[0]?.[0]
+    console.log(`[reconcile][probe] email=${probeEmail} gcUserId=${String(gcUid)} userFields=${JSON.stringify(uexp?.fields)}`)
+    let probe: Record<string, unknown> = { email: probeEmail, gcUserId: gcUid ?? null }
+    if (gcUid) {
+      const did = await startExport(`${BASE_URL}/deals?key=${apiKey}&user_id=${gcUid}&status=payed`)
+      const dexp = did ? await pollExport(did, apiKey, 22, 2000) : null
+      console.log(`[reconcile][probe] dealsCount=${dexp?.items?.length ?? 'null'} dealsFields=${JSON.stringify(dexp?.fields)}`)
+      console.log(`[reconcile][probe] row0=${JSON.stringify(dexp?.items?.[0])}`)
+      console.log(`[reconcile][probe] row1=${JSON.stringify(dexp?.items?.[1])}`)
+      probe = { ...probe, dealsFields: dexp?.fields, dealsCount: dexp?.items?.length ?? null, row0: dexp?.items?.[0], row1: dexp?.items?.[1] }
+    }
+    // Return right after probing unless ?full=1, so the manual Run finishes fast
+    // and reliably surfaces the probe data.
+    if (url.searchParams.get('full') !== '1') {
+      return NextResponse.json({ mode: 'probe', probe })
+    }
+  }
 
   const now = Date.now()
   const lookback = new Date(now - LOOKBACK_DAYS * 24 * 60 * 60 * 1000).toISOString()
