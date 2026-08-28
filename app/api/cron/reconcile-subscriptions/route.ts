@@ -3,53 +3,55 @@
  *
  * WHY THIS EXISTS
  * GetCourse has NO outgoing webhook configured that tells our app about payments
- * (verified: no process in GC posts to /api/webhooks/getcourse). App access is
- * granted only via the "pull" path (/api/getcourse/check-subscription), which fires
- * when a user manually types the email they paid with during onboarding. That path
- * does NOT cover:
+ * (verified: no GC process posts to /api/webhooks/getcourse). App access is granted
+ * only via the "pull" path (/api/getcourse/check-subscription), which fires when a
+ * user manually types their payment email during onboarding. That does NOT cover:
  *   - autopayment renewals (the user never re-enters their email) → they get locked out
  *   - buyers who never completed the email step
- * This cron closes that gap: it periodically re-checks subscriptions that are about to
- * lapse (or just lapsed) against the GetCourse Export API and extends access when GC
- * confirms a recent payment for the app product.
+ * This cron closes that gap: it reconciles subscriptions that are about to lapse (or
+ * just lapsed) against GetCourse and extends access when GC confirms a recent payment
+ * for the app product.
+ *
+ * WHY TWO-PHASE
+ * GetCourse exports are asynchronous and take minutes to generate — far longer than a
+ * serverless function may run. So we never poll inline. Instead each run:
+ *   PHASE A: if a previous run left a pending export id that is now READY, fetch and
+ *            reconcile it, then clear it. If it is still generating, wait (return) and
+ *            try again next run. If it is gone/expired, drop it.
+ *   PHASE B: start a fresh bulk paid-deals export and store its id for the next run.
+ * State lives in public.reconcile_state (single row, id=1). With a daily cron the
+ * effective latency is ~24h; two manual runs a few minutes apart reconcile immediately.
  *
  * SAFETY MODEL
- * - EXTEND-ONLY. This job never sets is_premium=false and never shortens expires_at.
- *   Revocation stays owned by check-subscription / telegram-sync. Worst case here is a
- *   no-op (falls back to today's manual process), never a wrongful lockout.
- * - Uses the LATEST paid deal's DATE (not merely "has a paid deal"), because paid deals
- *   stay "payed" in GC forever. New expiry = latestPaidDate + 30d. Only writes when that
- *   is later than what we already have AND still in the future.
- * - Filters GC deals to the app product (APP_PRODUCT_RE) so an unrelated course purchase
- *   on the same email does not grant app access.
- * - DRY-RUN by default until RECONCILE_LIVE=1 is set (or ?live=1 passed). Dry-run reports
- *   intended changes in the JSON response + logs without writing anything. Validate the
- *   field mapping against real GC data before going live.
+ * - EXTEND-ONLY. Never sets is_premium=false, never shortens expires_at. Revocation
+ *   stays owned by check-subscription / telegram-sync. Worst case here is a no-op.
+ * - Uses the LATEST paid deal's DATE (paid deals stay "payed" in GC forever), filtered
+ *   to the app product. New expiry = latestPaidDate + 30d; only written when later than
+ *   what we have AND still in the future.
+ * - DRY-RUN by default until RECONCILE_LIVE=1 (or ?live=1): reports intended changes
+ *   without writing.
  *
  * AUTH: Authorization: Bearer <CRON_SECRET>, same as the other crons.
  */
 
 import { NextResponse } from 'next/server'
 import { timingSafeEqual } from 'crypto'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 const BASE_URL = 'https://online.badbuddhas.ru/pl/api/account'
 
-// Subscription window (days) around now to re-check: recently lapsed .. about to lapse.
+// Re-check window (days) around now for candidate subscriptions.
 const LOOKBACK_DAYS = 14
 const LOOKAHEAD_DAYS = 2
-// Max subscriptions to attempt per run; a wall-clock budget stops us early anyway.
-const BATCH = 25
-// Stop starting new GC lookups after this many ms (keep headroom under maxDuration).
-const TIME_BUDGET_MS = 50_000
+// Date window for the bulk paid-deals export (covers recent renewals).
+const EXPORT_WINDOW_DAYS = 25
 // One app subscription period.
 const PERIOD_MS = 30 * 24 * 60 * 60 * 1000
 
-// Matches the app-subscription product/offer title in a GC deal row. Keep broad but
-// specific to the paid app product (currently "Черный Баблс | Bubles Black | приложение").
+// Matches the app-subscription product in a GC deal's "Состав заказа" column.
 const APP_PRODUCT_RE = /bubbles?\s*black|приложени|чёрный\s*баблс|черный\s*баблс|баблс/i
 
 function safeEqual(a: string | undefined, b: string | undefined): boolean {
@@ -72,29 +74,25 @@ async function startExport(url: string): Promise<string | null> {
   return null
 }
 
-/** Poll a GC export until it has rows; returns { items, fields } or null. */
-async function pollExport(
-  exportId: string,
-  apiKey: string,
-  tries = 18,
-  intervalMs = 1500,
-): Promise<{ items: unknown[][]; fields: string[] } | null> {
-  for (let i = 0; i < tries; i++) {
-    await new Promise((r) => setTimeout(r, intervalMs))
-    try {
-      const res = await fetch(`${BASE_URL}/exports/${exportId}?key=${apiKey}`)
-      const data = await res.json()
-      if (data?.success && data?.info?.items) {
-        return {
-          items: (data.info.items as unknown[][]) ?? [],
-          fields: (data.info.fields as string[]) ?? [],
-        }
-      }
-    } catch {
-      // transient — keep polling
+type ExportResult =
+  | { status: 'ready'; items: unknown[][]; fields: string[] }
+  | { status: 'pending' }
+  | { status: 'gone' }
+
+/** Single (non-polling) fetch of an export by id. GC error_code 909 = not generated yet. */
+async function fetchExport(id: string, apiKey: string): Promise<ExportResult> {
+  try {
+    const res = await fetch(`${BASE_URL}/exports/${id}?key=${apiKey}`)
+    const data = await res.json()
+    if (data?.success && data?.info?.items) {
+      return { status: 'ready', items: data.info.items as unknown[][], fields: (data.info.fields as string[]) ?? [] }
     }
+    if (data?.error_code === 909) return { status: 'pending' }
+    return { status: 'gone' }
+  } catch {
+    // transient network error — treat as not-ready so we retry next run
+    return { status: 'pending' }
   }
-  return null
 }
 
 /** Find a column index by trying several header-name candidates (case-insensitive). */
@@ -119,14 +117,119 @@ function parseDate(raw: unknown): number | null {
 }
 
 type Intended = {
-  subId: string
   email: string
-  userId: string
-  telegramId: number | null
   currentExpiry: string | null
   newExpiry: string
   dealId: string | null
   paidAt: string
+}
+
+/** Reconcile candidate subscriptions against a ready GC paid-deals export. */
+async function processExport(
+  items: unknown[][],
+  fields: string[],
+  supabase: SupabaseClient,
+  dryRun: boolean,
+  now: number,
+) {
+  const emailCol = findCol(fields, [/^email$/i, /e-?mail/i])
+  const payCol = findCol(fields, [/дата\s*оплат/i, /дата\s*заверш/i, /date_payment$/i, /payed|paid/i])
+  const prodCol = findCol(fields, [/состав\s*заказ/i, /предложени/i, /продукт/i, /состав/i, /offer|product/i])
+  const idCol = findCol(fields, [/id\s*заказа/i, /^id$/i, /deal/i, /номер/i])
+
+  if (emailCol < 0 || payCol < 0 || prodCol < 0) {
+    console.error(`[reconcile] column mapping failed emailCol=${emailCol} payCol=${payCol} prodCol=${prodCol} fields=${JSON.stringify(fields)}`)
+    return { error: 'column-mapping', rows: items.length }
+  }
+
+  // email -> latest app-product paid deal
+  const latest = new Map<string, { ts: number; dealId: string | null }>()
+  for (const row of items) {
+    if (!APP_PRODUCT_RE.test(String(row[prodCol] ?? ''))) continue
+    const email = String(row[emailCol] ?? '').toLowerCase().trim()
+    if (!email) continue
+    const ts = parseDate(row[payCol])
+    if (ts == null) continue
+    const prev = latest.get(email)
+    if (!prev || ts > prev.ts) {
+      latest.set(email, { ts, dealId: idCol >= 0 && row[idCol] != null ? String(row[idCol]) : null })
+    }
+  }
+
+  const lookback = new Date(now - LOOKBACK_DAYS * 24 * 60 * 60 * 1000).toISOString()
+  const lookahead = new Date(now + LOOKAHEAD_DAYS * 24 * 60 * 60 * 1000).toISOString()
+
+  const { data: subs, error: subsErr } = await supabase
+    .from('subscriptions')
+    .select('id, user_id, telegram_id, email, status, expires_at')
+    .not('user_id', 'is', null)
+    .not('email', 'is', null)
+    .gte('expires_at', lookback)
+    .lte('expires_at', lookahead)
+    .order('expires_at', { ascending: true })
+
+  if (subsErr) {
+    console.error('[reconcile] candidate query error:', subsErr.message)
+    return { error: 'db', rows: items.length }
+  }
+
+  const intended: Intended[] = []
+  let extended = 0
+
+  for (const sub of subs ?? []) {
+    const email = String(sub.email).toLowerCase().trim()
+    const m = latest.get(email)
+    if (!m) continue
+
+    const newExpiryTs = m.ts + PERIOD_MS
+    const currentTs = sub.expires_at ? Date.parse(sub.expires_at) : 0
+    // Extend-only: write only when GC says they are paid further than we think and it is future.
+    if (newExpiryTs <= currentTs || newExpiryTs <= now) continue
+
+    const rec: Intended = {
+      email,
+      currentExpiry: sub.expires_at,
+      newExpiry: new Date(newExpiryTs).toISOString(),
+      dealId: m.dealId,
+      paidAt: new Date(m.ts).toISOString(),
+    }
+    intended.push(rec)
+
+    if (!dryRun) {
+      const { error: subErr } = await supabase
+        .from('subscriptions')
+        .update({
+          status: 'active',
+          expires_at: rec.newExpiry,
+          ...(m.dealId ? { gc_deal_id: m.dealId } : {}),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', sub.id)
+      if (subErr) {
+        console.error('[reconcile] sub update failed for', email, subErr.message)
+        continue
+      }
+      const { error: userErr } = await supabase
+        .from('users')
+        .update({ is_premium: true })
+        .eq('id', sub.user_id)
+      if (userErr) {
+        console.error('[reconcile] user update failed for', email, userErr.message)
+        continue
+      }
+      extended++
+      console.log(`[reconcile] extended ${email} -> ${rec.newExpiry} (paid ${rec.paidAt}, deal ${rec.dealId})`)
+    }
+  }
+
+  return {
+    exportRows: items.length,
+    appPayers: latest.size,
+    candidates: subs?.length ?? 0,
+    matched: intended.length,
+    extended: dryRun ? 0 : extended,
+    intended: dryRun ? intended : undefined,
+  }
 }
 
 export async function GET(request: Request) {
@@ -150,198 +253,41 @@ export async function GET(request: Request) {
     { auth: { autoRefreshToken: false, persistSession: false } },
   )
 
-  // TEMP diagnostic probe: ONE bulk paid-deals export (the intended data source for
-  // the reconcile rewrite). Logs whether the export starts, its field headers, row
-  // count and a sample row, so the real GC layout + volume can be confirmed. Dry-run
-  // only; returns right after probing unless ?full=1. Remove after the rewrite.
-  if (dryRun) {
-    // Log the RAW export-endpoint response to learn GC's actual ready/processing shape.
-    const ids = (url.searchParams.get('ids') || '86611013,86611209').split(',').filter(Boolean)
-    const raws: Record<string, string> = {}
-    for (const id of ids) {
-      let bodyStr = ''
-      try {
-        const res = await fetch(`${BASE_URL}/exports/${id}?key=${apiKey}`)
-        bodyStr = (await res.text()).slice(0, 1200)
-      } catch (e) {
-        bodyStr = 'fetch error: ' + String(e)
-      }
-      raws[id] = bodyStr
-      console.log(`[reconcile][probe] raw exports/${id} => ${bodyStr}`)
-    }
-
-    // Also start a fresh export so a later run has a ready id to fetch.
-    const days = Number(url.searchParams.get('days') || '20')
-    const fromDate = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10)
-    let freshId: string | null = null
-    try {
-      const s = await (await fetch(`${BASE_URL}/deals?key=${apiKey}&status=payed&created_at[from]=${fromDate}`)).json()
-      freshId = s?.info?.export_id ? String(s.info.export_id) : null
-    } catch {}
-    console.log(`[reconcile][probe] fresh fromDate=${fromDate} nextFetchId=${freshId}`)
-
-    if (url.searchParams.get('full') !== '1') {
-      return NextResponse.json({ mode: 'probe', raws, nextFetchId: freshId })
-    }
-  }
-
   const now = Date.now()
-  const lookback = new Date(now - LOOKBACK_DAYS * 24 * 60 * 60 * 1000).toISOString()
-  const lookahead = new Date(now + LOOKAHEAD_DAYS * 24 * 60 * 60 * 1000).toISOString()
 
-  // Candidates: real users with an email, whose access is about to lapse or just lapsed.
-  const { data: subs, error: subsErr } = await supabase
-    .from('subscriptions')
-    .select('id, user_id, telegram_id, email, status, expires_at')
-    .not('user_id', 'is', null)
-    .not('email', 'is', null)
-    .gte('expires_at', lookback)
-    .lte('expires_at', lookahead)
-    .order('expires_at', { ascending: true })
-    .limit(BATCH)
+  const { data: state } = await supabase
+    .from('reconcile_state')
+    .select('pending_export_id, started_at')
+    .eq('id', 1)
+    .maybeSingle()
 
-  if (subsErr) {
-    console.error('[reconcile] candidate query error:', subsErr.message)
-    return NextResponse.json({ error: 'DB error' }, { status: 500 })
-  }
+  let phase = 'idle'
+  let result: Awaited<ReturnType<typeof processExport>> | null = null
 
-  const started = Date.now()
-  const intended: Intended[] = []
-  let checked = 0
-  let extended = 0
-  let skippedTime = 0
-
-  for (const sub of subs ?? []) {
-    if (Date.now() - started > TIME_BUDGET_MS) {
-      skippedTime = (subs?.length ?? 0) - checked
-      break
-    }
-    checked++
-
-    const email = String(sub.email).toLowerCase().trim()
-
-    // 1) email -> GC user id
-    const userExportId = await startExport(
-      `${BASE_URL}/users?key=${apiKey}&email=${encodeURIComponent(email)}`,
-    )
-    if (!userExportId) continue
-    const userExport = await pollExport(userExportId, apiKey)
-    const gcUserId = userExport?.items?.[0]?.[0]
-    if (!gcUserId) continue
-
-    // 2) GC user id -> paid deals (with field headers so we can locate date/product)
-    const dealsExportId = await startExport(
-      `${BASE_URL}/deals?key=${apiKey}&user_id=${gcUserId}&status=payed`,
-    )
-    if (!dealsExportId) continue
-    const dealsExport = await pollExport(dealsExportId, apiKey)
-    if (!dealsExport || !dealsExport.items.length) continue
-
-    const { items, fields } = dealsExport
-    const dateCol = findCol(fields, [
-      /дата\s*заверш/i, /дата\s*оплат/i, /completed/i, /payed|paid/i, /дата\s*создан/i, /created/i, /дата/i,
-    ])
-    const productCol = findCol(fields, [/предложени/i, /продукт/i, /названи/i, /offer|product|title/i])
-    const idCol = findCol(fields, [/^id$/i, /номер/i, /deal/i])
-
-    // DIAGNOSTIC (dry-run): dump the real GC deals-export layout so the column
-    // mapping can be verified/fixed. Remove once the bulk version is in place.
-    if (dryRun) {
-      console.log(
-        `[reconcile][diag] ${email} rows=${items.length}`,
-        `dateCol=${dateCol}(${fields[dateCol] ?? '-'})`,
-        `productCol=${productCol}(${fields[productCol] ?? '-'})`,
-        `idCol=${idCol}(${fields[idCol] ?? '-'})`,
-      )
-      console.log('[reconcile][diag] fields=', JSON.stringify(fields))
-      console.log('[reconcile][diag] row0=', JSON.stringify(items[0]))
-    }
-
-    // Keep only rows for the app product (if we can identify the product column).
-    const appRows = productCol >= 0
-      ? items.filter((row) => APP_PRODUCT_RE.test(String(row[productCol] ?? '')))
-      : items
-
-    if (!appRows.length) {
-      if (dryRun) console.log(`[reconcile][diag] ${email} no app-product rows after filter`)
-      continue
-    }
-
-    // Latest paid app deal by date.
-    let bestTs: number | null = null
-    let bestRow: unknown[] | null = null
-    for (const row of appRows) {
-      const ts = dateCol >= 0 ? parseDate(row[dateCol]) : null
-      if (ts != null && (bestTs == null || ts > bestTs)) {
-        bestTs = ts
-        bestRow = row
-      }
-    }
-    // If we could not read a date, we cannot safely compute an expiry — skip (extend-only).
-    if (bestTs == null || bestRow == null) {
-      console.warn('[reconcile] no readable deal date for', email, 'fields=', JSON.stringify(fields))
-      continue
-    }
-
-    const newExpiryTs = bestTs + PERIOD_MS
-    const currentTs = sub.expires_at ? Date.parse(sub.expires_at) : 0
-
-    // Extend-only: write solely when GC says they are paid further than we think AND
-    // that new expiry is still in the future.
-    if (newExpiryTs <= currentTs || newExpiryTs <= now) continue
-
-    const dealId = idCol >= 0 && bestRow[idCol] != null ? String(bestRow[idCol]) : null
-    const rec: Intended = {
-      subId: sub.id,
-      email,
-      userId: sub.user_id,
-      telegramId: sub.telegram_id ?? null,
-      currentExpiry: sub.expires_at,
-      newExpiry: new Date(newExpiryTs).toISOString(),
-      dealId,
-      paidAt: new Date(bestTs).toISOString(),
-    }
-    intended.push(rec)
-
-    if (!dryRun) {
-      const { error: subUpdErr } = await supabase
-        .from('subscriptions')
-        .update({
-          status: 'active',
-          expires_at: rec.newExpiry,
-          ...(dealId ? { gc_deal_id: dealId } : {}),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', sub.id)
-      if (subUpdErr) {
-        console.error('[reconcile] sub update failed for', email, subUpdErr.message)
-        continue
-      }
-
-      const { error: userUpdErr } = await supabase
-        .from('users')
-        .update({ is_premium: true })
-        .eq('id', sub.user_id)
-      if (userUpdErr) {
-        console.error('[reconcile] user update failed for', email, userUpdErr.message)
-        continue
-      }
-      extended++
-      console.log(`[reconcile] extended ${email} -> ${rec.newExpiry} (paid ${rec.paidAt}, deal ${dealId})`)
+  // PHASE A — consume a previously started export if it is ready.
+  if (state?.pending_export_id) {
+    const r = await fetchExport(state.pending_export_id, apiKey)
+    if (r.status === 'ready') {
+      result = await processExport(r.items, r.fields, supabase, dryRun, now)
+      await supabase.from('reconcile_state').update({ pending_export_id: null, updated_at: new Date().toISOString() }).eq('id', 1)
+      phase = 'processed'
+    } else if (r.status === 'pending') {
+      // still generating — leave it, retry next run, do not start a duplicate
+      return NextResponse.json({ mode: dryRun ? 'dry-run' : 'live', phase: 'waiting', pendingExportId: state.pending_export_id, startedAt: state.started_at })
     } else {
-      console.log(`[reconcile][dry] would extend ${email} -> ${rec.newExpiry} (paid ${rec.paidAt}, deal ${dealId})`)
+      phase = 'dropped-stale'
     }
   }
 
-  const summary = {
-    mode: dryRun ? 'dry-run' : 'live',
-    candidates: subs?.length ?? 0,
-    checked,
-    matched: intended.length,
-    extended: dryRun ? 0 : extended,
-    skippedForTime: skippedTime,
-    intended: dryRun ? intended : undefined,
-  }
-  console.log('[reconcile] summary', JSON.stringify({ ...summary, intended: undefined }))
+  // PHASE B — start a fresh export for the next run.
+  const fromDate = new Date(now - EXPORT_WINDOW_DAYS * 864e5).toISOString().slice(0, 10)
+  const freshId = await startExport(`${BASE_URL}/deals?key=${apiKey}&status=payed&created_at[from]=${fromDate}`)
+  await supabase
+    .from('reconcile_state')
+    .update({ pending_export_id: freshId, started_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq('id', 1)
+
+  const summary = { mode: dryRun ? 'dry-run' : 'live', phase, startedExportId: freshId, exportFrom: fromDate, result }
+  console.log('[reconcile] summary', JSON.stringify({ ...summary, result: result ? { ...result, intended: undefined } : null }))
   return NextResponse.json(summary)
 }
