@@ -255,11 +255,12 @@ export async function GET(request: Request) {
 
   const now = Date.now()
 
-  const { data: state } = await supabase
+  const { data: state, error: stateErr } = await supabase
     .from('reconcile_state')
     .select('pending_export_id, started_at')
     .eq('id', 1)
     .maybeSingle()
+  console.log(`[reconcile] state read=${JSON.stringify(state)} err=${stateErr?.message ?? ''} code=${stateErr?.code ?? ''}`)
 
   let phase = 'idle'
   let result: Awaited<ReturnType<typeof processExport>> | null = null
