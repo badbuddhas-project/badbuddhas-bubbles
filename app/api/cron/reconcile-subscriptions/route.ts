@@ -207,12 +207,28 @@ export async function GET(request: Request) {
     const productCol = findCol(fields, [/предложени/i, /продукт/i, /названи/i, /offer|product|title/i])
     const idCol = findCol(fields, [/^id$/i, /номер/i, /deal/i])
 
+    // DIAGNOSTIC (dry-run): dump the real GC deals-export layout so the column
+    // mapping can be verified/fixed. Remove once the bulk version is in place.
+    if (dryRun) {
+      console.log(
+        `[reconcile][diag] ${email} rows=${items.length}`,
+        `dateCol=${dateCol}(${fields[dateCol] ?? '-'})`,
+        `productCol=${productCol}(${fields[productCol] ?? '-'})`,
+        `idCol=${idCol}(${fields[idCol] ?? '-'})`,
+      )
+      console.log('[reconcile][diag] fields=', JSON.stringify(fields))
+      console.log('[reconcile][diag] row0=', JSON.stringify(items[0]))
+    }
+
     // Keep only rows for the app product (if we can identify the product column).
     const appRows = productCol >= 0
       ? items.filter((row) => APP_PRODUCT_RE.test(String(row[productCol] ?? '')))
       : items
 
-    if (!appRows.length) continue
+    if (!appRows.length) {
+      if (dryRun) console.log(`[reconcile][diag] ${email} no app-product rows after filter`)
+      continue
+    }
 
     // Latest paid app deal by date.
     let bestTs: number | null = null
