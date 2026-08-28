@@ -155,30 +155,30 @@ export async function GET(request: Request) {
   // count and a sample row, so the real GC layout + volume can be confirmed. Dry-run
   // only; returns right after probing unless ?full=1. Remove after the rewrite.
   if (dryRun) {
-    const days = Number(url.searchParams.get('days') || '45')
+    // Two-phase: an export started on a previous run has had time to generate, so
+    // fetch it fast here; and kick off a fresh one whose id we surface for next time.
+    const PRIOR_EXPORT_ID = url.searchParams.get('fetch') || '86611013'
+    const fetched = await pollExport(PRIOR_EXPORT_ID, apiKey, 6, 2000)
+    console.log(`[reconcile][probe] fetchId=${PRIOR_EXPORT_ID} count=${fetched?.items?.length ?? 'null'} fields=${JSON.stringify(fetched?.fields)}`)
+    console.log(`[reconcile][probe] row0=${JSON.stringify(fetched?.items?.[0])}`)
+    console.log(`[reconcile][probe] row1=${JSON.stringify(fetched?.items?.[1])}`)
+
+    const days = Number(url.searchParams.get('days') || '20')
     const fromDate = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10)
-    const startUrl = `${BASE_URL}/deals?key=${apiKey}&status=payed&created_at[from]=${fromDate}`
     let startRaw: { success?: boolean; info?: { export_id?: string | number }; error_message?: string; error?: string } | null = null
     try {
-      startRaw = await (await fetch(startUrl)).json()
+      startRaw = await (await fetch(`${BASE_URL}/deals?key=${apiKey}&status=payed&created_at[from]=${fromDate}`)).json()
     } catch (e) {
-      console.log('[reconcile][probe] deals start fetch error:', String(e))
+      console.log('[reconcile][probe] fresh start fetch error:', String(e))
     }
-    const exportId = startRaw?.info?.export_id ? String(startRaw.info.export_id) : null
-    console.log(`[reconcile][probe] fromDate=${fromDate} start.success=${startRaw?.success} export_id=${exportId} err=${startRaw?.error_message ?? startRaw?.error ?? ''}`)
-    const dexp = exportId ? await pollExport(exportId, apiKey, 25, 2000) : null
-    console.log(`[reconcile][probe] dealsCount=${dexp?.items?.length ?? 'null'} fields=${JSON.stringify(dexp?.fields)}`)
-    console.log(`[reconcile][probe] row0=${JSON.stringify(dexp?.items?.[0])}`)
-    console.log(`[reconcile][probe] row1=${JSON.stringify(dexp?.items?.[1])}`)
+    const freshId = startRaw?.info?.export_id ? String(startRaw.info.export_id) : null
+    console.log(`[reconcile][probe] fresh fromDate=${fromDate} success=${startRaw?.success} nextFetchId=${freshId}`)
+
     if (url.searchParams.get('full') !== '1') {
       return NextResponse.json({
         mode: 'probe',
-        fromDate,
-        start: { success: startRaw?.success ?? null, export_id: exportId, error: startRaw?.error_message ?? startRaw?.error ?? null },
-        dealsCount: dexp?.items?.length ?? null,
-        fields: dexp?.fields ?? null,
-        row0: dexp?.items?.[0] ?? null,
-        row1: dexp?.items?.[1] ?? null,
+        fetched: { id: PRIOR_EXPORT_ID, count: fetched?.items?.length ?? null, fields: fetched?.fields ?? null, row0: fetched?.items?.[0] ?? null, row1: fetched?.items?.[1] ?? null },
+        nextFetchId: freshId,
       })
     }
   }
