@@ -150,29 +150,36 @@ export async function GET(request: Request) {
     { auth: { autoRefreshToken: false, persistSession: false } },
   )
 
-  // TEMP diagnostic probe: inspect the GC deals-export layout for a single known
-  // payer, with a generous poll and no candidate-loop time pressure. Runs in dry-run
-  // only. `?probe=<email>` overrides the default; `?probe_only=1` returns after probing.
-  // Remove once the bulk version is in place.
+  // TEMP diagnostic probe: ONE bulk paid-deals export (the intended data source for
+  // the reconcile rewrite). Logs whether the export starts, its field headers, row
+  // count and a sample row, so the real GC layout + volume can be confirmed. Dry-run
+  // only; returns right after probing unless ?full=1. Remove after the rewrite.
   if (dryRun) {
-    const probeEmail = (url.searchParams.get('probe') || 'inna_rod@mail.ru').toLowerCase().trim()
-    const uid = await startExport(`${BASE_URL}/users?key=${apiKey}&email=${encodeURIComponent(probeEmail)}`)
-    const uexp = uid ? await pollExport(uid, apiKey, 8, 1500) : null
-    const gcUid = uexp?.items?.[0]?.[0]
-    console.log(`[reconcile][probe] email=${probeEmail} gcUserId=${String(gcUid)} userFields=${JSON.stringify(uexp?.fields)}`)
-    let probe: Record<string, unknown> = { email: probeEmail, gcUserId: gcUid ?? null }
-    if (gcUid) {
-      const did = await startExport(`${BASE_URL}/deals?key=${apiKey}&user_id=${gcUid}&status=payed`)
-      const dexp = did ? await pollExport(did, apiKey, 22, 2000) : null
-      console.log(`[reconcile][probe] dealsCount=${dexp?.items?.length ?? 'null'} dealsFields=${JSON.stringify(dexp?.fields)}`)
-      console.log(`[reconcile][probe] row0=${JSON.stringify(dexp?.items?.[0])}`)
-      console.log(`[reconcile][probe] row1=${JSON.stringify(dexp?.items?.[1])}`)
-      probe = { ...probe, dealsFields: dexp?.fields, dealsCount: dexp?.items?.length ?? null, row0: dexp?.items?.[0], row1: dexp?.items?.[1] }
+    const days = Number(url.searchParams.get('days') || '45')
+    const fromDate = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10)
+    const startUrl = `${BASE_URL}/deals?key=${apiKey}&status=payed&created_at[from]=${fromDate}`
+    let startRaw: { success?: boolean; info?: { export_id?: string | number }; error_message?: string; error?: string } | null = null
+    try {
+      startRaw = await (await fetch(startUrl)).json()
+    } catch (e) {
+      console.log('[reconcile][probe] deals start fetch error:', String(e))
     }
-    // Return right after probing unless ?full=1, so the manual Run finishes fast
-    // and reliably surfaces the probe data.
+    const exportId = startRaw?.info?.export_id ? String(startRaw.info.export_id) : null
+    console.log(`[reconcile][probe] fromDate=${fromDate} start.success=${startRaw?.success} export_id=${exportId} err=${startRaw?.error_message ?? startRaw?.error ?? ''}`)
+    const dexp = exportId ? await pollExport(exportId, apiKey, 25, 2000) : null
+    console.log(`[reconcile][probe] dealsCount=${dexp?.items?.length ?? 'null'} fields=${JSON.stringify(dexp?.fields)}`)
+    console.log(`[reconcile][probe] row0=${JSON.stringify(dexp?.items?.[0])}`)
+    console.log(`[reconcile][probe] row1=${JSON.stringify(dexp?.items?.[1])}`)
     if (url.searchParams.get('full') !== '1') {
-      return NextResponse.json({ mode: 'probe', probe })
+      return NextResponse.json({
+        mode: 'probe',
+        fromDate,
+        start: { success: startRaw?.success ?? null, export_id: exportId, error: startRaw?.error_message ?? startRaw?.error ?? null },
+        dealsCount: dexp?.items?.length ?? null,
+        fields: dexp?.fields ?? null,
+        row0: dexp?.items?.[0] ?? null,
+        row1: dexp?.items?.[1] ?? null,
+      })
     }
   }
 
