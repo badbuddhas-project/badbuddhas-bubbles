@@ -8,9 +8,16 @@
  * user manually types their payment email during onboarding. That does NOT cover:
  *   - autopayment renewals (the user never re-enters their email) → they get locked out
  *   - buyers who never completed the email step
- * This cron closes that gap: it reconciles subscriptions that are about to lapse (or
- * just lapsed) against GetCourse and extends access when GC confirms a recent payment
- * for the app product.
+ * This cron closes that gap. It runs two reconciliations against the same GC export:
+ *   1. RENEWALS — subscriptions about to lapse (or just lapsed) get extended when GC
+ *      confirms a recent payment for the app product.
+ *   2. MISSING ROWS — a payer who has NO subscription row linked to them at all gets
+ *      one created. This happens when someone registers in the app within minutes of
+ *      paying: check-subscription runs before GC's export reports the fresh deal, so
+ *      nothing is written, the user coasts on their trial and loses access when it
+ *      ends (case: s_lebediuk, paid 20.08 15:36, registered 20.08 15:41). An email-only
+ *      "pending" row (user_id IS NULL, left by check-subscription) is linked instead of
+ *      inserting a duplicate.
  *
  * WHY TWO-PHASE (STATELESS)
  * GetCourse exports are asynchronous and take minutes to generate — far longer than a
@@ -22,7 +29,8 @@
  * reconciliation; two manual runs a few minutes apart do the same.
  *
  * SAFETY MODEL
- * - EXTEND-ONLY. Never sets is_premium=false, never shortens expires_at. Revocation
+ * - EXTEND-ONLY. Never sets is_premium=false, never shortens expires_at, never grants
+ *   access GC has not confirmed a paid app-product deal for. Revocation
  *   stays owned by check-subscription / telegram-sync. Worst case here is a no-op.
  * - Uses the LATEST paid deal's DATE (paid deals stay "payed" in GC forever), filtered
  *   to the app product. New expiry = latestPaidDate + 30d; only written when later than
@@ -123,6 +131,145 @@ type Intended = {
   paidAt: string
 }
 
+type IntendedNew = {
+  email: string
+  userId: string
+  telegramId: number | null
+  newExpiry: string
+  dealId: string | null
+  paidAt: string
+  /** 'insert' = no row at all; 'link' = adopting an email-only pending row. */
+  via: 'insert' | 'link'
+}
+
+type PaidDeal = { ts: number; dealId: string | null }
+
+/** Dedupe rows by id, keeping the first occurrence. */
+function byId<T extends { id: string }>(rows: T[]): T[] {
+  const seen: Record<string, true> = {}
+  const out: T[] = []
+  for (const r of rows) {
+    if (seen[r.id]) continue
+    seen[r.id] = true
+    out.push(r)
+  }
+  return out
+}
+
+/**
+ * Second reconciliation pass: confirmed payers who have NO subscription row linked to
+ * them. Bounded by the export's payer list (tens of emails), so it costs a handful of
+ * queries regardless of how large `users` grows.
+ */
+async function processMissingRows(
+  latest: Map<string, PaidDeal>,
+  supabase: SupabaseClient,
+  dryRun: boolean,
+  now: number,
+) {
+  // Only payers whose paid period still covers today can gain anything here.
+  const emails: string[] = []
+  latest.forEach((m, email) => {
+    if (m.ts + PERIOD_MS > now) emails.push(email)
+  })
+  if (!emails.length) return { payersInPeriod: 0, matched: 0, created: 0, intendedNew: undefined as IntendedNew[] | undefined }
+
+  const cols = 'id, telegram_id, username, email, verified_email'
+  const [byVerified, byEmail] = await Promise.all([
+    supabase.from('users').select(cols).in('verified_email', emails),
+    supabase.from('users').select(cols).in('email', emails),
+  ])
+  if (byVerified.error || byEmail.error) {
+    console.error('[reconcile] missing-rows user query error:', byVerified.error?.message ?? byEmail.error?.message)
+    return { error: 'db-users' as const, payersInPeriod: emails.length, matched: 0, created: 0 }
+  }
+
+  const users = byId([...(byVerified.data ?? []), ...(byEmail.data ?? [])])
+  if (!users.length) return { payersInPeriod: emails.length, matched: 0, created: 0, intendedNew: undefined }
+
+  // Which of them already have a subscription row, and which pending (user_id IS NULL)
+  // rows exist for these emails — those get adopted rather than duplicated.
+  const [linked, pending] = await Promise.all([
+    supabase.from('subscriptions').select('user_id').in('user_id', users.map((u) => u.id)),
+    supabase.from('subscriptions').select('id, email').is('user_id', null).in('email', emails),
+  ])
+  if (linked.error || pending.error) {
+    console.error('[reconcile] missing-rows subs query error:', linked.error?.message ?? pending.error?.message)
+    return { error: 'db-subs' as const, payersInPeriod: emails.length, matched: 0, created: 0 }
+  }
+
+  const hasSub = new Set((linked.data ?? []).map((s) => s.user_id as string))
+  const pendingByEmail = new Map<string, string>()
+  for (const p of pending.data ?? []) {
+    const e = String(p.email ?? '').toLowerCase().trim()
+    if (e && !pendingByEmail.has(e)) pendingByEmail.set(e, p.id as string)
+  }
+
+  const intendedNew: IntendedNew[] = []
+  let created = 0
+
+  for (const user of users) {
+    if (hasSub.has(user.id)) continue
+
+    // The email GC confirmed payment for — verified_email wins, it is the payment email.
+    const email = [user.verified_email, user.email]
+      .map((e) => String(e ?? '').toLowerCase().trim())
+      .find((e) => e && latest.has(e))
+    if (!email) continue
+
+    const m = latest.get(email)!
+    const newExpiryTs = m.ts + PERIOD_MS
+    if (newExpiryTs <= now) continue
+
+    const pendingId = pendingByEmail.get(email) ?? null
+    const rec: IntendedNew = {
+      email,
+      userId: user.id,
+      telegramId: (user.telegram_id as number | null) ?? null,
+      newExpiry: new Date(newExpiryTs).toISOString(),
+      dealId: m.dealId,
+      paidAt: new Date(m.ts).toISOString(),
+      via: pendingId ? 'link' : 'insert',
+    }
+    intendedNew.push(rec)
+    if (dryRun) continue
+
+    const payload = {
+      user_id: user.id,
+      email,
+      status: 'active',
+      expires_at: rec.newExpiry,
+      ...(m.dealId ? { gc_deal_id: m.dealId } : {}),
+      ...(user.telegram_id ? { telegram_id: user.telegram_id } : {}),
+      ...(user.username ? { tg_username: user.username } : {}),
+      updated_at: new Date().toISOString(),
+    }
+
+    const { error: writeErr } = pendingId
+      ? await supabase.from('subscriptions').update(payload).eq('id', pendingId)
+      : await supabase.from('subscriptions').insert(payload)
+    if (writeErr) {
+      console.error(`[reconcile] missing-row ${rec.via} failed for`, email, writeErr.message)
+      continue
+    }
+
+    const { error: userErr } = await supabase.from('users').update({ is_premium: true }).eq('id', user.id)
+    if (userErr) {
+      console.error('[reconcile] missing-row user update failed for', email, userErr.message)
+      continue
+    }
+    created++
+    console.log(`[reconcile] ${rec.via}ed subscription for ${email} -> ${rec.newExpiry} (paid ${rec.paidAt}, deal ${rec.dealId})`)
+  }
+
+  return {
+    payersInPeriod: emails.length,
+    matched: intendedNew.length,
+    created: dryRun ? 0 : created,
+    intendedNew: dryRun ? intendedNew : undefined,
+  }
+}
+
 /** Reconcile candidate subscriptions against a ready GC paid-deals export. */
 async function processExport(
   items: unknown[][],
@@ -142,7 +289,7 @@ async function processExport(
   }
 
   // email -> latest app-product paid deal
-  const latest = new Map<string, { ts: number; dealId: string | null }>()
+  const latest = new Map<string, PaidDeal>()
   for (const row of items) {
     if (!APP_PRODUCT_RE.test(String(row[prodCol] ?? ''))) continue
     const email = String(row[emailCol] ?? '').toLowerCase().trim()
@@ -221,6 +368,8 @@ async function processExport(
     }
   }
 
+  const missingRows = await processMissingRows(latest, supabase, dryRun, now)
+
   return {
     exportRows: items.length,
     appPayers: latest.size,
@@ -228,6 +377,7 @@ async function processExport(
     matched: intended.length,
     extended: dryRun ? 0 : extended,
     intended: dryRun ? intended : undefined,
+    missingRows,
   }
 }
 
@@ -274,9 +424,15 @@ export async function GET(request: Request) {
   }
 
   const summary = { mode: dryRun ? 'dry-run' : 'live', phase, exportId, exportFrom: fromDate, result }
-  console.log('[reconcile] summary', JSON.stringify({ ...summary, result: result ? { ...result, intended: undefined } : null }))
+  const compact = result
+    ? { ...result, intended: undefined, missingRows: result.missingRows ? { ...result.missingRows, intendedNew: undefined } : undefined }
+    : null
+  console.log('[reconcile] summary', JSON.stringify({ ...summary, result: compact }))
   if (dryRun && result?.intended?.length) {
     console.log('[reconcile] intended', JSON.stringify(result.intended))
+  }
+  if (dryRun && result?.missingRows?.intendedNew?.length) {
+    console.log('[reconcile] intendedNew', JSON.stringify(result.missingRows.intendedNew))
   }
   return NextResponse.json(summary)
 }
