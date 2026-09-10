@@ -18,6 +18,12 @@
  *      ends (case: s_lebediuk, paid 20.08 15:36, registered 20.08 15:41). An email-only
  *      "pending" row (user_id IS NULL, left by check-subscription) is linked instead of
  *      inserting a duplicate.
+ *   3. TRIAL REQUESTS — someone who signed up for the free "14 дней в приложении" offer
+ *      in GC but never got a trial in the app, because the app grants one only on
+ *      account creation (telegram-sync sets trial_ends_at only while it is null). They
+ *      see the 3 free practices and think the trial is broken (case: bbblisful,
+ *      requested 26.08, trial had lapsed 05.07). Needs its own export: the trial product
+ *      is free, so it never appears in the status=payed one.
  *
  * WHY TWO-PHASE (STATELESS)
  * GetCourse exports are asynchronous and take minutes to generate — far longer than a
@@ -57,9 +63,14 @@ const LOOKAHEAD_DAYS = 2
 const EXPORT_WINDOW_DAYS = 25
 // One app subscription period.
 const PERIOD_MS = 30 * 24 * 60 * 60 * 1000
+// One trial period, matching what register/telegram-sync hand out.
+const TRIAL_MS = 14 * 24 * 60 * 60 * 1000
 
 // Matches the app-subscription product in a GC deal's "Состав заказа" column.
 const APP_PRODUCT_RE = /bubbles?\s*black|приложени|чёрный\s*баблс|черный\s*баблс|баблс/i
+// Matches the free trial product ("Черный баблс | trial | 14 дней в приложении").
+// Checked BEFORE APP_PRODUCT_RE, which would otherwise swallow it.
+const TRIAL_PRODUCT_RE = /trial|триал|пробн/i
 
 function safeEqual(a: string | undefined, b: string | undefined): boolean {
   if (!a || !b) return false
@@ -144,6 +155,30 @@ type IntendedNew = {
 
 type PaidDeal = { ts: number; dealId: string | null }
 
+/**
+ * `.in()` builds a GET query string, so a few hundred emails would blow past URL length
+ * limits. Query in chunks and concatenate. Also keeps every response well under
+ * PostgREST's 1000-row page cap.
+ */
+async function selectIn<T>(
+  supabase: SupabaseClient,
+  table: string,
+  cols: string,
+  column: string,
+  values: string[],
+  extra?: (q: any) => any,
+): Promise<{ data: T[] | null; error: { message: string } | null }> {
+  const out: T[] = []
+  for (let i = 0; i < values.length; i += 150) {
+    let q = supabase.from(table).select(cols).in(column, values.slice(i, i + 150))
+    if (extra) q = extra(q)
+    const { data, error } = await q
+    if (error) return { data: null, error }
+    out.push(...((data ?? []) as T[]))
+  }
+  return { data: out, error: null }
+}
+
 /** Dedupe rows by id, keeping the first occurrence. */
 function byId<T extends { id: string }>(rows: T[]): T[] {
   const seen: Record<string, true> = {}
@@ -175,9 +210,10 @@ async function processMissingRows(
   if (!emails.length) return { payersInPeriod: 0, matched: 0, created: 0, intendedNew: undefined as IntendedNew[] | undefined }
 
   const cols = 'id, telegram_id, username, email, verified_email'
+  type UserRow = { id: string; telegram_id: number | null; username: string | null; email: string | null; verified_email: string | null }
   const [byVerified, byEmail] = await Promise.all([
-    supabase.from('users').select(cols).in('verified_email', emails),
-    supabase.from('users').select(cols).in('email', emails),
+    selectIn<UserRow>(supabase, 'users', cols, 'verified_email', emails),
+    selectIn<UserRow>(supabase, 'users', cols, 'email', emails),
   ])
   if (byVerified.error || byEmail.error) {
     console.error('[reconcile] missing-rows user query error:', byVerified.error?.message ?? byEmail.error?.message)
@@ -190,8 +226,8 @@ async function processMissingRows(
   // Which of them already have a subscription row, and which pending (user_id IS NULL)
   // rows exist for these emails — those get adopted rather than duplicated.
   const [linked, pending] = await Promise.all([
-    supabase.from('subscriptions').select('user_id').in('user_id', users.map((u) => u.id)),
-    supabase.from('subscriptions').select('id, email').is('user_id', null).in('email', emails),
+    selectIn<{ user_id: string }>(supabase, 'subscriptions', 'user_id', 'user_id', users.map((u) => u.id)),
+    selectIn<{ id: string; email: string | null }>(supabase, 'subscriptions', 'id, email', 'email', emails, (q) => q.is('user_id', null)),
   ])
   if (linked.error || pending.error) {
     console.error('[reconcile] missing-rows subs query error:', linked.error?.message ?? pending.error?.message)
@@ -291,7 +327,9 @@ async function processExport(
   // email -> latest app-product paid deal
   const latest = new Map<string, PaidDeal>()
   for (const row of items) {
-    if (!APP_PRODUCT_RE.test(String(row[prodCol] ?? ''))) continue
+    const product = String(row[prodCol] ?? '')
+    // The trial product also matches APP_PRODUCT_RE — it must never buy premium.
+    if (TRIAL_PRODUCT_RE.test(product) || !APP_PRODUCT_RE.test(product)) continue
     const email = String(row[emailCol] ?? '').toLowerCase().trim()
     if (!email) continue
     const ts = parseDate(row[payCol])
@@ -381,6 +419,149 @@ async function processExport(
   }
 }
 
+type IntendedTrial = {
+  email: string
+  userId: string
+  telegramId: number | null
+  requestedAt: string
+  currentTrialEnds: string | null
+  newTrialEnds: string
+}
+
+/**
+ * Third reconciliation pass: people who asked for the 14-day trial in GetCourse but
+ * never got it in the app.
+ *
+ * The app hands out a trial exactly once per account (telegram-sync only sets
+ * trial_ends_at when it is still null), and GC never tells us about the request. So
+ * someone who registered months ago, let their trial lapse, and then signed up for the
+ * trial offer sees only the 3 free practices and assumes the trial is broken
+ * (case: bbblisful, requested 26.08, trial had lapsed 05.07).
+ *
+ * The trial is counted from the REQUEST date, so a request whose 14 days have already
+ * elapsed grants nothing — the daily cron catches fresh ones within a day. Extend-only:
+ * never shortens an existing trial, never touches anyone with paid access.
+ */
+async function processTrialRequests(
+  items: unknown[][],
+  fields: string[],
+  supabase: SupabaseClient,
+  dryRun: boolean,
+  now: number,
+) {
+  const emailCol = findCol(fields, [/^email$/i, /e-?mail/i])
+  const createdCol = findCol(fields, [/дата\s*создан/i, /date_create/i, /created/i])
+  const prodCol = findCol(fields, [/состав\s*заказ/i, /предложени/i, /продукт/i, /состав/i, /offer|product/i])
+
+  if (emailCol < 0 || createdCol < 0 || prodCol < 0) {
+    console.error(`[reconcile] trial column mapping failed emailCol=${emailCol} createdCol=${createdCol} prodCol=${prodCol}`)
+    return { error: 'column-mapping' as const, rows: items.length }
+  }
+
+  // email -> latest trial request that could still be worth honouring
+  const requests = new Map<string, number>()
+  for (const row of items) {
+    const product = String(row[prodCol] ?? '')
+    if (!TRIAL_PRODUCT_RE.test(product) || !APP_PRODUCT_RE.test(product)) continue
+    const email = String(row[emailCol] ?? '').toLowerCase().trim()
+    if (!email) continue
+    const ts = parseDate(row[createdCol])
+    if (ts == null || ts + TRIAL_MS <= now) continue
+    const prev = requests.get(email)
+    if (prev == null || ts > prev) requests.set(email, ts)
+  }
+
+  const emails: string[] = []
+  requests.forEach((_ts, email) => emails.push(email))
+  if (!emails.length) return { requestsInWindow: 0, matched: 0, granted: 0, intendedTrials: undefined as IntendedTrial[] | undefined }
+
+  const cols = 'id, telegram_id, email, verified_email, is_premium, trial_ends_at'
+  type TrialUserRow = { id: string; telegram_id: number | null; email: string | null; verified_email: string | null; is_premium: boolean | null; trial_ends_at: string | null }
+  const [byVerified, byEmail] = await Promise.all([
+    selectIn<TrialUserRow>(supabase, 'users', cols, 'verified_email', emails),
+    selectIn<TrialUserRow>(supabase, 'users', cols, 'email', emails),
+  ])
+  if (byVerified.error || byEmail.error) {
+    console.error('[reconcile] trial user query error:', byVerified.error?.message ?? byEmail.error?.message)
+    return { error: 'db-users' as const, requestsInWindow: emails.length, matched: 0, granted: 0 }
+  }
+
+  const users = byId([...(byVerified.data ?? []), ...(byEmail.data ?? [])])
+  if (!users.length) return { requestsInWindow: emails.length, matched: 0, granted: 0, intendedTrials: undefined }
+
+  // Anyone with a live paid subscription needs no trial.
+  const { data: paidSubs, error: subsErr } = await selectIn<{ user_id: string; status: string; expires_at: string | null }>(
+    supabase,
+    'subscriptions',
+    'user_id, status, expires_at',
+    'user_id',
+    users.map((u) => u.id),
+    (q) => q.eq('status', 'active'),
+  )
+  if (subsErr) {
+    console.error('[reconcile] trial subs query error:', subsErr.message)
+    return { error: 'db-subs' as const, requestsInWindow: emails.length, matched: 0, granted: 0 }
+  }
+  const paidUserIds = new Set(
+    (paidSubs ?? [])
+      .filter((s) => s.expires_at && Date.parse(s.expires_at as string) > now)
+      .map((s) => s.user_id as string),
+  )
+
+  const intendedTrials: IntendedTrial[] = []
+  let granted = 0
+
+  for (const user of users) {
+    if (user.is_premium || paidUserIds.has(user.id)) continue
+
+    const email = [user.verified_email, user.email]
+      .map((e) => String(e ?? '').toLowerCase().trim())
+      .find((e) => e && requests.has(e))
+    if (!email) continue
+
+    const requestedTs = requests.get(email)!
+    const currentTs = user.trial_ends_at ? Date.parse(user.trial_ends_at as string) : 0
+    // The bug this pass fixes is "their trial had already lapsed when they asked".
+    // If the trial was still running at request time they DID get their 14 days — the
+    // usual case, since the app grants a trial on the same visit that creates the GC
+    // deal. Comparing end dates instead would fire on all of them for the few minutes
+    // between registration and the deal.
+    if (currentTs >= requestedTs) continue
+
+    const newTrialTs = requestedTs + TRIAL_MS
+    if (newTrialTs <= currentTs) continue
+
+    const rec: IntendedTrial = {
+      email,
+      userId: user.id,
+      telegramId: (user.telegram_id as number | null) ?? null,
+      requestedAt: new Date(requestedTs).toISOString(),
+      currentTrialEnds: (user.trial_ends_at as string | null) ?? null,
+      newTrialEnds: new Date(newTrialTs).toISOString(),
+    }
+    intendedTrials.push(rec)
+    if (dryRun) continue
+
+    const { error: updErr } = await supabase
+      .from('users')
+      .update({ trial_ends_at: rec.newTrialEnds })
+      .eq('id', user.id)
+    if (updErr) {
+      console.error('[reconcile] trial grant failed for', email, updErr.message)
+      continue
+    }
+    granted++
+    console.log(`[reconcile] granted trial to ${email} -> ${rec.newTrialEnds} (requested ${rec.requestedAt})`)
+  }
+
+  return {
+    requestsInWindow: emails.length,
+    matched: intendedTrials.length,
+    granted: dryRun ? 0 : granted,
+    intendedTrials: dryRun ? intendedTrials : undefined,
+  }
+}
+
 export async function GET(request: Request) {
   const secret = request.headers.get('authorization')?.replace('Bearer ', '')
   if (!safeEqual(secret, process.env.CRON_SECRET)) {
@@ -423,11 +604,40 @@ export async function GET(request: Request) {
     phase = 'processed'
   }
 
-  const summary = { mode: dryRun ? 'dry-run' : 'live', phase, exportId, exportFrom: fromDate, result }
+  // Trial requests need their OWN export: the trial product is free, so those deals are
+  // never in the status=payed export above. Same day-granular dedup applies.
+  const trialExportId = await startExport(`${BASE_URL}/deals?key=${apiKey}&created_at[from]=${fromDate}`)
+  let trialPhase = 'start-failed'
+  let trialResult: Awaited<ReturnType<typeof processTrialRequests>> | null = null
+  if (trialExportId) {
+    const tr = await fetchExport(trialExportId, apiKey)
+    trialPhase = tr.status
+    if (tr.status === 'ready') {
+      trialResult = await processTrialRequests(tr.items, tr.fields, supabase, dryRun, now)
+      trialPhase = 'processed'
+    }
+  }
+
+  const summary = {
+    mode: dryRun ? 'dry-run' : 'live',
+    phase,
+    exportId,
+    exportFrom: fromDate,
+    result,
+    trial: { phase: trialPhase, exportId: trialExportId, result: trialResult },
+  }
   const compact = result
     ? { ...result, intended: undefined, missingRows: result.missingRows ? { ...result.missingRows, intendedNew: undefined } : undefined }
     : null
-  console.log('[reconcile] summary', JSON.stringify({ ...summary, result: compact }))
+  const trialCompact = trialResult ? { ...trialResult, intendedTrials: undefined } : null
+  console.log('[reconcile] summary', JSON.stringify({
+    ...summary,
+    result: compact,
+    trial: { ...summary.trial, result: trialCompact },
+  }))
+  if (dryRun && trialResult?.intendedTrials?.length) {
+    console.log('[reconcile] intendedTrials', JSON.stringify(trialResult.intendedTrials))
+  }
   if (dryRun && result?.intended?.length) {
     console.log('[reconcile] intended', JSON.stringify(result.intended))
   }
