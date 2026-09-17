@@ -104,9 +104,14 @@ export async function POST(request: Request) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: user.verified_email }),
           })
-          const checkData = await checkRes.json()
+          const checkData = await checkRes.json().catch(() => ({ status: 'unknown' }))
 
-          if (!checkData.hasSubscription) {
+          if (checkData.status === 'unknown' || (!checkData.hasSubscription && checkData.status !== 'none')) {
+            // GetCourse didn't answer (busy exporting, timeout). That says nothing about
+            // the subscription — keep current access and re-check on the next open.
+            // Revoking here locked paying users out minutes after their autopayment.
+            console.log('[telegram-sync] GC unavailable, keeping current access for:', user.verified_email)
+          } else if (!checkData.hasSubscription) {
             await supabase.from('users').update({ is_premium: false }).eq('id', user.id)
             await supabase
               .from('subscriptions')

@@ -38,9 +38,10 @@
  * - EXTEND-ONLY. Never sets is_premium=false, never shortens expires_at, never grants
  *   access GC has not confirmed a paid app-product deal for. Revocation
  *   stays owned by check-subscription / telegram-sync. Worst case here is a no-op.
- * - Uses the LATEST paid deal's DATE (paid deals stay "payed" in GC forever), filtered
- *   to the app product. New expiry = latestPaidDate + 30d; only written when later than
- *   what we have AND still in the future.
+ * - Uses the LATEST real app payment's DATE (paid deals stay "payed" in GC forever, and
+ *   free deals are "payed" too — see lib/getcourse isAppPayment). New expiry =
+ *   latestPaidDate + 30d + renewal grace; only written when later than what we have AND
+ *   still in the future.
  * - DRY-RUN by default until RECONCILE_LIVE=1 (or ?live=1): reports intended changes
  *   without writing.
  *
@@ -50,27 +51,28 @@
 import { NextResponse } from 'next/server'
 import { timingSafeEqual } from 'crypto'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import {
+  GC_BASE_URL as BASE_URL,
+  APP_PRODUCT_RE,
+  TRIAL_PRODUCT_RE,
+  accessEndsAt,
+  findCol,
+  latestAppPayments,
+  mapDealColumns,
+  parseDate,
+  type AppPayment,
+} from '@/lib/getcourse'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
-
-const BASE_URL = 'https://online.badbuddhas.ru/pl/api/account'
 
 // Re-check window (days) around now for candidate subscriptions.
 const LOOKBACK_DAYS = 14
 const LOOKAHEAD_DAYS = 2
 // Date window for the bulk paid-deals export (covers recent renewals).
 const EXPORT_WINDOW_DAYS = 25
-// One app subscription period.
-const PERIOD_MS = 30 * 24 * 60 * 60 * 1000
 // One trial period, matching what register/telegram-sync hand out.
 const TRIAL_MS = 14 * 24 * 60 * 60 * 1000
-
-// Matches the app-subscription product in a GC deal's "Состав заказа" column.
-const APP_PRODUCT_RE = /bubbles?\s*black|приложени|чёрный\s*баблс|черный\s*баблс|баблс/i
-// Matches the free trial product ("Черный баблс | trial | 14 дней в приложении").
-// Checked BEFORE APP_PRODUCT_RE, which would otherwise swallow it.
-const TRIAL_PRODUCT_RE = /trial|триал|пробн/i
 
 function safeEqual(a: string | undefined, b: string | undefined): boolean {
   if (!a || !b) return false
@@ -113,27 +115,6 @@ async function fetchExport(id: string, apiKey: string): Promise<ExportResult> {
   }
 }
 
-/** Find a column index by trying several header-name candidates (case-insensitive). */
-function findCol(fields: string[], candidates: RegExp[]): number {
-  for (const re of candidates) {
-    const idx = fields.findIndex((f) => re.test(f))
-    if (idx >= 0) return idx
-  }
-  return -1
-}
-
-function parseDate(raw: unknown): number | null {
-  if (raw == null) return null
-  const s = String(raw).trim()
-  if (!s) return null
-  // GC dates look like "2026-08-27 15:54:00"; treat as Moscow time (UTC+3) if no tz.
-  const iso = /\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(s) && !/[zZ+]/.test(s)
-    ? s.replace(' ', 'T') + '+03:00'
-    : s
-  const t = Date.parse(iso)
-  return Number.isNaN(t) ? null : t
-}
-
 type Intended = {
   email: string
   currentExpiry: string | null
@@ -152,8 +133,6 @@ type IntendedNew = {
   /** 'insert' = no row at all; 'link' = adopting an email-only pending row. */
   via: 'insert' | 'link'
 }
-
-type PaidDeal = { ts: number; dealId: string | null }
 
 /**
  * `.in()` builds a GET query string, so a few hundred emails would blow past URL length
@@ -197,7 +176,7 @@ function byId<T extends { id: string }>(rows: T[]): T[] {
  * queries regardless of how large `users` grows.
  */
 async function processMissingRows(
-  latest: Map<string, PaidDeal>,
+  latest: Map<string, AppPayment>,
   supabase: SupabaseClient,
   dryRun: boolean,
   now: number,
@@ -205,7 +184,7 @@ async function processMissingRows(
   // Only payers whose paid period still covers today can gain anything here.
   const emails: string[] = []
   latest.forEach((m, email) => {
-    if (m.ts + PERIOD_MS > now) emails.push(email)
+    if (accessEndsAt(m.ts) > now) emails.push(email)
   })
   if (!emails.length) return { payersInPeriod: 0, matched: 0, created: 0, intendedNew: undefined as IntendedNew[] | undefined }
 
@@ -254,7 +233,7 @@ async function processMissingRows(
     if (!email) continue
 
     const m = latest.get(email)!
-    const newExpiryTs = m.ts + PERIOD_MS
+    const newExpiryTs = accessEndsAt(m.ts)
     if (newExpiryTs <= now) continue
 
     const pendingId = pendingByEmail.get(email) ?? null
@@ -314,31 +293,14 @@ async function processExport(
   dryRun: boolean,
   now: number,
 ) {
-  const emailCol = findCol(fields, [/^email$/i, /e-?mail/i])
-  const payCol = findCol(fields, [/дата\s*оплат/i, /дата\s*заверш/i, /date_payment$/i, /payed|paid/i])
-  const prodCol = findCol(fields, [/состав\s*заказ/i, /предложени/i, /продукт/i, /состав/i, /offer|product/i])
-  const idCol = findCol(fields, [/id\s*заказа/i, /^id$/i, /deal/i, /номер/i])
-
-  if (emailCol < 0 || payCol < 0 || prodCol < 0) {
-    console.error(`[reconcile] column mapping failed emailCol=${emailCol} payCol=${payCol} prodCol=${prodCol} fields=${JSON.stringify(fields)}`)
+  const cols = mapDealColumns(fields)
+  if (!cols) {
+    console.error(`[reconcile] column mapping failed fields=${JSON.stringify(fields)}`)
     return { error: 'column-mapping', rows: items.length }
   }
 
-  // email -> latest app-product paid deal
-  const latest = new Map<string, PaidDeal>()
-  for (const row of items) {
-    const product = String(row[prodCol] ?? '')
-    // The trial product also matches APP_PRODUCT_RE — it must never buy premium.
-    if (TRIAL_PRODUCT_RE.test(product) || !APP_PRODUCT_RE.test(product)) continue
-    const email = String(row[emailCol] ?? '').toLowerCase().trim()
-    if (!email) continue
-    const ts = parseDate(row[payCol])
-    if (ts == null) continue
-    const prev = latest.get(email)
-    if (!prev || ts > prev.ts) {
-      latest.set(email, { ts, dealId: idCol >= 0 && row[idCol] != null ? String(row[idCol]) : null })
-    }
-  }
+  // email -> latest real app payment (free "payed" deals and the trial excluded)
+  const latest = latestAppPayments(items, cols)
 
   const lookback = new Date(now - LOOKBACK_DAYS * 24 * 60 * 60 * 1000).toISOString()
   const lookahead = new Date(now + LOOKAHEAD_DAYS * 24 * 60 * 60 * 1000).toISOString()
@@ -365,7 +327,7 @@ async function processExport(
     const m = latest.get(email)
     if (!m) continue
 
-    const newExpiryTs = m.ts + PERIOD_MS
+    const newExpiryTs = accessEndsAt(m.ts)
     const currentTs = sub.expires_at ? Date.parse(sub.expires_at) : 0
     // Extend-only: write only when GC says they are paid further than we think and it is future.
     if (newExpiryTs <= currentTs || newExpiryTs <= now) continue

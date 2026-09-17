@@ -127,6 +127,9 @@ function SubscribePage() {
         })
         ymEvent('subscription_activated', { platform: getPlatform() })
         setStep('success')
+      } else if (data.status === 'unknown') {
+        ymEvent('subscription_check_failed', { reason: 'gc_unavailable', platform: getPlatform() })
+        setError('Не удалось связаться с GetCourse. Попробуйте ещё раз через минуту')
       } else {
         ymEvent('subscription_check_failed', { reason: 'not_found', platform: getPlatform() })
         setError('Подписка не найдена. Проверьте email или подождите несколько минут после оплаты')

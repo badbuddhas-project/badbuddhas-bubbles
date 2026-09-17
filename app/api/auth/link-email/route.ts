@@ -4,8 +4,9 @@
  * Supports both JWT cookie (web) and telegram_id (Telegram Mini App).
  *
  * Body: { email: string, telegram_id?: number, activate_premium?: boolean }
- * - activate_premium: true → also sets is_premium=true and creates subscription record
- *   (used after successful GetCourse check)
+ * - activate_premium: true → also sets is_premium=true, but only when check-subscription
+ *   has already cached a live GC-confirmed subscription for this email (the flag comes
+ *   from the client and is not trusted on its own)
  * - activate_premium: false/absent → only saves email (used by EmailGate)
  */
 
@@ -90,12 +91,30 @@ export async function POST(request: Request) {
 
     const normalizedEmail = email.toLowerCase().trim()
 
-    // Build update payload — only set is_premium when explicitly activating
+    // activate_premium comes from the client, so it is a request, not proof of payment.
+    // Honour it only if check-subscription has already confirmed a payment in GC and
+    // cached it as a live subscription for this email.
+    let premiumConfirmed = false
+    if (activate_premium) {
+      const { data: confirmedSubs } = await supabase
+        .from('subscriptions')
+        .select('id')
+        .eq('email', normalizedEmail)
+        .eq('status', 'active')
+        .gt('expires_at', new Date().toISOString())
+        .limit(1)
+      premiumConfirmed = !!confirmedSubs?.length
+      if (!premiumConfirmed) {
+        console.warn('[link-email] activate_premium without a confirmed subscription, ignoring for:', normalizedEmail)
+      }
+    }
+
+    // Build update payload — only set is_premium when activation is confirmed
     const updatePayload: Record<string, unknown> = {
       email: normalizedEmail,
       verified_email: normalizedEmail,
     }
-    if (activate_premium) {
+    if (premiumConfirmed) {
       updatePayload.is_premium = true
     }
 
@@ -140,46 +159,26 @@ export async function POST(request: Request) {
       console.log('[link-email] Pending subscription activated for user:', userId)
     }
 
-    // Create/update subscription record only when activating premium
-    if (activate_premium) {
-      const telegramId = updateData?.telegram_id ?? null
+    // Fill in Telegram details on this user's subscription. The row itself and its
+    // expiry were written by check-subscription from the GC payment date — do not reset
+    // expires_at here: "now + 30 days" drifted away from GC's billing date and lapsed
+    // access hours before each autopayment.
+    if (premiumConfirmed) {
       const { data: userData } = await supabase
         .from('users')
         .select('username')
         .eq('id', userId)
         .single()
-      const tgUsername = userData?.username ?? null
 
-      const { data: existingSub } = await supabase
+      const { error: updErr } = await supabase
         .from('subscriptions')
-        .select('id')
-        .eq('email', normalizedEmail)
-        .maybeSingle()
-
-      if (!existingSub) {
-        const { error: insErr } = await supabase.from('subscriptions').insert({
-          user_id: userId,
-          email: normalizedEmail,
-          status: 'active',
-          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          telegram_id: telegramId,
-          tg_username: tgUsername,
+        .update({
+          telegram_id: updateData?.telegram_id ?? null,
+          tg_username: userData?.username ?? null,
+          updated_at: new Date().toISOString(),
         })
-        console.log('[link-email] Created subscription for user:', userId, insErr ? `error: ${insErr.message}` : 'OK')
-      } else {
-        const { error: updErr } = await supabase
-          .from('subscriptions')
-          .update({
-            user_id: userId,
-            status: 'active',
-            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-            telegram_id: telegramId,
-            tg_username: tgUsername,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('email', normalizedEmail)
-        console.log('[link-email] Updated subscription for user:', userId, updErr ? `error: ${updErr.message}` : 'OK')
-      }
+        .eq('user_id', userId)
+      console.log('[link-email] Linked subscription details for user:', userId, updErr ? `error: ${updErr.message}` : 'OK')
     }
 
     // Получить данные юзера для ГК
