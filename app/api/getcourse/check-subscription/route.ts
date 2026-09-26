@@ -31,7 +31,7 @@ type ExportResult =
 
 async function runExport(url: string, apiKey: string): Promise<ExportResult> {
   try {
-    const start = await fetch(url)
+    const start = await fetch(url, { cache: 'no-store' })
     const startData = await start.json()
     if (!startData?.success || !startData?.info?.export_id) {
       console.warn('[check-subscription] export start failed:', startData?.error_code, startData?.error_message)
@@ -41,7 +41,7 @@ async function runExport(url: string, apiKey: string): Promise<ExportResult> {
     const exportId = startData.info.export_id
     for (let i = 0; i < 10; i++) {
       await new Promise(r => setTimeout(r, 3000))
-      const res = await fetch(`${GC_BASE_URL}/exports/${exportId}?key=${apiKey}`)
+      const res = await fetch(`${GC_BASE_URL}/exports/${exportId}?key=${apiKey}`, { cache: 'no-store' })
       const data = await res.json()
       if (data?.success && data?.info?.items) {
         return { status: 'ready', items: data.info.items as unknown[][], fields: (data.info.fields as string[]) ?? [] }

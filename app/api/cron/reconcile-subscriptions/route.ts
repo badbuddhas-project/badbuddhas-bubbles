@@ -85,7 +85,7 @@ function safeEqual(a: string | undefined, b: string | undefined): boolean {
 /** Kick off a GC export, return its export_id (or null on failure). */
 async function startExport(url: string): Promise<string | null> {
   try {
-    const res = await fetch(url)
+    const res = await fetch(url, { cache: 'no-store' })
     const data = await res.json()
     if (data?.success && data?.info?.export_id) return String(data.info.export_id)
   } catch (e) {
@@ -102,7 +102,7 @@ type ExportResult =
 /** Single (non-polling) fetch of an export by id. GC error_code 909 = not generated yet. */
 async function fetchExport(id: string, apiKey: string): Promise<ExportResult> {
   try {
-    const res = await fetch(`${BASE_URL}/exports/${id}?key=${apiKey}`)
+    const res = await fetch(`${BASE_URL}/exports/${id}?key=${apiKey}`, { cache: 'no-store' })
     const data = await res.json()
     if (data?.success && data?.info?.items) {
       return { status: 'ready', items: data.info.items as unknown[][], fields: (data.info.fields as string[]) ?? [] }
