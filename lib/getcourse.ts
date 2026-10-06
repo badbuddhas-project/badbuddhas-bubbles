@@ -6,7 +6,7 @@
 
 export const GC_BASE_URL = 'https://online.badbuddhas.ru/pl/api/account'
 
-/** One paid app period. */
+/** One paid month of the app. */
 export const PERIOD_MS = 30 * 24 * 60 * 60 * 1000
 /**
  * Slack added on top of a period when access is derived from a payment date. GC renews
@@ -88,9 +88,37 @@ export function isAppPayment(row: unknown[], cols: DealColumns): boolean {
   return true
 }
 
-export type AppPayment = { ts: number; dealId: string | null }
+/** What a deal's product buys, read from its name: "| 6 мес" → 6 months, "| 2 нед" → 2 weeks. */
+export type ProductTerm = { months: number } | { weeks: number }
 
-/** Latest real app payment per lower-cased email. */
+/** Products with no term in the name are the monthly plan. */
+export function productTerm(product: string): ProductTerm {
+  const weeks = /(\d+)\s*нед/i.exec(product)
+  if (weeks) {
+    const n = parseInt(weeks[1], 10)
+    if (n >= 1 && n <= 8) return { weeks: n }
+  }
+  const months = /(\d+)\s*мес/i.exec(product)
+  const n = months ? parseInt(months[1], 10) : 1
+  return { months: n >= 1 && n <= 24 ? n : 1 }
+}
+
+/** Access a payment buys: its term plus renewal grace, counted from the payment. */
+export function accessEndsAt(paymentTs: number, term: ProductTerm = { months: 1 }): number {
+  if ('weeks' in term) return paymentTs + term.weeks * 7 * 24 * 60 * 60 * 1000 + RENEWAL_GRACE_MS
+  if (term.months <= 1) return paymentTs + PERIOD_MS + RENEWAL_GRACE_MS
+  const d = new Date(paymentTs)
+  d.setUTCMonth(d.getUTCMonth() + term.months)
+  return d.getTime() + RENEWAL_GRACE_MS
+}
+
+/** A real app payment and the access it buys (`endsAt`, grace included). */
+export type AppPayment = { ts: number; endsAt: number; dealId: string | null }
+
+/**
+ * Per lower-cased email, the app payment whose access runs furthest. Not simply the
+ * latest one: a monthly top-up bought during a 6-month plan must not cut the plan short.
+ */
 export function latestAppPayments(items: unknown[][], cols: DealColumns): Map<string, AppPayment> {
   const latest = new Map<string, AppPayment>()
   for (const row of items) {
@@ -98,15 +126,11 @@ export function latestAppPayments(items: unknown[][], cols: DealColumns): Map<st
     const email = String(row[cols.email] ?? '').toLowerCase().trim()
     if (!email) continue
     const ts = parseDate(row[cols.paidAt])!
+    const endsAt = accessEndsAt(ts, productTerm(String(row[cols.product] ?? '')))
     const prev = latest.get(email)
-    if (!prev || ts > prev.ts) {
-      latest.set(email, { ts, dealId: cols.dealId >= 0 && row[cols.dealId] != null ? String(row[cols.dealId]) : null })
+    if (!prev || endsAt > prev.endsAt) {
+      latest.set(email, { ts, endsAt, dealId: cols.dealId >= 0 && row[cols.dealId] != null ? String(row[cols.dealId]) : null })
     }
   }
   return latest
-}
-
-/** Access a payment buys: one period plus renewal grace, counted from the payment. */
-export function accessEndsAt(paymentTs: number): number {
-  return paymentTs + PERIOD_MS + RENEWAL_GRACE_MS
 }

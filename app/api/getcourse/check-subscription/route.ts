@@ -23,7 +23,7 @@
 
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { GC_BASE_URL, accessEndsAt, latestAppPayments, mapDealColumns } from '@/lib/getcourse'
+import { GC_BASE_URL, latestAppPayments, mapDealColumns, type AppPayment } from '@/lib/getcourse'
 
 type ExportResult =
   | { status: 'ready'; items: unknown[][]; fields: string[] }
@@ -79,15 +79,14 @@ async function askGetCourse(email: string, apiKey: string): Promise<GcVerdict> {
     return { status: 'unknown' }
   }
 
-  // One GC user, so every row carries the same email — take the latest payment overall.
-  let latest: { ts: number; dealId: string | null } | null = null
+  // One GC user, so every row carries the same email — take the furthest-reaching payment.
+  let latest: AppPayment | null = null
   latestAppPayments(dealsExport.items, cols).forEach((p) => {
-    if (!latest || p.ts > latest.ts) latest = p
+    if (!latest || p.endsAt > latest.endsAt) latest = p
   })
   if (!latest) return { status: 'none' }
 
-  const { ts, dealId } = latest as { ts: number; dealId: string | null }
-  const expiresAt = accessEndsAt(ts)
+  const { endsAt: expiresAt, dealId } = latest as AppPayment
   return expiresAt > Date.now() ? { status: 'active', expiresAt, dealId } : { status: 'none' }
 }
 

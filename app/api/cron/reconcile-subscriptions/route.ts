@@ -38,10 +38,10 @@
  * - EXTEND-ONLY. Never sets is_premium=false, never shortens expires_at, never grants
  *   access GC has not confirmed a paid app-product deal for. Revocation
  *   stays owned by check-subscription / telegram-sync. Worst case here is a no-op.
- * - Uses the LATEST real app payment's DATE (paid deals stay "payed" in GC forever, and
- *   free deals are "payed" too — see lib/getcourse isAppPayment). New expiry =
- *   latestPaidDate + 30d + renewal grace; only written when later than what we have AND
- *   still in the future.
+ * - Uses the real app payment whose access runs furthest (paid deals stay "payed" in GC
+ *   forever, and free deals are "payed" too — see lib/getcourse isAppPayment). New expiry =
+ *   paidDate + the product's term (30d, or N months for "N мес" plans) + renewal grace;
+ *   only written when later than what we have AND still in the future.
  * - DRY-RUN by default until RECONCILE_LIVE=1 (or ?live=1): reports intended changes
  *   without writing.
  *
@@ -55,7 +55,6 @@ import {
   GC_BASE_URL as BASE_URL,
   APP_PRODUCT_RE,
   TRIAL_PRODUCT_RE,
-  accessEndsAt,
   findCol,
   latestAppPayments,
   mapDealColumns,
@@ -184,7 +183,7 @@ async function processMissingRows(
   // Only payers whose paid period still covers today can gain anything here.
   const emails: string[] = []
   latest.forEach((m, email) => {
-    if (accessEndsAt(m.ts) > now) emails.push(email)
+    if (m.endsAt > now) emails.push(email)
   })
   if (!emails.length) return { payersInPeriod: 0, matched: 0, created: 0, intendedNew: undefined as IntendedNew[] | undefined }
 
@@ -233,7 +232,7 @@ async function processMissingRows(
     if (!email) continue
 
     const m = latest.get(email)!
-    const newExpiryTs = accessEndsAt(m.ts)
+    const newExpiryTs = m.endsAt
     if (newExpiryTs <= now) continue
 
     const pendingId = pendingByEmail.get(email) ?? null
@@ -327,7 +326,7 @@ async function processExport(
     const m = latest.get(email)
     if (!m) continue
 
-    const newExpiryTs = accessEndsAt(m.ts)
+    const newExpiryTs = m.endsAt
     const currentTs = sub.expires_at ? Date.parse(sub.expires_at) : 0
     // Extend-only: write only when GC says they are paid further than we think and it is future.
     if (newExpiryTs <= currentTs || newExpiryTs <= now) continue
