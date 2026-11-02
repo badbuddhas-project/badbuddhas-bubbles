@@ -139,7 +139,7 @@ export default function Home() {
   }, [isPremium, user])
 
   const daysLeft = expiresAt ? Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null
-  const showRenewal = isPremium && daysLeft !== null && daysLeft <= 3
+  const showRenewal = isPremium && daysLeft !== null && daysLeft > 0 && daysLeft <= 3
   const showTrialExpiry = !isPremium && trialDaysLeft > 0 && trialDaysLeft <= 3
 
   const freePractices = useMemo(

@@ -9,8 +9,8 @@
  *   - autopayment renewals (the user never re-enters their email) → they get locked out
  *   - buyers who never completed the email step
  * This cron closes that gap. It runs two reconciliations against the same GC export:
- *   1. RENEWALS — subscriptions about to lapse (or just lapsed) get extended when GC
- *      confirms a recent payment for the app product.
+ *   1. RENEWALS — any linked subscription whose payer GC shows as paid further than we
+ *      think gets extended, however long ago the row lapsed.
  *   2. MISSING ROWS — a payer who has NO subscription row linked to them at all gets
  *      one created. This happens when someone registers in the app within minutes of
  *      paying: check-subscription runs before GC's export reports the fresh deal, so
@@ -25,14 +25,14 @@
  *      requested 26.08, trial had lapsed 05.07). Needs its own export: the trial product
  *      is free, so it never appears in the status=payed one.
  *
- * WHY TWO-PHASE (STATELESS)
- * GetCourse exports are asynchronous and take minutes to generate — far longer than a
- * serverless function may run. GetCourse dedups exports: identical params return the
- * SAME export_id for the rest of the day. So each run just requests the (day-granular)
- * export and tries to fetch it: the day's first run creates it (status pending); a
- * later run the same day gets the same id, now generated, and reconciles it. No stored
- * state needed. Two cron runs ~20min apart per day (see vercel.json) give same-day
- * reconciliation; two manual runs a few minutes apart do the same.
+ * WHY THE EXPORT ID IS STORED
+ * GetCourse exports are asynchronous and take minutes to generate, and every request
+ * creates a NEW export (no dedup: identical params returned different ids, 02.11.2026).
+ * GC also runs one export per account at a time (error 905). So a run can only collect
+ * an export started by an earlier run, and only one export can be in flight. The
+ * reconcile_exports table carries the id between runs. A day goes: start payed → process
+ * payed, start trial → process trial (see the cron times in vercel.json). Manual runs a
+ * few minutes apart do the same.
  *
  * SAFETY MODEL
  * - EXTEND-ONLY. Never sets is_premium=false, never shortens expires_at, never grants
@@ -43,7 +43,7 @@
  *   paidDate + the product's term (30d, or N months for "N мес" plans) + renewal grace;
  *   only written when later than what we have AND still in the future.
  * - DRY-RUN by default until RECONCILE_LIVE=1 (or ?live=1): reports intended changes
- *   without writing.
+ *   without writing to users or subscriptions (reconcile_exports is still updated).
  *
  * AUTH: Authorization: Bearer <CRON_SECRET>, same as the other crons.
  */
@@ -65,11 +65,10 @@ import {
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-// Re-check window (days) around now for candidate subscriptions.
-const LOOKBACK_DAYS = 14
-const LOOKAHEAD_DAYS = 2
 // Date window for the bulk paid-deals export (covers recent renewals).
 const EXPORT_WINDOW_DAYS = 25
+// An export still not generated after this long is abandoned and started over.
+const EXPORT_STALE_MS = 6 * 60 * 60 * 1000
 // One trial period, matching what register/telegram-sync hand out.
 const TRIAL_MS = 14 * 24 * 60 * 60 * 1000
 
@@ -301,17 +300,23 @@ async function processExport(
   // email -> latest real app payment (free "payed" deals and the trial excluded)
   const latest = latestAppPayments(items, cols)
 
-  const lookback = new Date(now - LOOKBACK_DAYS * 24 * 60 * 60 * 1000).toISOString()
-  const lookahead = new Date(now + LOOKAHEAD_DAYS * 24 * 60 * 60 * 1000).toISOString()
+  // Candidates come from the payer list, not an expiry window: a row that lapsed long ago
+  // still deserves extending once GC shows a payment for it (a window left returning
+  // payers stuck, case: ivashchenko.kv, row expired in April, paid 09.10).
+  const payerEmails: string[] = []
+  latest.forEach((m, email) => {
+    if (m.endsAt > now) payerEmails.push(email)
+  })
 
-  const { data: subs, error: subsErr } = await supabase
-    .from('subscriptions')
-    .select('id, user_id, telegram_id, email, status, expires_at')
-    .not('user_id', 'is', null)
-    .not('email', 'is', null)
-    .gte('expires_at', lookback)
-    .lte('expires_at', lookahead)
-    .order('expires_at', { ascending: true })
+  type SubRow = { id: string; user_id: string; telegram_id: number | null; email: string; status: string; expires_at: string | null }
+  const { data: subs, error: subsErr } = await selectIn<SubRow>(
+    supabase,
+    'subscriptions',
+    'id, user_id, telegram_id, email, status, expires_at',
+    'email',
+    payerEmails,
+    (q) => q.not('user_id', 'is', null),
+  )
 
   if (subsErr) {
     console.error('[reconcile] candidate query error:', subsErr.message)
@@ -541,69 +546,98 @@ export async function GET(request: Request) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } },
+    {
+      auth: { autoRefreshToken: false, persistSession: false },
+      // Next caches GET fetches; a cached read of reconcile_exports would lose the export id.
+      global: { fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }) },
+    },
   )
 
   const now = Date.now()
-
-  // STATELESS two-phase via GetCourse's export dedup: identical export params return
-  // the SAME export_id for the rest of the day, so we need no stored state. The day's
-  // first cron run creates the export (status=pending); a later run the same day gets
-  // the same id, now generated, and processes it. `fromDate` is day-granular so all
-  // runs on a given day share one export.
+  const today = new Date(now).toISOString().slice(0, 10)
   const fromDate = new Date(now - EXPORT_WINDOW_DAYS * 864e5).toISOString().slice(0, 10)
-  const exportId = await startExport(`${BASE_URL}/deals?key=${apiKey}&status=payed&created_at[from]=${fromDate}`)
-  if (!exportId) {
-    return NextResponse.json({ mode: dryRun ? 'dry-run' : 'live', phase: 'start-failed', exportFrom: fromDate }, { status: 502 })
-  }
-
-  const r = await fetchExport(exportId, apiKey)
-  let phase: string = r.status // 'pending' | 'gone' | (below) 'processed'
-  let result: Awaited<ReturnType<typeof processExport>> | null = null
-  if (r.status === 'ready') {
-    result = await processExport(r.items, r.fields, supabase, dryRun, now)
-    phase = 'processed'
-  }
 
   // Trial requests need their OWN export: the trial product is free, so those deals are
-  // never in the status=payed export above. Same day-granular dedup applies.
-  const trialExportId = await startExport(`${BASE_URL}/deals?key=${apiKey}&created_at[from]=${fromDate}`)
-  let trialPhase = 'start-failed'
-  let trialResult: Awaited<ReturnType<typeof processTrialRequests>> | null = null
-  if (trialExportId) {
-    const tr = await fetchExport(trialExportId, apiKey)
-    trialPhase = tr.status
-    if (tr.status === 'ready') {
-      trialResult = await processTrialRequests(tr.items, tr.fields, supabase, dryRun, now)
-      trialPhase = 'processed'
-    }
+  // never in the status=payed one.
+  const jobs = [
+    { key: 'payed', url: `${BASE_URL}/deals?key=${apiKey}&status=payed&created_at[from]=${fromDate}`, process: processExport },
+    { key: 'trial', url: `${BASE_URL}/deals?key=${apiKey}&created_at[from]=${fromDate}`, process: processTrialRequests },
+  ]
+
+  const { data: stateRows, error: stateErr } = await supabase
+    .from('reconcile_exports')
+    .select('job, export_id, started_at, processed_at')
+  if (stateErr) {
+    console.error('[reconcile] state read failed:', stateErr.message)
+    return NextResponse.json({ error: 'state-read-failed' }, { status: 500 })
   }
 
-  const summary = {
-    mode: dryRun ? 'dry-run' : 'live',
-    phase,
-    exportId,
-    exportFrom: fromDate,
-    result,
-    trial: { phase: trialPhase, exportId: trialExportId, result: trialResult },
+  const saveState = async (job: string, patch: { export_id: string | null; started_at: string | null; processed_at?: string }) => {
+    const { error } = await supabase.from('reconcile_exports').upsert({ job, ...patch })
+    if (error) console.error('[reconcile] state write failed:', job, error.message)
+    return !error
   }
-  const compact = result
-    ? { ...result, intended: undefined, missingRows: result.missingRows ? { ...result.missingRows, intendedNew: undefined } : undefined }
-    : null
-  const trialCompact = trialResult ? { ...trialResult, intendedTrials: undefined } : null
-  console.log('[reconcile] summary', JSON.stringify({
-    ...summary,
-    result: compact,
-    trial: { ...summary.trial, result: trialCompact },
-  }))
-  if (dryRun && trialResult?.intendedTrials?.length) {
-    console.log('[reconcile] intendedTrials', JSON.stringify(trialResult.intendedTrials))
+
+  // GC runs one export at a time, so at most one job may have one in flight.
+  let exportInFlight = false
+  const jobReports: Record<string, { phase: string; exportId?: string | null; result?: unknown }> = {}
+
+  for (const job of jobs) {
+    const state = stateRows?.find((row) => row.job === job.key)
+    let processedToday = state?.processed_at?.slice(0, 10) === today
+
+    if (state?.export_id) {
+      const r = await fetchExport(state.export_id, apiKey)
+      if (r.status === 'ready') {
+        const result = await job.process(r.items, r.fields, supabase, dryRun, Date.now())
+        const failed = 'error' in result && !!result.error
+        // A failed pass drops the export but leaves the day unprocessed, so a later run retries.
+        await saveState(job.key, {
+          export_id: null,
+          started_at: null,
+          ...(failed ? {} : { processed_at: new Date().toISOString() }),
+        })
+        jobReports[job.key] = { phase: failed ? 'process-failed' : 'processed', exportId: state.export_id, result }
+        continue
+      }
+
+      const fresh = !!state.started_at && now - Date.parse(state.started_at) < EXPORT_STALE_MS
+      if (r.status === 'pending' && fresh) {
+        exportInFlight = true
+        jobReports[job.key] = { phase: 'pending', exportId: state.export_id }
+        continue
+      }
+      await saveState(job.key, { export_id: null, started_at: null })
+      processedToday = false
+    }
+
+    if (processedToday || exportInFlight) {
+      jobReports[job.key] = { phase: processedToday ? 'done-today' : 'waiting' }
+      continue
+    }
+
+    const exportId = await startExport(job.url)
+    if (!exportId) {
+      // Usually 905: another export is running, possibly check-subscription's. Next run retries.
+      exportInFlight = true
+      jobReports[job.key] = { phase: 'start-failed' }
+      continue
+    }
+    const saved = await saveState(job.key, { export_id: exportId, started_at: new Date().toISOString() })
+    exportInFlight = true
+    jobReports[job.key] = { phase: saved ? 'started' : 'state-write-failed', exportId }
   }
-  if (dryRun && result?.intended?.length) {
-    console.log('[reconcile] intended', JSON.stringify(result.intended))
-  }
-  if (dryRun && result?.missingRows?.intendedNew?.length) {
-    console.log('[reconcile] intendedNew', JSON.stringify(result.missingRows.intendedNew))
+
+  const summary = { mode: dryRun ? 'dry-run' : 'live', exportFrom: fromDate, jobs: jobReports }
+  // Personal data stays out of the summary log; dry runs print the intended lists below.
+  console.log('[reconcile] summary', JSON.stringify(summary, (key, value) =>
+    key === 'intended' || key === 'intendedNew' || key === 'intendedTrials' ? undefined : value))
+  if (dryRun) {
+    const payed = jobReports.payed?.result as Awaited<ReturnType<typeof processExport>> | undefined
+    const trial = jobReports.trial?.result as Awaited<ReturnType<typeof processTrialRequests>> | undefined
+    if (trial?.intendedTrials?.length) console.log('[reconcile] intendedTrials', JSON.stringify(trial.intendedTrials))
+    if (payed?.intended?.length) console.log('[reconcile] intended', JSON.stringify(payed.intended))
+    if (payed?.missingRows?.intendedNew?.length) console.log('[reconcile] intendedNew', JSON.stringify(payed.missingRows.intendedNew))
   }
   return NextResponse.json(summary)
 }

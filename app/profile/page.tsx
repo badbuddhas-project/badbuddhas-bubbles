@@ -122,7 +122,7 @@ export default function ProfilePage() {
   const daysUntilExpiry = subscriptionExpiry
     ? Math.ceil((new Date(subscriptionExpiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
     : null
-  const showRenewalWarning = isPremium && daysUntilExpiry !== null && daysUntilExpiry < 7
+  const showRenewalWarning = isPremium && daysUntilExpiry !== null && daysUntilExpiry > 0 && daysUntilExpiry < 7
 
   const formatExpiryLine = (dateStr: string) => {
     const date = new Date(dateStr)

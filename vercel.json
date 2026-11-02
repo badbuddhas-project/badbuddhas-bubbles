@@ -6,11 +6,19 @@
     },
     {
       "path": "/api/cron/reconcile-subscriptions",
-      "schedule": "0 6 * * *"
+      "schedule": "0 8 * * *"
     },
     {
       "path": "/api/cron/reconcile-subscriptions",
-      "schedule": "0 8 * * *"
+      "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/reconcile-subscriptions",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/reconcile-subscriptions",
+      "schedule": "0 14 * * *"
     },
     {
       "path": "/api/cron/broadcast",
