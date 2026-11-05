@@ -7,10 +7,11 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 const TRIAL_LAUNCH_DATE = new Date('2026-06-19T00:00:00Z')
+const PAYMENT_CHECK_INTERVAL_MS = 30 * 60 * 1000
 
 function sanitizeUser(user: Record<string, unknown>) {
-  const { password_hash, reset_token, reset_token_expires_at, ...safe } = user
-  void password_hash; void reset_token; void reset_token_expires_at
+  const { password_hash, reset_token, reset_token_expires_at, payment_checked_at, ...safe } = user
+  void password_hash; void reset_token; void reset_token_expires_at; void payment_checked_at
   return safe
 }
 
@@ -75,6 +76,8 @@ export async function POST(request: Request) {
       }
     }
 
+    let paymentCheckDue = false
+
     // Auto-check subscription expiry if user has verified_email
     if (user.verified_email) {
       try {
@@ -124,12 +127,28 @@ export async function POST(request: Request) {
             console.log('[telegram-sync] Subscription renewed:', user.verified_email)
           }
         }
+
+        // No live subscription on record, but they may have just paid: GetCourse doesn't
+        // notify us. The GC check takes up to a minute, so the client runs it in the
+        // background after the app has opened. Claiming the slot here keeps it to one
+        // check per interval however many times the app calls this route.
+        if (!sub && !user.is_premium) {
+          const cutoff = new Date(Date.now() - PAYMENT_CHECK_INTERVAL_MS).toISOString()
+          const { data: claimed } = await supabase
+            .from('users')
+            .update({ payment_checked_at: new Date().toISOString() })
+            .eq('id', user.id)
+            .or(`payment_checked_at.is.null,payment_checked_at.lt."${cutoff}"`)
+            .select('id')
+            .maybeSingle()
+          paymentCheckDue = !!claimed
+        }
       } catch (err) {
         console.error('[telegram-sync] Subscription check failed (non-blocking):', err)
       }
     }
 
-    return NextResponse.json({ user: sanitizeUser(user), isNewUser })
+    return NextResponse.json({ user: sanitizeUser(user), isNewUser, paymentCheckDue })
   } catch (error) {
     console.error('[telegram-sync] error:', error)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })

@@ -41,6 +41,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router   = useRouter()
   const pathname = usePathname()
 
+  /** Picks up a payment GetCourse hasn't told us about, without holding up app start. */
+  const checkPaymentInBackground = async (email: string, telegramId: number) => {
+    try {
+      const res = await fetch('/api/getcourse/check-subscription', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, telegram_id: telegramId }),
+      })
+      const data = await res.json()
+      if (data.hasSubscription) {
+        setUser((current) => (current ? { ...current, is_premium: true } : current))
+        ymEvent('subscription_activated', { platform: getPlatform(), source: 'app_open_check' })
+      }
+    } catch (e) {
+      console.error('[AuthProvider] Background payment check error:', e)
+    }
+  }
+
   const fetchUser = async () => {
     // ── 1. Telegram Mini App ──────────────────────────────────────────────────
     if (isTelegramWebApp()) {
@@ -66,6 +84,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const data = await res.json()
             console.log('[AuthProvider] TG sync OK, user:', data.user?.id, 'email:', data.user?.email, 'verified:', data.user?.verified_email)
             setUser(data.user)
+            if (data.paymentCheckDue && data.user?.verified_email) {
+              checkPaymentInBackground(data.user.verified_email, telegramUser.id)
+            }
             if (data.user?.id) ymIdentify(data.user.id, { is_premium: !!data.user.is_premium, platform: getPlatform(), method: 'telegram' })
             const startParam = (window as any).Telegram?.WebApp?.initDataUnsafe?.start_param
             ymEvent('app_opened', { platform: getPlatform(), method: 'telegram', source: startParam || 'organic' })
