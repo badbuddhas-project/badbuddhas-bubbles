@@ -11,7 +11,8 @@ export interface SendResult {
 export async function sendTelegramMessage(
   chatId: number,
   text: string,
-  button?: { text: string; url: string }
+  button?: { text: string; url: string } | { text: string; url: string }[],
+  attempt = 0
 ): Promise<SendResult> {
   const body: Record<string, unknown> = {
     chat_id: chatId,
@@ -19,9 +20,11 @@ export async function sendTelegramMessage(
     parse_mode: 'HTML',
   }
 
-  if (button) {
+  // Одна кнопка или несколько — каждая отдельной строкой
+  const buttons = button ? (Array.isArray(button) ? button : [button]) : []
+  if (buttons.length) {
     body.reply_markup = {
-      inline_keyboard: [[{ text: button.text, url: button.url }]],
+      inline_keyboard: buttons.map((b) => [{ text: b.text, url: b.url }]),
     }
   }
 
@@ -42,6 +45,13 @@ export async function sendTelegramMessage(
   if (res.status === 403) {
     // User blocked the bot
     return { ok: false, delivered: false, bot_blocked: true, error: data.description }
+  }
+
+  if (res.status === 429 && attempt < 3) {
+    // Flood limit: wait as long as Telegram asks and retry
+    const retryAfter = Number(data.parameters?.retry_after ?? 1)
+    await new Promise((r) => setTimeout(r, (retryAfter + 0.5) * 1000))
+    return sendTelegramMessage(chatId, text, button, attempt + 1)
   }
 
   if (!res.ok) {
