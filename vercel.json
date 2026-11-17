@@ -35,6 +35,14 @@
     {
       "path": "/api/cron/techworks",
       "schedule": "10 7 17,19,21,23,24 11 *"
+    },
+    {
+      "path": "/api/cron/techworks",
+      "schedule": "15 7 17,19,21,23,24 11 *"
+    },
+    {
+      "path": "/api/cron/techworks",
+      "schedule": "20 7 17,19,21,23,24 11 *"
     }
   ]
 }

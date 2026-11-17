@@ -16,7 +16,7 @@ export const maxDuration = 60
 export const dynamic = 'force-dynamic'
 
 const TIME_BUDGET_MS = 50_000 // останавливаемся до таймаута функции
-const CONCURRENCY = 8 // ~20 msg/sec — ниже лимита Telegram 30 msg/sec
+const CONCURRENCY = 12 // ~25 msg/sec — ниже лимита Telegram 30 msg/sec (на 429 есть повтор)
 const PAGE = 1000 // Supabase отдаёт максимум 1000 строк за запрос
 
 function sleep(ms: number) {
@@ -116,7 +116,12 @@ export async function GET(request: Request) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
+    {
+      auth: { autoRefreshToken: false, persistSession: false },
+      // Next 14 кэширует GET-ответы fetch между запусками: без no-store каждый
+      // запуск видел пустой notification_log из первого и гонял уже отправленных
+      global: { fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }) },
+    }
   )
 
   let users: { id: string; telegram_id: number }[]
@@ -142,7 +147,7 @@ export async function GET(request: Request) {
     while (next < queue.length && Date.now() - started < TIME_BUDGET_MS) {
       const user = queue[next++]
       stats[await sendOne(supabase, campaign!, user)]++
-      await sleep(300)
+      await sleep(150)
     }
   }
   await Promise.all(Array.from({ length: CONCURRENCY }, worker))
